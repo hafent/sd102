@@ -30,10 +30,10 @@
 class CBASE102:public CProtocol
 {
 public:
-		CBASE102();
-		~CBASE102();
-		 void SendProc();
-		 int ReciProc();
+	CBASE102();
+	~CBASE102();
+	void SendProc();
+	int ReciProc();
 protected:
 	stMtrConfig *mtrConfig;
 	stSIOPlanpara *sioplanConfig;
@@ -46,43 +46,43 @@ protected:
 	unsigned char *SoftVersion;
 	unsigned char *Reboot_Flag;
 protected:
-	
+
 	unsigned short M_MainFile_CRC_Check(unsigned char * data, unsigned char len);
 	unsigned char M_Write_Main_File(unsigned char * data);
 	int M_Soft_Update_Can();
 	void M_Return_Pin_Error(unsigned char type);
 	/*-----------------------------------
 	维护接口上传参数
--------------------------------------*/
-	 int M_Save_LP_Para_NA2();
-	 int M_Save_MNT_Para_NA2();
-	 int M_Save_Para_NA2();
-	 int M_Save_QR_Para_NA2();
-	 int M_Save_TA_Para_NA2();
-	 int M_Save_TE_Para_NA2();
-	 int M_Save_TOU_Para_NA2();
-	 int M_Save_PB_Para_NA2();
+	-------------------------------------*/
+	int M_Save_LP_Para_NA2();
+	int M_Save_MNT_Para_NA2();
+	int M_Save_Para_NA2();
+	int M_Save_QR_Para_NA2();
+	int M_Save_TA_Para_NA2();
+	int M_Save_TE_Para_NA2();
+	int M_Save_TOU_Para_NA2();
+	int M_Save_PB_Para_NA2();
 	int M_Clt_Para_NA2();
-	 int M_Ctr_Para_NA2();
+	int M_Ctr_Para_NA2();
 	int M_Moin_Para_NA2();
-	 int M_Net_Para_NA2();
+	int M_Net_Para_NA2();
 	unsigned char Is_IP_3(char * data_buf);
-	 int M_Sioplan_Para_NA2();
-	 int M_Meter_Para_NA2();
-	 int M_Sys_Para_NA2();
-	 void Ertu_Para_NA2();//061130 he add
-	 int M_Soft_SerNum_NA_2();
+	int M_Sioplan_Para_NA2();
+	int M_Meter_Para_NA2();
+	int M_Sys_Para_NA2();
+	void Ertu_Para_NA2();//061130 he add
+	int M_Soft_SerNum_NA_2();
 	int M_HardWare_Status_NA2();
-	
-/*----------------------------------------
-	维护接口下装参数
-----------------------------------------------*/
+
+	/*----------------------------------------
+		维护接口下装参数
+	----------------------------------------------*/
 	int M_Cfg_Para_Update_NA2(unsigned char flag);
 	int Update_Cfg_File(unsigned char *databuf);
-	 unsigned char WriteCfgFlie(std::string filename,unsigned char *databuf,unsigned char cfg_len,unsigned char pro_len );
-	 unsigned char m_Calc_Now_Frame_Seq(unsigned char *data_buf);
-	 unsigned char M_CTL_PORT_Open();
-	 unsigned char M_CTL_PORT_Close();
+	unsigned char WriteCfgFlie(std::string filename,unsigned char *databuf,unsigned char cfg_len,unsigned char pro_len );
+	unsigned char m_Calc_Now_Frame_Seq(unsigned char *data_buf);
+	unsigned char M_CTL_PORT_Open();
+	unsigned char M_CTL_PORT_Close();
 	/*102 帧处理*/
 	void Clear_Continue_Flag();
 	void Clear_FrameFlags();
@@ -94,7 +94,7 @@ protected:
 	int Realmtr2Retranmtr(unsigned char realmtr);//由真实表号转换得到在监视转发表中的表号
 	//监视转发所需
 	unsigned char m_Max_Mtrnum;
-     	std::vector<unsigned char> m_retransmit_table;
+	std::vector<unsigned char> m_retransmit_table;
 	unsigned char retran_table_valid;
 	/*-----------------------------------*/
 	//控制帧相关信息
@@ -105,7 +105,7 @@ protected:
 	unsigned char  c_func;
 	unsigned char  c_func_tmp;
 	unsigned char c_prm;
-	
+
 	unsigned short c_Start_Info;
 	unsigned short c_Stop_Info;
 	unsigned char  c_Start_MIN;
@@ -113,7 +113,7 @@ protected:
 	unsigned char  c_Start_D;
 	unsigned char  c_Start_MON;
 	unsigned char  c_Start_YL;
-	
+
 	unsigned char  c_End_MIN;
 	unsigned char  c_End_H;
 	unsigned char  c_End_D;
@@ -133,10 +133,10 @@ protected:
 	unsigned char  c_TI;
 	unsigned char  c_TI_tmp;
 	unsigned char  c_Record_Addr;
-//报文接收控制帧	
+//报文接收控制帧
 	unsigned char  syn_char_num;
 	unsigned char  expect_charnum;
-	unsigned char  Syn_Head_Rece_Flag;	
+	unsigned char  Syn_Head_Rece_Flag;
 //监视帧相关信息
 	unsigned char  m_ACD;
 	unsigned char m_Resend;
@@ -148,66 +148,66 @@ protected:
 	unsigned char m_COT_tmp;
 	unsigned short m_IOA;
 	unsigned char info_overflow;
-/*------------------------------------------------------
-	规约控制流程
---------------------------------------------------------*/
-/*------------------------------------------------------
-	帧转换控制命令:ACT/DATA/ACTEND   
---------------------------------------------------------*/
+	/*------------------------------------------------------
+		规约控制流程
+	--------------------------------------------------------*/
+	/*------------------------------------------------------
+		帧转换控制命令:ACT/DATA/ACTEND
+	--------------------------------------------------------*/
 	unsigned char  Command;
-/*------------------------------------------------------
-	需要发送的总信息体数
---------------------------------------------------------*/
+	/*------------------------------------------------------
+		需要发送的总信息体数
+	--------------------------------------------------------*/
 	unsigned int  Send_Total;
-/*------------------------------------------------------
-	每帧可发送的最大信息体数
---------------------------------------------------------*/
+	/*------------------------------------------------------
+		每帧可发送的最大信息体数
+	--------------------------------------------------------*/
 	unsigned int  Send_num;
-/*------------------------------------------------------
-	续传标志，在每个主站命令起始时清零 ，续传开始时置1
---------------------------------------------------------*/
+	/*------------------------------------------------------
+		续传标志，在每个主站命令起始时清零 ，续传开始时置1
+	--------------------------------------------------------*/
 	unsigned char  Continue_Flag;
-/*------------------------------------------------------
-	数据发送完毕标志
---------------------------------------------------------*/
+	/*------------------------------------------------------
+		数据发送完毕标志
+	--------------------------------------------------------*/
 	unsigned char  Send_DataEnd;
-/*------------------------------------------------------
-	某个时间点的所有信息点发送完毕需要的总帧数
---------------------------------------------------------*/
+	/*------------------------------------------------------
+		某个时间点的所有信息点发送完毕需要的总帧数
+	--------------------------------------------------------*/
 	unsigned int  Send_Times;
 	unsigned int  Send_RealTimes;
-/*------------------------------------------------------
-	所有时间点发送完毕需要的总步数
---------------------------------------------------------*/	
+	/*------------------------------------------------------
+		所有时间点发送完毕需要的总步数
+	--------------------------------------------------------*/
 	unsigned int Steps;
 	unsigned int  SendT_RealTimes;
 	unsigned int  Continue_Step_Flag;
-/*------------------------------------------------------
-	信息体大小
--------------------------------------------------------*/
+	/*------------------------------------------------------
+		信息体大小
+	-------------------------------------------------------*/
 	unsigned char  Info_Size;
-/*----------------------------------------------------
-	重发控制机制
-------------------------------------------------------*/
+	/*----------------------------------------------------
+		重发控制机制
+	------------------------------------------------------*/
 	int m_LastSendBytes;
-/*------------------------------------------------------
-	维护控制过程中当前帧序号061130  he add	
------------------------------------------------------------*/
-unsigned short m_Now_Frame_Seq;
-unsigned short m_Now_Frame_Seq_tmp;
-unsigned short m_Frame_Total;
+	/*------------------------------------------------------
+		维护控制过程中当前帧序号061130  he add
+	-----------------------------------------------------------*/
+	unsigned short m_Now_Frame_Seq;
+	unsigned short m_Now_Frame_Seq_tmp;
+	unsigned short m_Frame_Total;
 
-/*------------------------------------------------------
-	维护成功或失败标记061130  he add	
------------------------------------------------------------*/
-unsigned char m_Update_Flag;
-/*----------------------------------------------------
-	 监视通道密码
--------------------------------------------*/
-unsigned short m_suppwd;
-unsigned short m_pwd1;
-unsigned short m_pwd2;
-unsigned char  mirror_buf[256];
+	/*------------------------------------------------------
+		维护成功或失败标记061130  he add
+	-----------------------------------------------------------*/
+	unsigned char m_Update_Flag;
+	/*----------------------------------------------------
+		 监视通道密码
+	-------------------------------------------*/
+	unsigned short m_suppwd;
+	unsigned short m_pwd1;
+	unsigned short m_pwd2;
+	unsigned char  mirror_buf[256];
 
 };
 #endif

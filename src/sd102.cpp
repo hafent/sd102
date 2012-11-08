@@ -41,7 +41,7 @@ int Csd102::ReciProc(void)
 	splitmsg(readbuf,msglen);
 	printf("after pro:");
 	print_array(readbuf,msglen);
-return 0;
+	return 0;
 }
 /*分离出正确的报文.经过处理之后准确无误的报文被保存在
 	readbuf[len]数组中,传递出来
@@ -86,7 +86,7 @@ u8 Csd102::check_sum(u8 * a,int len )
 {
 	int i;
 	u8 sum=0;
-	for(i=0;i<len;i++){
+	for(i=0; i<len; i++) {
 		sum+=a[i];
 	}
 	return sum;
@@ -94,7 +94,7 @@ u8 Csd102::check_sum(u8 * a,int len )
 void Csd102::print_array(u8 *transbuf,int len)
 {
 	int i;
-	for(i=0;i<len;i++){
+	for(i=0; i<len; i++) {
 		printf("%02X ",transbuf[i]);
 	}
 	printf("\n");
