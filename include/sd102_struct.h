@@ -1,4 +1,6 @@
-/*山东102规约 结构体定义头文件
+/* File encode:	 GB2312
+   filename:	sd102_struct.h
+ 山东102规约 结构体定义头文件
  未注明的章节号 参考:山东电网 DL/T 719-2000
 			电力系统电能累计量
 			传输配套标准实施规范(2011)
@@ -8,6 +10,7 @@
 */
 #ifndef SD102_STRUCT_H
 #define SD102_STRUCT_H
+
 #include "typedefine.h"
 #pragma pack(1) //本文件内所有结构体压缩!按照规约所规定紧凑分布
 // 7.2.1.1 类型标识域值的语义的定义
@@ -59,7 +62,7 @@ const u8 START_SINGLE_FARME=0xE5; //单字符帧
 const u8 C_FC_Reset_communication_unit=0;
 const u8 C_Transfer_data=3;
 //7.2.2 可变结构限定词（VARIABLE OF STRUCTURE QUALIFIER）
-union  vsq_t {
+union  Vsq {
 	u8 val;
 	struct {
 		u8 n:7;
@@ -75,12 +78,22 @@ union cot_t {
 		u8 t:1;
 	};
 };
-//7.2.4 电能累计量数据终端设备地址
+//7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASU_addr
 typedef u16 rtuaddr;
 //7.2.5 记录地址(RAD)	Record address
 typedef u8 rad_t;
 //7.2.6 信息体地址(IOA) Information Object Address
 typedef u8 ioa_t;
+//7.2.7.1 序列号和数据状态 字节 //sd102中全改为状态位,
+union seq_number {
+	u8 val;
+	struct {
+		u8 sn:5;//序列号
+		u8 cy:1;//carry
+		u8 ca:1;//计数器被调整(CA＝counter was adjusted)
+		u8 iv:1;//无效(IV＝invalid)
+	};
+};
 //7.2.7.1 序列号和数据状态 字节
 union data_status {
 	u8 val;
@@ -107,18 +120,18 @@ struct Ta {
 	u8 iv:1;//时间陈述无效标志位 invalid
 	//
 	u8 hour:5;
-	u8 res1:2;//备用 reserve 1
+	u8 res1:2;//备用 reserve 1 <0>
 	u8 su:1;//夏令时 summer time
 	//
 	u8 day:5;//几号 1-31
 	u8 week:3;//星期几 1-7
 	//
 	u8 month:4;
-	u8 eti:2; //energy tariff information
-	u8 pti:2;//power tariff information
+	u8 eti:2; //能量费率信息(ETI＝energy tariff information)
+	u8 pti:2;//功率费率信息(PTI＝power tariff information)
 	//
 	u8 year:7;
-	u8 res2:1;//reserve 2
+	u8 res2:1;//备用2(RES2＝reserve 2) <0>
 };
 //7.2.7.3 时间信息 b(Time information b,毫秒至年)
 struct Tb {
@@ -285,7 +298,7 @@ struct C_SP_NB_2_iObj {
 	//没有信息体
 };*/
 //7.3.3.5 读一个选定的时间范围和一个选定的地址范围的月结算复费率电能累计量
-struct C_CI_NA_C_2_iObj {
+struct C_CI_NA_D_2_iObj {
 	ioa_t start_ioa;
 	ioa_t end_ioa;
 	struct Ta Tstart;
@@ -312,35 +325,10 @@ struct C_CI_NA_C_2_iObj {
 	struct Ta Tstart;
 	struct Ta Tend;
 };
-//数据单元标识 6字节
-struct data_unit_t {
-	typ_t typ;
-	union  vsq_t vaq;
-	union cot_t cot;
-	struct addr_t addr;
-};
-//标准发行日期
-union proctol_date {
-	u8 val;
-	struct {
-		u8 month:4;
-		u8 year:4;
-	};
-};
 
 
-//电量数据有效字节
-union power_date_iv {
-	u8 val;
-	struct {
-		u8 res:7;//保留 取0
-		u8 iv:1;
-	};
-};
-
-
-//下行 控制域 主站->终端
-union ctrl_down_t {
+//C3.1 控制域 主站->终端(下行)
+union Ctrl_down {
 	u8 val;
 	struct {
 		u8 funcode:4;
@@ -350,8 +338,8 @@ union ctrl_down_t {
 		u8 dir:1;//非平衡传输,应保留为0
 	};
 } ;
-//上行 控制域 终端->主站
-union ctrl_up_t {
+//C3.1 控制域 终端->主站(上行)
+union Ctrl_up {
 	u8 val;
 	struct {
 		u8 funcode:4;
@@ -361,30 +349,68 @@ union ctrl_up_t {
 		u8 dir:1; //本规约备用
 	};
 };
-//可变帧长帧 - 帧头
-struct long_farme_head {
-	u8 start_byte1;
-	u8 len_hi;
-	u8 len_lo;
-	u8 start_byte2;
-};
-//可变帧长帧 - 帧尾
-struct long_farme_tail {
-	u8 cs;
-	u8 end_byte;
-};
-//固定帧长帧 - 帧体
+//C1.2 固定帧长帧 - 帧体
 struct short_farme {
 	u8 start_byte; //开始字节
 	union { //控制域
-		union ctrl_down_t c_down;
-		union ctrl_up_t c_up;
+		union Ctrl_down c_down;
+		union Ctrl_up c_up;
 	};
 	u8 addr1;//地址
 	u8 addr2;//地址
 	u8 cs;//校验和
 	u8 end_byte;//终止字符
 };
+/* 帧头
+   C
+   A1
+   A2
+   数据单元标识
+*/
+//C1.1 可变帧长帧 - 帧头
+struct long_farme_head {
+	u8 start_byte1;
+	u8 len_hi;
+	u8 len_lo;
+	u8 start_byte2;
+	//控制域
+	union { //控制域
+		union Ctrl_down c_down;
+		union Ctrl_up c_up;
+	};
+	//地址域
+	rtuaddr taddr;
+	rad_t rad;
+};
+// C
+// A1 A2
+//7.1 数据单元标识 6字节
+struct data_unit_t {
+	typ_t typ;
+	union  Vsq vaq;
+	union cot_t cot;
+	rtuaddr taddr;
+	rad_t rad;
+};
 
+//C1.1 可变帧长帧 - 帧尾
+struct long_farme_tail {
+	u8 cs;
+	u8 end_byte;
+};
+//C3.2.5 功能码:控制站向电能累计量数据终端传输的帧中功能码的定义 Ctrl
+const u8 FN_C_RS=0;//复位 reset
+const u8 FN_C_TD=3;//传输数据 trans date
+const u8 FN_C_CL=9;//召唤链路 call link
+const u8 FN_C_CC1=10;//召唤1级链路 call class 1 data
+const u8 FN_C_CC2=11;//召唤2级链路 call class 2 date
+const u8 FN_C_RES1=12;//备用1
+const u8 FN_C_RES2=13;//备用2
+//C3.3.4 功能码:电能累计量数据终端向控制站传输的帧中功能码的定义 Monitor
+const u8 FN_M_CON=0;//确认 Confirm
+const u8 FN_M_LB=1;//链路繁忙 link busy
+const u8 FN_M_SD=8;//以数据响应请求帧 send data
+const u8 FN_M_ND=9;//没有所召唤的数据 no data
+const u8 FN_M_RSP=13;//以链路状态或访问请求回答请求帧 Response
 
 #endif // SD102_STRUCT_H

@@ -1,7 +1,11 @@
-#ifndef __NULL_H__
-#define __NULL_H__
+/*File encode:	 GB2312
+   filename:	sd102.h
+*/
+#ifndef SD102_H
+#define SD102_H
 #include "CBASE102s.h"
 #include "sd102_struct.h"
+#include "typedefine.h"
 extern "C" CProtocol *CreateCProto_ProNULL();
 
 class Csd102 :public CBASE102
@@ -15,9 +19,10 @@ public:
 private:
 	int splitmsg(u8 *readbuf,int &len);
 	int GX102s_Synchead(u8 * databuf);
-	int process_short_frame(u8 * databuf);
+	int process_short_frame(u8 * sfarme, int len);
+	int process_long_frame(u8 *sfarme,int len);
 	u8 check_sum(u8 * a,int len );
 	u8 bak_farme[253];//±¸·ÝÖ¡
 	void print_array(u8 *transbuf,int len);
 };
-#endif
+#endif // SD102_H

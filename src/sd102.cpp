@@ -1,4 +1,6 @@
-/*山东102规约 实现文件
+/* File encode:	 GB2312
+   filename:	sd102.h
+山东102规约 实现文件
 引用 GB/T 18657.2-2002 等效与 IEC60870-5-2:1990 链路传输规则*/
 #include <sys/msg.h>
 #include <stdio.h>
@@ -12,7 +14,6 @@
 #include "log.h"
 #include "Hisfile.h"
 #include "sd102.h"
-
 extern "C" CProtocol *CreateCProto_ProNULL()
 {
 	return  new Csd102;
@@ -100,7 +101,40 @@ void Csd102::print_array(u8 *transbuf,int len)
 	printf("\n");
 }
 //解析 FT1.2 固定帧长帧
-int Csd102::process_short_frame(u8 *databuf)
+int Csd102::process_short_frame(u8 * sfarme, int len)
 {
+	struct short_farme farme;
+	memcpy(&farme,sfarme,sizeof(struct short_farme));//copy farme
+	if(farme.c_down.prm==0){ //下行
+		PRINT_HERE
+		return -1;
+	}
+	switch(farme.c_down.funcode){
+	case FN_C_RS:
+		PRINT_HERE
+		break;
+	case FN_C_TD:
+		PRINT_HERE
+		break;
+	case FN_C_CL:
+		PRINT_HERE
+		break;
+	case FN_C_CC1:
+		PRINT_HERE
+		break;
+	case FN_C_CC2:
+		PRINT_HERE
+		break;
+	case FN_C_RES1:
+		PRINT_HERE
+		break;
+	case FN_C_RES2:
+		PRINT_HERE
+		break;
+	default:
+		PRINT_HERE
+		break;
+	}
 	return 0;
 }
+

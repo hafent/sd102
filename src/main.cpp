@@ -1,3 +1,4 @@
+/*File encode is GB2312 */
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
