@@ -1,11 +1,12 @@
 /* File encode:	 GB2312
    filename:	sd102.h
-山东102规约 实现文件
+山东102规约 实现文件 引用 DL/T719-2000（IEC60870-5-102：1996）
 引用 GB/T 18657.2-2002 等效与 IEC60870-5-2:1990 链路传输规则*/
 #include <sys/msg.h>
 #include <stdio.h>
 #include <string>
 #include <unistd.h>
+#include <arpa/inet.h> //字节序相关
 #include "define.h"
 #include "sys_utl.h"
 #include "loopbuf.h"
@@ -14,6 +15,7 @@
 #include "log.h"
 #include "Hisfile.h"
 #include "sd102.h"
+//
 extern "C" CProtocol *CreateCProto_ProNULL()
 {
 	return  new Csd102;
@@ -22,13 +24,15 @@ extern "C" CProtocol *CreateCProto_ProNULL()
 Csd102::Csd102()
 {
 	//开始时备份帧应该被清空
-	memset(bak_farme,0x00,sizeof(bak_farme)*1);
+	memset(this->bak_farme,0x00,sizeof(bak_farme)*sizeof(u8));
+	this->bak_farme_len=0;
 }
 Csd102::~Csd102()
 {
-	memset(bak_farme,0x00,sizeof(bak_farme)*1);
+	memset(this->bak_farme,0x00,sizeof(bak_farme)*sizeof(u8));
+	this->bak_farme_len=0;
 }
-//终端(从站)主动发送.在山东102,非平衡传输中不需要
+//终端(从站)主动发送.在山东102,非平衡传输中(协议规定)不需要
 void Csd102::SendProc(void)
 {
 	return;
@@ -122,6 +126,7 @@ int Csd102::process_short_frame(u8 * sfarme, int len)
 {
 	struct Short_farme farme;
 	memcpy(&farme,sfarme,sizeof(struct Short_farme));//copy farme
+	farme.link_addr=ntohs(farme.link_addr);//字节序转换
 	if(farme.c_down.prm==0){ //下行
 		PRINT_HERE
 		return -1;

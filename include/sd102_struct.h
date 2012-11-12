@@ -1,12 +1,14 @@
 /* File encode:	 GB2312
    filename:	sd102_struct.h
- 山东102规约 结构体定义头文件
- 未注明的章节号 参考:山东电网 DL/T 719-2000
-			电力系统电能累计量
-			传输配套标准实施规范(2011)
-			引用标准IEC60870-5-102
- 其他章节号见其具体协议编号
- 数据格式按照 GBT18657.4 dit IEC60870-5-4
+山东102规约 结构体定义头文件
+未注明的章节号内容参考资料1,其他章节号见其具体协议编号.
+其他说明:
+	数据格式按照 GB/T18657.4 dit IEC60870-5-4
+	*_t 为无符号整型数据(8位/16位等)
+	首字母大写的单词为结构体类型/联合体 如  It Vsq
+参考资料:
+	1.山东电网 DL/T 719-2000 电力系统电能累计量传输配套标准实施规范(2011) ref IEC60870-5-102
+	2.http://en.wikipedia.org/wiki/IEC_60870-5
 */
 #ifndef SD102_STRUCT_H
 #define SD102_STRUCT_H
@@ -54,7 +56,7 @@ const typ_t C_CI_NA_D_2=175;//读一个选定的时间范围和一个选定的地址范围的表计谐波
 #define SPQ_LOW_VA_GX  53	//
 #define SPQ_LOW_VB_GX   54	//
 #define SPQ_LOW_VC_GX   55 	//
-#define SPA_ERTU_RST_GX 	1
+#define SPA_ERTU_RST_GX	1
 #define SPA_ERTU_CLOSE_GX 3 //系统掉电
 #define SPA_SYN_TIME_GX 	7//对时
 #define SPA_PARA_MOD_GX	8//参数修改
@@ -64,6 +66,8 @@ const u8 START_LONG_FARME=0x68; //变长帧
 const u8 START_SINGLE_FARME=0xE5; //单字符帧
 const u8 C_FC_Reset_communication_unit=0;
 const u8 C_Transfer_data=3;
+//6.1传输帧格式
+typedef u16 link_addr_t;//链路地址
 //7.2.2 可变结构限定词（VARIABLE OF STRUCTURE QUALIFIER）
 union  Vsq {
 	u8 val;
@@ -73,7 +77,7 @@ union  Vsq {
 	};
 };
 //7.2.3 传送原因 (Cause Of Transmission)
-union cot_t {
+union Cot {
 	u8 val;
 	struct {
 		u8 cause:6;
@@ -81,14 +85,14 @@ union cot_t {
 		u8 t:1;
 	};
 };
-//7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASU_addr
-typedef u8 rtuaddr_t;
-//7.2.5 记录地址(RAD)	Record address
+//7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASDU_addr
+typedef u16 asdu_addr_t;
+//7.2.5 记录地址(RAD)	Record Address
 typedef u8 rad_t;
 //7.2.6 信息体地址(IOA) Information Object Address
 typedef u8 ioa_t;
 //7.2.7.1 序列号和数据状态 字节 //sd102中全改为状态位,
-union seq_number {
+union Seq_number {
 	u8 val;
 	struct {
 		u8 sn:5;//序列号
@@ -97,8 +101,8 @@ union seq_number {
 		u8 iv:1;//无效(IV＝invalid)
 	};
 };
-//7.2.7.1 序列号和数据状态 字节
-union data_status {
+//7.2.7.1 序列号和数据状态 字节 //替代上面的
+union Data_status {
 	u8 val;
 	struct {
 		u8 lv:1;//lost v
@@ -112,9 +116,9 @@ union data_status {
 	};
 };
 //7.2.7.1 电能累计量 IT (Integrated total)
-struct	it {
+struct	It {
 	u32 dat;
-	union data_status d_status;
+	union Data_status d_status;
 };
 //7.2.7.2 时间信息 a(Time information a,分至年)
 struct Ta {
@@ -160,7 +164,7 @@ struct Tb {
 	u8 res2:1;//reserve 2
 };
 //7.2.7.4 标准的日期(DOS)Date of standard
-struct dos_t {
+struct Dos {
 	u8 month:4;//月 <1..12>
 	u8 year:4;//年 <	0..9>
 };
@@ -175,7 +179,7 @@ struct Spinfo {
 	u8 spq:7;//
 };
 //7.2.7.8 电能累计量数据保护的校核 TODO:再详细查阅规约
-typedef u8 Signature;
+typedef u8 signature_t;
 //7.2.7.9 初始化原因 Cause of initialization
 union Coi {
 	u8 val;
@@ -192,7 +196,7 @@ struct Multi_it {
 	u32 rate3;
 	u32 rate4;
 	u32 rate5;//保留为0
-	union data_status d_status;
+	union Data_status d_status;
 };
 //7.2.7.11 月结算复费率电能累计量 Monthly balance sheet multi-rate  IT
 struct Month_mit {
@@ -202,20 +206,20 @@ struct Month_mit {
 	u32 rate3;
 	u32 rate4;
 	u32 rate5;//保留为0
-	union data_status d_status;
+	union Data_status d_status;
 };
 //7.2.7.12 月总最大需量及发生时间 Monthly total demand and time
-struct month_maxdemand {
+struct Month_maxdemand {
 	u32 total_maxdemand;//月总最大需量值
 	struct Ta occur_time;
 };
 //7.2.7.13 遥测量 Remote measurement
-struct	remote_measure {
+struct	Remote_measure {
 	u32 dat;
-	union data_status d_status;
+	union Data_status d_status;
 };
 //7.2.7.14 表计谐波数据 Meter harmonic data
-struct mtr_harmonic_data {
+struct Harmonic_data {
 	u32  fa_thd ;//forward active Total harmonic power
 	u32  ra_thd;//Reverse active total harmonic power
 	u32  ta_distortion;//Total active the harmonic power consumption distortion rate
@@ -237,24 +241,24 @@ struct M_SP_TA_2_InfoObj {
 //7.3.1.2 电能累计量 information object
 struct M_IT_TA_2_InfoObj {
 	ioa_t ioa;//
-	struct it it_power;
-	Signature cs;//电能累计量数据保护的校核
+	struct It it_power;
+	signature_t cs;//电能累计量数据保护的校核
 };
 //7.3.1.3 复费率记帐(计费)电能累计量 information object
 struct M_IT_TA_B_2_InfoObj {
 	ioa_t ioa;//
 	struct Multi_it mit;
-	Signature cs;//电能累计量数据保护的校核
+	signature_t cs;//电能累计量数据保护的校核
 };
 //7.3.1.4遥测历史量 History of remote measurement -information object
 struct M_YC_TA_2_InfoObj {
 	ioa_t ioa;//
-	struct remote_measure rm;
+	struct Remote_measure rm;
 };
 //7.3.1.5 月最大需量及发生时间 顺序信息体(SQ=0) Information Object
 struct M_MMD_TA_InfoObj {
 	ioa_t ioa;//
-	struct month_maxdemand mmd;
+	struct Month_maxdemand mmd;
 };
 //7.3.1.6 月结算复费率电能累计量 Information Object
 struct M_MMIT_InfoObj {
@@ -264,7 +268,7 @@ struct M_MMIT_InfoObj {
 //7.3.1.7 表计谐波数据 顺序信息体(SQ=0) information object
 struct M_THD_InfoObj {
 	ioa_t ioa;//
-	struct mtr_harmonic_data mhd;
+	struct Harmonic_data mhd;
 };
 //7.3.2 在监视方向上的系统信息的应用服务数据单元
 //7.3.2.1 初始化结束
@@ -274,7 +278,7 @@ struct M_EI_NA_2_InfoObj {
 };
 //7.3.2.2 电能累计量数据终端设备的制造厂和产品的规范
 struct P_MP_NA_2_iObj {
-	struct dos_t dos;
+	struct Dos dos;
 	factcode_t fcode;
 	productcode_bs pcode;
 };
@@ -358,57 +362,69 @@ struct Short_farme {
 		union Ctrl_down c_down;
 		union Ctrl_up c_up;
 	};
-	rtuaddr_t addr_lo;
-	rtuaddr_t addr_hi;
+	link_addr_t link_addr;//***需要注意网络字节序和本机字节序的转换
 	u8 cs;//校验和
 	u8 end_byte;//终止字符
 };
 /* 变长帧结构:
-   0x68		─┬─帧头
-   len		─┤
-   len		─┤
-   0x68		─┘
-
-控制字节(Ctrl)	─┬─LPDU 有且只有1个
-地址低(A_lo)	─┤
-地址高(A_hi)	─┘
-
-ASDU_head	─┬─ASDU 有且只有1个
-信息体(InfoObj)	┄┆
-    ...		┄┆
-(大于等于1个)	┄┆
-信息体(InfoObj)	─┘
-
-校验(CS)		─┬─帧尾
-结束(0x16)	─┘
+|                                    |     含义    |  长度 |  小节  |
++-------+------------------------------------------+------+--------+
+|       |                                 0x68     |1 byte|        |
+| Farme |                                 lenth    |1 byte|4 Bytes |
+| head  |                             lenth(copy)  |1 byte|        |
+|       |                                 0x68     |1 byte|        |
++-------+---------+--------------------------------+------+--------+
+|       |         |                     Ctrl Byte  |1 byte|        |
+|       |LPDU head|                    Link addr lo|1 byte|3 Bytes |
+|       |         |                    Link addr hi|1 byte|        |
+|       +---------+------+-----------+-------------+------+--------+
+|       |         |      |           |  Type Id    |1 byte|        |
+|       |         |      | ASDU head |    VSQ      |1 byte|        |
+|       |         |      |           |    COT      |1 byte|6 Bytes |
+|       |         |      |           | ASDU addr lo|1 byte|        |
+| LPDU  |         |      |           | ASDU addr hi|1 byte|        |
+|       |         |      |           |    RAD      |1 byte|        |
+|       |LPDU body| ASDU +-----------+-------------+------+--------+
+|       |         |      |           |             |      |        |
+|       |         |      |           | Information |  ?   |        |
+|       |         |      |           | Object(Obj1)|      |        |
+|       |         |      | ASDU body | (necessary) |      | Unkown |
+|       |         |      |           Z-------------Z      |        |
+|       |         |      |           |     ...     |      |        |
+|       |         |      |           Z-------------Z      |        |
+|       |         |      |           |    Obj N    |      |        |
+|       |         |      |           | (Optainal)  |      |        |
++-------+---------+------+-----------+-------------+------+--------+
+| Farme |                                  CS      |1 byte|2 Bytes |
+| Tail  |                                 0x16     |1 byte|        |
++-------+------------------------------------------+------+--------+
 */
-// C1.1 可变帧长帧 - 帧头
+// C1.1 可变帧长帧 - 帧头 Farme head
 struct Long_farme_head {
 	u8 start_byte1;
-	u8 len_hi;
-	u8 len_lo;
+	u8 len1;
+	u8 len2;
 	u8 start_byte2;
 
 };
-// 7.1 链路规约数据单元 link proctol data unit
+// 7.1 链路规约数据单元 Link Proctol Data Unit
 struct Lpdu_head{
 	union { //控制域
 		union Ctrl_down c_down;
 		union Ctrl_up c_up;
 	};
-	rtuaddr_t addr_lo;//地址域
-	rtuaddr_t addr_hi;
+	link_addr_t link_addr;//***需要注意网络字节序和本机字节序的转换
 };
-// 7.1 数据单元标识,ASDU=1个数据单元标识+(1~n)*InfoObj
+// 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
 struct Asdu_head { //ASDU头即 数据单元标识 Data unit identifier
 	typ_t typ;
 	union  Vsq vaq;
-	union cot_t cot;
-	rtuaddr_t addr_lo;
-	rtuaddr_t addr_hi;
+	union Cot cot;
+	asdu_addr_t asdu_addr;//***需要注意网络字节序和本机字节序的转换
 	rad_t rad;
 };
-// C1.1 可变帧长帧 - 帧尾
+//Information Object 信息体,按照不通类型不通.
+// C1.1 可变帧长帧 - 帧尾 Farme Tail
 struct Long_farme_tail {
 	u8 cs;
 	u8 end_byte;
