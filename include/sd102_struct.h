@@ -20,6 +20,7 @@ const typ_t M_UNUSED=0;// 未用
 const typ_t M_SP_TA_2=1;//带时标的单点信息
 const typ_t M_IT_TA_2=2;//记账(计费)电能累计量,每个量为四个八位位组
 const typ_t M_IT_TD_2=5;//周期复位记账(计费)电能累计量,每个量为四个八位位组
+const typ_t M_SYN_TA_2=128;//电能累计量数据终端系统时间同步确认帧
 const typ_t M_IT_TA_B_2=160;//复费率记帐(计费)电能累计量
 const typ_t M_YC_TA_2=162;//遥测历史值
 const typ_t M_XL_TA_2=163;//最大需量
@@ -36,11 +37,13 @@ const typ_t C_SP_NB_2=102;//读一个所选定时间范围的带时标的单点信息的记录
 const typ_t C_TI_NA_2=103;//读电能累计量数据终端设备的当前系统时间
 const typ_t C_CI_NR_2=120;//读一个选定的时间范围和一个选定的地址范围的记账(计费)电能累计量
 const typ_t C_CI_NS_2=121;//读周期地复位的一个选定的时间范围和一个选定的地址范围的记账(计费)电能累计量
+const typ_t C_SYN_TA_2=128;//电能累计量数据终端系统时间同步命令
 const typ_t C_CI_NA_B_2=170;//读一个选定的时间范围和一个选定的地址范围的复费率记帐(计费)电能累计量
 const typ_t C_YC_TA_2=172;//读一个选定时间范围和选定地址范围的遥测量
 const typ_t C_CI_NA_C_2=173;//读一个选定的时间范围和一个选定的地址范围的月结算复费率电能累计量
 const typ_t C_XL_NB_2=174;//读一个选定的时间范围和一个选定的地址范围的最大需量
 const typ_t C_CI_NA_D_2=175;//读一个选定的时间范围和一个选定的地址范围的表计谐波数据
+
 // 事件
 #define SPQ_ERTU_RST_GX	1
 #define SPQ_ERTU_CLOSE_GX	1 //系统掉电
@@ -79,7 +82,7 @@ union cot_t {
 	};
 };
 //7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASU_addr
-typedef u16 rtuaddr;
+typedef u8 rtuaddr_t;
 //7.2.5 记录地址(RAD)	Record address
 typedef u8 rad_t;
 //7.2.6 信息体地址(IOA) Information Object Address
@@ -162,11 +165,11 @@ struct dos_t {
 	u8 year:4;//年 <	0..9>
 };
 //7.2.7.5 制造厂编码 Manufactuer code
-typedef u8 factcode; //<0..255>
+typedef u8 factcode_t; //<0..255>
 //7.2.7.6 产品编码 product code ;BS32 bit strings 32bits
-typedef u32 productcode;
+typedef u32 productcode_bs;
 //7.2.7.7 带地址和限定词的单点信息 single-piont information
-struct spinfo {
+struct Spinfo {
 	u8 spa;//single-point addr
 	u8 spi:1;//
 	u8 spq:7;//
@@ -174,7 +177,7 @@ struct spinfo {
 //7.2.7.8 电能累计量数据保护的校核 TODO:再详细查阅规约
 typedef u8 Signature;
 //7.2.7.9 初始化原因 Cause of initialization
-union coi_t {
+union Coi {
 	u8 val;
 	struct {
 		u8 coi:7;
@@ -182,7 +185,7 @@ union coi_t {
 	};
 };
 //7.2.7.10 复费率电能累计量 Multi-rate  Integrated total
-struct multi_it {
+struct Multi_it {
 	u32 total;
 	u32 rate1;//费率1
 	u32 rate2;
@@ -192,7 +195,7 @@ struct multi_it {
 	union data_status d_status;
 };
 //7.2.7.11 月结算复费率电能累计量 Monthly balance sheet multi-rate  IT
-struct month_mit {
+struct Month_mit {
 	u32 total;
 	u32 rate1;//费率1
 	u32 rate2;
@@ -228,7 +231,7 @@ struct mtr_harmonic_data {
 //7.3.1 在监视方向上的过程信息的应用服务数据单元
 //7.3.1.1 监视(Monitor)方向 带时标的单点信息(Single-Point)
 struct M_SP_TA_2_InfoObj {
-	struct spinfo sp;
+	struct Spinfo sp;
 	struct Tb tb;
 };
 //7.3.1.2 电能累计量 information object
@@ -240,7 +243,7 @@ struct M_IT_TA_2_InfoObj {
 //7.3.1.3 复费率记帐(计费)电能累计量 information object
 struct M_IT_TA_B_2_InfoObj {
 	ioa_t ioa;//
-	struct multi_it mit;
+	struct Multi_it mit;
 	Signature cs;//电能累计量数据保护的校核
 };
 //7.3.1.4遥测历史量 History of remote measurement -information object
@@ -256,7 +259,7 @@ struct M_MMD_TA_InfoObj {
 //7.3.1.6 月结算复费率电能累计量 Information Object
 struct M_MMIT_InfoObj {
 	ioa_t ioa;//
-	struct month_mit mmit;
+	struct Month_mit mmit;
 };
 //7.3.1.7 表计谐波数据 顺序信息体(SQ=0) information object
 struct M_THD_InfoObj {
@@ -267,13 +270,13 @@ struct M_THD_InfoObj {
 //7.3.2.1 初始化结束
 struct M_EI_NA_2_InfoObj {
 	ioa_t ioa;//
-	union coi_t coi;
+	union Coi coi;
 };
 //7.3.2.2 电能累计量数据终端设备的制造厂和产品的规范
 struct P_MP_NA_2_iObj {
 	struct dos_t dos;
-	factcode fcode;
-	productcode pcode;
+	factcode_t fcode;
+	productcode_bs pcode;
 };
 //7.3.2.3  电能累计量数据终端设备目前的系统时间
 struct M_TI_TA_2_iObj {
@@ -326,7 +329,6 @@ struct C_CI_NA_C_2_iObj {
 	struct Ta Tend;
 };
 
-
 //C3.1 控制域 主站->终端(下行)
 union Ctrl_down {
 	u8 val;
@@ -350,67 +352,81 @@ union Ctrl_up {
 	};
 };
 //C1.2 固定帧长帧 - 帧体
-struct short_farme {
+struct Short_farme {
 	u8 start_byte; //开始字节
 	union { //控制域
 		union Ctrl_down c_down;
 		union Ctrl_up c_up;
 	};
-	u8 addr1;//地址
-	u8 addr2;//地址
+	rtuaddr_t addr_lo;
+	rtuaddr_t addr_hi;
 	u8 cs;//校验和
 	u8 end_byte;//终止字符
 };
-/* 帧头
-   C
-   A1
-   A2
-   数据单元标识
+/* 变长帧结构:
+   0x68		─┬─帧头
+   len		─┤
+   len		─┤
+   0x68		─┘
+
+控制字节(Ctrl)	─┬─LPDU 有且只有1个
+地址低(A_lo)	─┤
+地址高(A_hi)	─┘
+
+ASDU_head	─┬─ASDU 有且只有1个
+信息体(InfoObj)	┄┆
+    ...		┄┆
+(大于等于1个)	┄┆
+信息体(InfoObj)	─┘
+
+校验(CS)		─┬─帧尾
+结束(0x16)	─┘
 */
-//C1.1 可变帧长帧 - 帧头
-struct long_farme_head {
+// C1.1 可变帧长帧 - 帧头
+struct Long_farme_head {
 	u8 start_byte1;
 	u8 len_hi;
 	u8 len_lo;
 	u8 start_byte2;
-	//控制域
+
+};
+// 7.1 链路规约数据单元 link proctol data unit
+struct Lpdu_head{
 	union { //控制域
 		union Ctrl_down c_down;
 		union Ctrl_up c_up;
 	};
-	//地址域
-	rtuaddr taddr;
-	rad_t rad;
+	rtuaddr_t addr_lo;//地址域
+	rtuaddr_t addr_hi;
 };
-// C
-// A1 A2
-//7.1 数据单元标识 6字节
-struct data_unit_t {
+// 7.1 数据单元标识,ASDU=1个数据单元标识+(1~n)*InfoObj
+struct Asdu_head { //ASDU头即 数据单元标识 Data unit identifier
 	typ_t typ;
 	union  Vsq vaq;
 	union cot_t cot;
-	rtuaddr taddr;
+	rtuaddr_t addr_lo;
+	rtuaddr_t addr_hi;
 	rad_t rad;
 };
-
-//C1.1 可变帧长帧 - 帧尾
-struct long_farme_tail {
+// C1.1 可变帧长帧 - 帧尾
+struct Long_farme_tail {
 	u8 cs;
 	u8 end_byte;
 };
-//C3.2.5 功能码:控制站向电能累计量数据终端传输的帧中功能码的定义 Ctrl
-const u8 FN_C_RS=0;//复位 reset
-const u8 FN_C_TD=3;//传输数据 trans date
-const u8 FN_C_CL=9;//召唤链路 call link
-const u8 FN_C_CC1=10;//召唤1级链路 call class 1 data
-const u8 FN_C_CC2=11;//召唤2级链路 call class 2 date
-const u8 FN_C_RES1=12;//备用1
-const u8 FN_C_RES2=13;//备用2
-//C3.3.4 功能码:电能累计量数据终端向控制站传输的帧中功能码的定义 Monitor
-const u8 FN_M_CON=0;//确认 Confirm
-const u8 FN_M_LB=1;//链路繁忙 link busy
-const u8 FN_M_SD=8;//以数据响应请求帧 send data
-const u8 FN_M_ND=9;//没有所召唤的数据 no data
-const u8 FN_M_RSP=13;//以链路状态或访问请求回答请求帧 Response
+// C3.2.5 功能码:控制站向电能累计量数据终端传输的帧中功能码的定义 Ctrl
+typedef u8 funcode_t;//u8:4
+const funcode_t FN_C_RS  =0;//复位 reset
+const funcode_t FN_C_TD  =3;//传输数据 trans date
+const funcode_t FN_C_CL  =9;//召唤链路 call link
+const funcode_t FN_C_CC1 =10;//召唤1级链路 call class 1 data
+const funcode_t FN_C_CC2 =11;//召唤2级链路 call class 2 date
+const funcode_t FN_C_RES1=12;//备用1
+const funcode_t FN_C_RES2=13;//备用2
+// C3.3.4 功能码:电能累计量数据终端向控制站传输的帧中功能码的定义 Monitor
+const funcode_t FN_M_CON =0;//确认 Confirm
+const funcode_t FN_M_LB	 =1;//链路繁忙 link busy
+const funcode_t FN_M_SD  =8;//以数据响应请求帧 send data
+const funcode_t FN_M_ND  =9;//没有所召唤的数据 no data
+const funcode_t FN_M_RSP =13;//以链路状态或访问请求回答请求帧 Response
 
 #endif // SD102_STRUCT_H

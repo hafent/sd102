@@ -43,9 +43,20 @@ int Csd102::ReciProc(void)
 	printf("after pro:");
 	print_array(readbuf,msglen);
 	return 0;
+
+	/*#从缓冲区截取正确的报文
+	  #判断报文类型
+	  #检验报文
+	  #根据分类, 采集发送,或者发送镜像帧,或者不应答等.
+	*/
 }
-/*分离出正确的报文.经过处理之后准确无误的报文被保存在
+/*	分离出正确的报文.经过处理之后准确无误的报文被保存在
 	readbuf[len]数组中,传递出来
+输入:	类变量 m_recvBuf 输入
+输出:	readbuf	数组
+	len	数组长度
+返回值:	0-成功
+	非0-失败
 */
 int Csd102::splitmsg(u8 *readbuf,int &len)
 {
@@ -82,7 +93,12 @@ int Csd102::GX102s_Synchead(u8 * databuf)
 		return -1;
 	}
 }
-//一般校验和程序.TODO 加入到通用功能库
+/*一般校验和程序.
+输入:	a	数组(u8*)
+	len	数组长度(int)
+输出	无
+返回值:		一个字节校验和(u8)
+  */
 u8 Csd102::check_sum(u8 * a,int len )
 {
 	int i;
@@ -92,6 +108,7 @@ u8 Csd102::check_sum(u8 * a,int len )
 	}
 	return sum;
 }
+/*打印字符数组*/
 void Csd102::print_array(u8 *transbuf,int len)
 {
 	int i;
@@ -103,8 +120,8 @@ void Csd102::print_array(u8 *transbuf,int len)
 //解析 FT1.2 固定帧长帧
 int Csd102::process_short_frame(u8 * sfarme, int len)
 {
-	struct short_farme farme;
-	memcpy(&farme,sfarme,sizeof(struct short_farme));//copy farme
+	struct Short_farme farme;
+	memcpy(&farme,sfarme,sizeof(struct Short_farme));//copy farme
 	if(farme.c_down.prm==0){ //下行
 		PRINT_HERE
 		return -1;
