@@ -1,4 +1,4 @@
--- lua wireshark 山东102协议插件.
+-- lua wireshark 山东102协议插件. file encode :utf-8
 --简单参考中文 http://yoursunny.com/study/IS409/ScoreBoard.htm
 --位操作 参考 http://blog.chinaunix.net/uid-24931444-id-3372735.html
 --api定义参考 http://www.wireshark.org/docs/wsug_html_chunked/lua_module_Proto.html
@@ -8,9 +8,9 @@ do
 	local FT_static_farme --解析固定长度帧
 	local FT_change_farme --解析变长度帧
 
-	--协议名称为ScoreBoard，在Packet Details（中间可以展开的那部分）
+	--协议名称为shandong102，在Packet Details（中间可以展开的那部分）
 	--    窗格显示为山东102主站通讯规约
-	local p_ScoreBoard = Proto("sd102","山东102",base.DEC)
+	local p_ShanDong102 = Proto("sd102","山东102",base.DEC)
 	--协议的各个字段 标识符/第一字段
 	local f_identifier = ProtoField.bytes("sd102.id","标识符/规约号之类") 
 	local f_len = ProtoField.uint16("sd102.len","长度(字节)",base.DEC) 
@@ -48,8 +48,8 @@ do
 	--变长帧 
 	local f_farmehead=ProtoField.uint8("sd102.farmehead","帧头",base.HEX)
 	local f_ASDU=ProtoField.uint8("sd102.ASDU","应用服务数据单元",base.HEX)
-	local f_len1=ProtoField.uint8("sd102.len1","长度1",base.DEC)
-	local f_len2=ProtoField.uint8("sd102.len2","长度2",base.DEC)
+	local f_len1=ProtoField.uint8("sd102.len1","长度",base.DEC)
+	local f_len2=ProtoField.uint8("sd102.len2","长度(复本)",base.DEC)
 	local f_typeID_up=ProtoField.uint8("sd102.typeID2_up","类型标识(TYP)",base.DEC,
 	{[0]="M_UNUSED:未用",[1]="M_SP_TA_2:带时标的单点信息",
 	[2]="M_IT_TA_2:读电量返回帧",[5]="M_IT_TD_2:周期复位记账(计费)电能累计量",
@@ -94,7 +94,7 @@ do
 	[19]="为将来兼容定义保留",--[[[20-41]="未用",
 	[42-47]="为将来兼容定义保留",[48-63]="为特殊应用(专用范围)",--]]
 	[48]="时间同步(专用范围定义)"},0x3F)
-	local f_ASDU_addr=ProtoField.uint16("sd102.ASDU_addr","ASDU地址",base.DEC)
+	local f_ASDU_addr=ProtoField.uint16("sd102.ASDU_addr","应用服务单元公共地址(ASDU address)",base.DEC)
 	local f_ASDU_addr_lo=ProtoField.uint8("sd102.ASDU_addr_lo","低字节",base.HEX)
 	local f_ASDU_addr_hi=ProtoField.uint8("sd102.ASDU_addr_hi","高字节",base.HEX)
 	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","信息体(记录体)地址(ROA)",base.HEX)
@@ -129,20 +129,9 @@ do
 	local f_Ta_week = ProtoField.uint8("sd102.Ta_week","周次(week)",base.HEX,nil,0xE0)
 	local f_Ta_mon = ProtoField.uint8("sd102.Ta_mon","月(month)",base.HEX,nil,0x0F)
 	local f_Ta_year = ProtoField.uint8("sd102.Ta_year","年(year)",base.HEX,nil,0x7F)
-
-	-- 操作,第二字段
-	local f_operator = ProtoField.uint8("sd102.operator","操作",base.HEX,
-	--这个字段的数字值都有相应的含义，可以自动对应成字符串
-	{ [0] = "取值", [1] = "设定值", [128] = "设定值,应答",
-	[0x10] = "取颜色", [17] = "设定颜色", [144] = "设定颜色,应答"})
-	--所有可能的字段都要定义，到时没有t:add就不会显示
-	local f_left = ProtoField.uint32("sd102.left","左边数值",base.DEC)
-	local f_right = ProtoField.uint32("sd102.right","右边数值",base.DEC)
-	local f_red = ProtoField.uint8("sd102.red","红色",base.DEC)
-	local f_green = ProtoField.uint8("sd102.green","绿色",base.DEC)
-	local f_blue = ProtoField.uint8("sd102.blue","蓝色",base.DEC)
 	local f_onebyte = ProtoField.uint8("sd102.onebyte","单字节",base.HEX)
-	p_ScoreBoard.fields = { f_identifier, f_operator, f_left, f_right, f_red, f_green, 			f_blue,f_onebyte,f_len,
+	--添加到域
+	p_ShanDong102.fields = { f_onebyte,f_len,
 	f_start,f_funcode,f_funcode_rsp,f_ctrl,
 	f_fcv,f_dfc,f_fcb,f_acd,f_prm,f_dir,f_linkaddr,f_addr1,f_addr2,f_p,f_end,
 	f_farmehead,f_len1,f_len2,f_ASDU,f_typeID_up,f_typeID_down,f_vsq,f_sq,f_vsq_num,
@@ -153,88 +142,49 @@ do
 	f_Ta, f_Ta_min,f_Ta_hour,f_Ta_day,f_Ta_week,f_Ta_mon,f_Ta_year} --Ta
 
 	local data_dis = Dissector.get("data")
-	-- 函数:解码
-	local function ScoreBoard_dissector(buf,pkt,root)
+	-- 主体函数
+	local function shandong102_dissector(buf,pkt,root)
 		local buf_len = buf:len();
 		if buf_len < 1 then  --长度 < 1 绝对错误
 			return false
 		end
+
 		if buf(0,1):uint() == 0xe5 then --1.单字节帧解析
 			FT_farme(buf,pkt,root)
 			return true
 		end 
+
 		if buf(0,1):uint() == 0x10 then --2.固定帧长帧解析
 			FT_static_farme(buf,pkt,root)
 			return true
 		end 
+
 		if buf(0,1):uint() == 0x68 then --3.变帧长帧解析
 			FT_change_farme(buf,pkt,root)
 			return true
 		else
 			return false
 		end 
-
-		if buf_len < 17 then return false end
-		--取得前16字节identifier字段的值
-		local v_identifier = buf(0,16)
-		--验证identifier是否正确
-		if ((buf(0,1):uint()~=226) or (buf(1,1):uint()~=203) or (buf(2,1):uint()~=181)
-			or (buf(3,1):uint()~=128) or (buf(4,1):uint()~=203) or (buf(5,1):uint()~=9)
-			or (buf(6,1):uint()~=78) or (buf(7,1):uint()~=186) or (buf(8,1):uint()~=163)
-			or (buf(9,1):uint()~=107) or (buf(10,1):uint()~=246) or (buf(11,1):uint()~=7)
-			or (buf(12,1):uint()~=206) or (buf(13,1):uint()~=149) or (buf(14,1):uint()~=63)
-			or (buf(15,1):uint()~=43)) then
-			--不正确就不是我的协议  
-			return false 
-		end
-		--取得operator的值
-		local v_operator = buf(16,1)
-		local i_operator = v_operator:uint()
-
-		--现在知道是我的协议了，放心大胆添加Packet Details
-		--开始添加显示的东西
-		local t = root:add(p_ScoreBoard,buf) --添加协议
-		--在Packet List窗格的Protocol列
-		pkt.cols.protocol = "102" --显示在第一栏的协议名称
-		t:add(f_identifier,v_identifier) --域1 标识符
-		t:add(f_operator,v_operator) --域2 操作符
-		-- 域3 操作数,分三种
-		if ((i_operator == 1) or (i_operator == 128)) and (buf_len >= 25) then
-			--把存在的字段逐个添加进去
-			t:add(f_left,buf(17,4))
-			t:add(f_right,buf(21,4))
-		elseif ((i_operator == 17) or (i_operator == 144)) and (buf_len >= 20) then
-			t:add(f_red,buf(17,1))
-			t:add(f_green,buf(18,1))
-			t:add(f_blue,buf(19,1))
-		elseif i_operator == 0 then
-			t:add("取值操作 不需要操作数")
-		elseif i_operator == 0x10 then
-			t:add("取值颜色 不需要操作数")
-		else
-			t:add("未知的操作符!")
-		end
-
 		return true
 	end
 
-	-- **********解析单字节数据帧函数************
+	----------------解析单字节数据帧函数-----------------------
 	function FT_farme(buf,pkt,root)
-		--local p_ScoreBoard = Proto("sd102","山东102")
-		--p_ScoreBoard.fields = {f_onebyte}
+		--local p_ShanDong102 = Proto("sd102","山东102")
+		--p_ShanDong102.fields = {f_onebyte}
 		--添加协议
-		local t = root:add(p_ScoreBoard,buf,nil,"长度=",f_len,buf:len(),"字节") 
+		local t = root:add(p_ShanDong102,buf,nil,"长度:",f_len,buf:len(),"字节") 
 		pkt.cols.protocol = "sd102-单字符" --显示在第一栏的协议名称
 		t:add(f_start,buf(0,1)) 
 		--t:add("单字节数据")
 		return true
 	end
 
-	--************短帧/固定长帧*********
+	----------------短帧/固定长帧----------------
 	function FT_static_farme(buf,pkt,root)
 		local len = buf:len();
 		--添加协议
-		local t = root:add(p_ScoreBoard,buf(0,len),nil,"长度=",f_len,buf:len(),"字节") 
+		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度:",f_len,buf:len(),"字节") 
 		pkt.cols.protocol = "sd102-定长帧" --显示在第一栏的协议名称
 		--开始判断:
 		if len ~= 6 then --短帧的长度固定,长度不对,错误
@@ -255,13 +205,13 @@ do
 			ctrlbyte:add(f_fcv,buf(1,1))
 			ctrlbyte:add(f_fcb,buf(1,1))
 			ctrlbyte:add(f_prm,buf(1,1))
-			ctrlbyte:add(f_dir,buf(1,1))
+			--ctrlbyte:add(f_dir,buf(1,1))
 		else --采集端 向控制端
 			ctrlbyte:add(f_funcode_rsp,buf(1,1))
 			ctrlbyte:add(f_dfc,buf(1,1))
 			ctrlbyte:add(f_acd,buf(1,1))
 			ctrlbyte:add(f_prm,buf(1,1))
-			ctrlbyte:add(f_dir,buf(1,1))
+			--ctrlbyte:add(f_dir,buf(1,1))
 		end
 
 		local linkaddr = t:add_le(f_linkaddr,buf(2,2))
@@ -273,11 +223,11 @@ do
 		return true
 	end
 
-	--**********长帧/变长帧**************
+	----------------长帧/变长帧----------------
 	function FT_change_farme(buf,pkt,root)
 		local len = buf:len();
 		--添加协议
-		local t = root:add(p_ScoreBoard,buf(0,len),nil,"长度=",f_len,buf:len(),"字节") 
+		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度:",f_len,buf:len(),"字节") 
 		pkt.cols.protocol = "sd102-变长帧" --显示在第一栏的协议名称
 		--开始判断:
 		if len < 6 then --长度太小错误
@@ -308,13 +258,13 @@ do
 			ctrlbyte:add(f_fcv,buf(4,1))
 			ctrlbyte:add(f_fcb,buf(4,1))
 			ctrlbyte:add(f_prm,buf(4,1))
-			ctrlbyte:add(f_dir,buf(4,1))
+			--ctrlbyte:add(f_dir,buf(4,1))
 		else --采集端 向控制端
 			ctrlbyte:add(f_funcode_rsp,buf(4,1))
 			ctrlbyte:add(f_dfc,buf(4,1))
 			ctrlbyte:add(f_acd,buf(4,1))
 			ctrlbyte:add(f_prm,buf(4,1))
-			ctrlbyte:add(f_dir,buf(4,1))
+			--ctrlbyte:add(f_dir,buf(4,1))
 		end
 		local linkaddr = t:add_le(f_linkaddr,buf(5,2))
 		linkaddr:add(f_addr1,buf(5,1)) 
@@ -336,7 +286,8 @@ do
 		asdu_addr:add(f_ASDU_addr_hi,buf(11,1))
 		t:add(f_recordAddr,buf(12,1))
 		--按上下行分类
-		if bit.rshift(bit.band(buf(4,1):uint(), 0x40), 6) == 1 then --下行
+		if bit.rshift(bit.band(buf(4,1):uint(), 0x40), 6) == 1 then
+		 -----下行------
 			--按TYP分类
 			if buf(7,1):uint() == 103 then --读终端时间,
 				--什么都不做,信息体为空
@@ -374,7 +325,8 @@ do
 				Ta_end:add(f_Ta_min,buf(20,1))
 				Ta_end:add(f_Ta_week,buf(22,1))
 			end
-		else --上行 
+		else -----------上行 -------
+			--按TYP分类
 			if buf(7,1):uint() == 72 then --返回当前系统时间
 				local Tb = t:add(f_Tb,buf(13,7))			
 				Tb:add(f_Tb_ms,buf(13,2))
@@ -413,10 +365,11 @@ do
 		t:add(f_end,buf(len-1,1))
 		return true
 	end
-	-- 全局函数?api?
-	function p_ScoreBoard.dissector(buf,pkt,root) 
-		if ScoreBoard_dissector(buf,pkt,root) then
-			--valid ScoreBoard diagram
+
+	---------------- 全局函数?api? ----------------
+	function p_ShanDong102.dissector(buf,pkt,root) 
+		if shandong102_dissector(buf,pkt,root) then
+			--valid shandong102 diagram
 		else
 			--data这个dissector几乎是必不可少的；当发现不是我的协议时，就应该调用data
 			data_dis:call(buf,pkt,root)
@@ -425,11 +378,14 @@ do
 
 	local tcp_encap_table = DissectorTable.get("tcp.port")
 	--只需要处理UDP1127端口就可以了
-	tcp_encap_table:add(10003,p_ScoreBoard)
-	tcp_encap_table:add(10004,p_ScoreBoard)
-	tcp_encap_table:add(10005,p_ScoreBoard)
-	tcp_encap_table:add(35243,p_ScoreBoard)
-	tcp_encap_table:add(50187,p_ScoreBoard)
-	--udp_encap_table:add(10003,p_ScoreBoard)
-	--udp_encap_table:add(10001,p_ScoreBoard)
+	tcp_encap_table:add(10001,p_ShanDong102)
+	tcp_encap_table:add(10002,p_ShanDong102)
+	tcp_encap_table:add(10003,p_ShanDong102)
+	tcp_encap_table:add(10004,p_ShanDong102)
+	tcp_encap_table:add(10005,p_ShanDong102)
+
+	--tcp_encap_table:add(35243,p_ShanDong102)
+	--tcp_encap_table:add(50187,p_ShanDong102)
+	--udp_encap_table:add(10003,p_ShanDong102)
+	--udp_encap_table:add(10001,p_ShanDong102)
 end

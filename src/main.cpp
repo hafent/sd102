@@ -18,3 +18,6 @@ int main(void)
 	printf("Tb %d\n",sizeof(struct Tb));
 	return 0;
 }
+/*
+
+*/

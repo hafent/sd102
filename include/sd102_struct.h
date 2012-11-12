@@ -12,7 +12,6 @@
 */
 #ifndef SD102_STRUCT_H
 #define SD102_STRUCT_H
-
 #include "typedefine.h"
 #pragma pack(1) //本文件内所有结构体压缩!按照规约所规定紧凑分布
 // 7.2.1.1 类型标识域值的语义的定义
