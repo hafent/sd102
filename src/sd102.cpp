@@ -120,6 +120,7 @@ void Csd102::print_array(u8 *transbuf,int len)
 		printf("%02X ",transbuf[i]);
 	}
 	printf("\n");
+	return ;
 }
 //解析 FT1.2 固定帧长帧
 int Csd102::process_short_frame(u8 * sfarme, int len)
@@ -159,4 +160,43 @@ int Csd102::process_short_frame(u8 * sfarme, int len)
 	}
 	return 0;
 }
-
+// 解析 FT1.2 变帧长帧
+int Csd102::process_long_frame(u8 *sfarme,int len)
+{
+	struct Lpdu_head lpdu_head;
+	//跳过帧头,复制链路数据头,利用其中的控制字节,分类判断
+	memcpy(&lpdu_head,sfarme+(sizeof(struct Long_farme_head)),
+	       sizeof(struct Lpdu_head)); //copy lpdu头
+	lpdu_head.link_addr=ntohs(lpdu_head.link_addr);//字节序转换
+	if(lpdu_head.c_down.prm==0){ //下行
+		PRINT_HERE
+		return -1;
+	}
+	switch(lpdu_head.c_down.funcode){
+	case FN_C_RS:
+		PRINT_HERE
+		break;
+	case FN_C_TD:
+		PRINT_HERE
+		break;
+	case FN_C_CL:
+		PRINT_HERE
+		break;
+	case FN_C_CC1:
+		PRINT_HERE
+		break;
+	case FN_C_CC2:
+		PRINT_HERE
+		break;
+	case FN_C_RES1:
+		PRINT_HERE
+		break;
+	case FN_C_RES2:
+		PRINT_HERE
+		break;
+	default:
+		PRINT_HERE
+		break;
+	}
+	return 0;
+}
