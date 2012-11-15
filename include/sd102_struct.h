@@ -13,38 +13,12 @@
 #ifndef SD102_STRUCT_H
 #define SD102_STRUCT_H
 #include "typedefine.h"
+//包含各种情形的分类编码
+#include "sd102_funcode.h" //功能码
+#include "sd102_typ.h" //类型码
+#include "sd102_cot.h" //传输原因分类
+#include "sd102_start_char.h" //起始码
 #pragma pack(1) //本文件内所有结构体压缩!按照规约所规定紧凑分布
-// 7.2.1.1 类型标识域值的语义的定义
-typedef u8 typ_t;
-// 表4 类型标识的语义-在监视方向上的过程信息
-const typ_t M_UNUSED=0;// 未用
-const typ_t M_SP_TA_2=1;//带时标的单点信息
-const typ_t M_IT_TA_2=2;//记账(计费)电能累计量,每个量为四个八位位组
-const typ_t M_IT_TD_2=5;//周期复位记账(计费)电能累计量,每个量为四个八位位组
-const typ_t M_SYN_TA_2=128;//电能累计量数据终端系统时间同步确认帧
-const typ_t M_IT_TA_B_2=160;//复费率记帐(计费)电能累计量
-const typ_t M_YC_TA_2=162;//遥测历史值
-const typ_t M_XL_TA_2=163;//最大需量
-const typ_t M_IT_TA_C_2=164;//月结算复费率电能累计量
-const typ_t M_IT_TA_D_2=165;//表计谐波数据
-// 表5 类型标识的语义-在监视方向上的系统信息
-const typ_t M_EI_NA_2=70;//初始化结束
-const typ_t P_MP_NA_2=71;//电能累计量数据终端设备的制造厂和产品规范
-const typ_t M_TI_TA_2=72;//电能累计量数据终端设备的当前系统时间
-// 表6 类型标识的语义-在控制方向上的系统信息
-const typ_t C_RD_NA_2=100;//读制造厂和产品规范
-const typ_t C_SP_NA_2=101;//读带时标的单点信息的记录
-const typ_t C_SP_NB_2=102;//读一个所选定时间范围的带时标的单点信息的记录
-const typ_t C_TI_NA_2=103;//读电能累计量数据终端设备的当前系统时间
-const typ_t C_CI_NR_2=120;//读一个选定的时间范围和一个选定的地址范围的记账(计费)电能累计量
-const typ_t C_CI_NS_2=121;//读周期地复位的一个选定的时间范围和一个选定的地址范围的记账(计费)电能累计量
-const typ_t C_SYN_TA_2=128;//电能累计量数据终端系统时间同步命令
-const typ_t C_CI_NA_B_2=170;//读一个选定的时间范围和一个选定的地址范围的复费率记帐(计费)电能累计量
-const typ_t C_YC_TA_2=172;//读一个选定时间范围和选定地址范围的遥测量
-const typ_t C_CI_NA_C_2=173;//读一个选定的时间范围和一个选定的地址范围的月结算复费率电能累计量
-const typ_t C_XL_NB_2=174;//读一个选定的时间范围和一个选定的地址范围的最大需量
-const typ_t C_CI_NA_D_2=175;//读一个选定的时间范围和一个选定的地址范围的表计谐波数据
-
 // 事件
 #define SPQ_ERTU_RST_GX	1
 #define SPQ_ERTU_CLOSE_GX	1 //系统掉电
@@ -59,12 +33,6 @@ const typ_t C_CI_NA_D_2=175;//读一个选定的时间范围和一个选定的地址范围的表计谐波
 #define SPA_ERTU_CLOSE_GX 3 //系统掉电
 #define SPA_SYN_TIME_GX 	7//对时
 #define SPA_PARA_MOD_GX	8//参数修改
-//
-const u8 START_SHORT_FARME=0x10; //固定长帧
-const u8 START_LONG_FARME=0x68; //变长帧
-const u8 START_SINGLE_FARME=0xE5; //单字符帧
-const u8 C_FC_Reset_communication_unit=0;
-const u8 C_Transfer_data=3;
 //6.1传输帧格式
 typedef u16 link_addr_t;//链路地址
 //7.2.2 可变结构限定词（VARIABLE OF STRUCTURE QUALIFIER）
@@ -72,7 +40,7 @@ union  Vsq {
 	u8 val;
 	struct {
 		u8 n:7;
-		u8 sq:1;
+		u8 sq:1;//n的寻址方式:0-顺序 1-单独.
 	};
 };
 //7.2.3 传送原因 (Cause Of Transmission)
@@ -85,7 +53,7 @@ union Cot {
 	};
 };
 //7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASDU_addr
-typedef u16 asdu_addr_t;
+typedef u16 asdu_addr_t; //协议一小尾端方式存储,同是小尾端不需要转换
 //7.2.5 记录地址(RAD)	Record Address
 typedef u8 rad_t;
 //7.2.6 信息体地址(IOA) Information Object Address
@@ -177,7 +145,7 @@ struct Spinfo {
 	u8 spi:1;//
 	u8 spq:7;//
 };
-//7.2.7.8 电能累计量数据保护的校核 TODO:再详细查阅规约
+//7.2.7.8 电能累计量数据保护的校核 TODO:再详细查阅规约,查询对那几部分CS
 typedef u8 signature_t;
 //7.2.7.9 初始化原因 Cause of initialization
 union Coi {
@@ -339,7 +307,7 @@ union Ctrl_down {
 		u8 funcode:4;
 		u8 fcv:1;
 		u8 fcb:1;
-		u8 prm:1;
+		u8 prm:1;//1 主站向终端
 		u8 dir:1;//非平衡传输,应保留为0
 	};
 } ;
@@ -350,21 +318,11 @@ union Ctrl_up {
 		u8 funcode:4;
 		u8 dfc:1;
 		u8 acd:1;
-		u8 prm:1;
-		u8 dir:1; //本规约备用
+		u8 prm:1;//0 终端向主站
+		u8 res:1; //本规约备用
 	};
 };
-//C1.2 固定帧长帧 - 帧体
-struct Short_farme {
-	u8 start_byte; //开始字节
-	union { //控制域
-		union Ctrl_down c_down;
-		union Ctrl_up c_up;
-	};
-	link_addr_t link_addr;//***需要注意网络字节序和本机字节序的转换
-	u8 cs;//校验和
-	u8 end_byte;//终止字符
-};
+
 /* 变长帧结构:
 |                                    |     含义    |  长度 |  小节  |
 +-------+------------------------------------------+------+--------+
@@ -373,18 +331,18 @@ struct Short_farme {
 | head  |                             lenth(copy)  |1 byte|        |
 |       |                                 0x68     |1 byte|        |
 +-------+---------+--------------------------------+------+--------+
-|       |         |                     Ctrl Byte  |1 byte|        |
+|       |         |                     Ctrl Field |1 byte|        |
 |       |LPDU head|                    Link addr lo|1 byte|3 Bytes |
-|       |         |                    Link addr hi|1 byte|        |
+|       |  (LPCI) |                    Link addr hi|1 byte|        |
 |       +---------+------+-----------+-------------+------+--------+
 |       |         |      |           |  Type Id    |1 byte|        |
 |       |         |      | ASDU head |    VSQ      |1 byte|        |
-|       |         |      |           |    COT      |1 byte|6 Bytes |
+|       |         |      |  (APCI)   |    COT      |1 byte|6 Bytes |
 |       |         |      |           | ASDU addr lo|1 byte|        |
 | LPDU  |         |      |           | ASDU addr hi|1 byte|        |
 |       |         |      |           |    RAD      |1 byte|        |
 |       |LPDU body| ASDU +-----------+-------------+------+--------+
-|       |         |      |           |             |      |        |
+|       |         |(APDU)|           |             |      |        |
 |       |         |      |           | Information |  ?   |        |
 |       |         |      |           | Object(Obj1)|      |        |
 |       |         |      | ASDU body | (necessary) |      | Unkown |
@@ -399,49 +357,57 @@ struct Short_farme {
 +-------+------------------------------------------+------+--------+
 */
 // C1.1 可变帧长帧 - 帧头 Farme head
-struct Long_farme_head {
+struct Farme_head {
 	u8 start_byte1;
 	u8 len1;
 	u8 len2;
 	u8 start_byte2;
-
 };
 // 7.1 链路规约数据单元 Link Proctol Data Unit
-struct Lpdu_head{
+struct Lpdu_head {
 	union { //控制域
 		union Ctrl_down c_down;
 		union Ctrl_up c_up;
 	};
-	link_addr_t link_addr;//***需要注意网络字节序和本机字节序的转换
+	link_addr_t link_addr;
 };
 // 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
 struct Asdu_head { //ASDU头即 数据单元标识 Data unit identifier
 	typ_t typ;
 	union  Vsq vaq;
 	union Cot cot;
-	asdu_addr_t asdu_addr;//***需要注意网络字节序和本机字节序的转换
+	asdu_addr_t asdu_addr;//
 	rad_t rad;
 };
 //Information Object 信息体,按照不通类型不通.
-// C1.1 可变帧长帧 - 帧尾 Farme Tail
-struct Long_farme_tail {
+// C1.1  变长/定长帧尾 Farme Tail
+struct Farme_tail {
 	u8 cs;
 	u8 end_byte;
 };
-// C3.2.5 功能码:控制站向电能累计量数据终端传输的帧中功能码的定义 Ctrl
-typedef u8 funcode_t;//u8:4
-const funcode_t FN_C_RS  =0;//复位 reset
-const funcode_t FN_C_TD  =3;//传输数据 trans date
-const funcode_t FN_C_CL  =9;//召唤链路 call link
-const funcode_t FN_C_CC1 =10;//召唤1级链路 call class 1 data
-const funcode_t FN_C_CC2 =11;//召唤2级链路 call class 2 date
-const funcode_t FN_C_RES1=12;//备用1
-const funcode_t FN_C_RES2=13;//备用2
-// C3.3.4 功能码:电能累计量数据终端向控制站传输的帧中功能码的定义 Monitor
-const funcode_t FN_M_CON =0;//确认 Confirm
-const funcode_t FN_M_LB	 =1;//链路繁忙 link busy
-const funcode_t FN_M_SD  =8;//以数据响应请求帧 send data
-const funcode_t FN_M_ND  =9;//没有所召唤的数据 no data
-const funcode_t FN_M_RSP =13;//以链路状态或访问请求回答请求帧 Response
+
+/*C1.2 固定帧长帧 - 帧体
++------------+-----------------+-------+
+| Farme head | 0x10(Start byte)|1 byte |
++------------+-----------------+-------+
+|            | Ctrl Field      |1 byte |
+| LPDU(head) | Link addr lo    |1 byte |
+|            | Link addr hi    |1 byte |
++------------+-----------------+-------+
+| Farme Tail |     CS          |1 byte |
+|            | 0x16(End byte)  |1 byte |
++------------+-----------------+-------+
+*/
+struct Short_farme {
+	u8 start_byte; //开始字节
+	union { //控制域
+		union Ctrl_down c_down;
+		union Ctrl_up c_up;
+	};
+	link_addr_t link_addr;
+	struct Farme_tail farme_tail;
+};
+
+
 
 #endif // SD102_STRUCT_H

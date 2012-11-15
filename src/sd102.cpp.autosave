@@ -473,7 +473,7 @@ int Csd102::process_short_frame(u8 const *farme_in ,int const len_in,
 	}
 	//分类解析
 	switch(farme->c_down.funcode) {
-	case FN_C_RESET://复位
+	case FN_C_RCU://复位
 		//PRINT_HERE;
 		farme_up->c_up.funcode=FN_M_CON;
 		farme_up->c_up.acd=0;
@@ -486,7 +486,7 @@ int Csd102::process_short_frame(u8 const *farme_in ,int const len_in,
 	case FN_C_TRANS_DAT:
 		PRINT_HERE;
 		break;
-	case FN_C_CALL_LINK://请求链路状态
+	case FN_C_RLK://请求链路状态
 		//if()
 		farme_up->c_up.funcode=FN_M_RSP;
 		farme_up->c_up.acd=0;
@@ -497,7 +497,7 @@ int Csd102::process_short_frame(u8 const *farme_in ,int const len_in,
 		farme_up->farme_tail.cs=cs;
 		//PRINT_HERE;
 		break;
-	case FN_C_CLASS1:
+	case FN_C_PL1:
 		PRINT_HERE;
 		break;
 	case FN_C_CLASS2:

@@ -20,8 +20,8 @@ do
 	local f_ctrl = ProtoField.uint8("sd102.ctrl","控制字节",base.HEX)
 	-- 控制端到采集终端	
 	local f_funcode = ProtoField.uint8("sd102.funcode","功能码(FC)",base.DEC,
-	{[0]="复位通信单元",[3]="传送数据",[9]="召唤链路状态",
-	[10]="召唤1级用户数据",[11]="召唤2级用户数据"},0x0F) 
+	{[0]="S2:复位通信单元",[3]="S2:传送数据",[9]="S3:召唤链路状态",
+	[10]="S3:召唤1级用户数据",[11]="S3:召唤2级用户数据"},0x0F) 
 	local f_fcv = ProtoField.uint8("sd102.fcv","帧计数有效位(FCV)",base.HEX,
 	{[0]="帧计数位(FCB)的变化无效",[1]="帧计数位(FCB)的变化有效"},0x10) 
 	local f_fcb = ProtoField.uint8("sd102.fcb","帧计数位(FCB)",base.HEX,
@@ -33,9 +33,17 @@ do
 	{[0]="备用为0",[1]="备用,应为0"},0x80) 
 	-- 采集终端到控制端
 	local f_funcode_rsp = ProtoField.uint8("sd102.funcode_rsp","功能码(FC)",base.DEC,
-	{[0]="确认",[1]="链路忙,没有收到报文",[2]="备用",[3]="备用",[4]="备用",[5]="备用",
-	[6]="制造厂和用户协商定义",[7]="制造厂和用户协商定义",[8]="以数据回答请求帧",
-	[9]="没有所召唤的数据",[11]="以链路状态或访问请求回答请求帧"},0x0F) 
+	{[0]="S2:确认",[1]="S2:链路忙,没有收到报文",[2]="备用",[3]="备用",[4]="备用",[5]="备用",
+	[6]="制造厂和用户协商定义",
+	[7]="制造厂和用户协商定义",
+	[8]="S3:以数据回答请求帧",
+	[9]="S3:没有所召唤的数据",
+	[10]="备用",
+	[11]="S3:以链路状态或访问请求回答请求帧",
+	[12]="备用",
+	[13]="制造厂和用户协商定义",
+	[14]="链路服务未工作",
+	[15]="链路服务未完成"},0x0F) 
 	local f_dfc = ProtoField.uint8("sd102.dfc","数据流控制位(DFC)",base.HEX,
 	{[0]="终端可以接收数据",[1]="终端的缓冲区已满"},0x10) 
 	local f_acd = ProtoField.uint8("sd102.acd","要求访问位(ACD)",base.HEX,
@@ -78,7 +86,7 @@ do
 	local f_vsq_num=ProtoField.uint8("sd102.vsq_num","可变结构数目",base.HEX,nil,0x7F)
 	local f_cot=ProtoField.uint8("sd102.cot","传送原因(Cause Of Transmission)",base.HEX)
 	local f_cot_t=ProtoField.uint8("sd102.cot_t","试验(Test)",base.HEX,
-	{[0]="未试验",[1]="试验"},0x80)
+	{[0]="不试验,执行,一般为0",[1]="仅试验传输,不执行实际动作"},0x80)
 	local f_cot_pn=ProtoField.uint8("sd102.cot_pn","激活确认",base.HEX,
 	{[0]="肯定确认",[1]="否定确认"},0x40)
 	local f_cot_cot=ProtoField.uint8("sd102.cot_cot","传送原因",base.DEC,
@@ -95,17 +103,17 @@ do
 	[42-47]="为将来兼容定义保留",[48-63]="为特殊应用(专用范围)",--]]
 	[48]="时间同步(专用范围定义)"},0x3F)
 	local f_ASDU_addr=ProtoField.uint16("sd102.ASDU_addr","应用服务单元公共地址(ASDU address)",base.DEC)
-	local f_ASDU_addr_lo=ProtoField.uint8("sd102.ASDU_addr_lo","低字节",base.HEX)
-	local f_ASDU_addr_hi=ProtoField.uint8("sd102.ASDU_addr_hi","高字节",base.HEX)
-	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","信息体(记录体)地址(ROA)",base.HEX)
+	local f_ASDU_addr_lo=ProtoField.uint8("sd102.ASDU_addr_lo","低字节(lo)",base.HEX)
+	local f_ASDU_addr_hi=ProtoField.uint8("sd102.ASDU_addr_hi","高字节(hi_",base.HEX)
+	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","记录地址(RAD)",base.HEX)
 	--时间 ,其中有写位没解析 RSE
 	local f_Tb = ProtoField.bytes("sd102.Tb","时间(Tb)",base.HEX)
-	local f_Tb_ms=ProtoField.uint16("sd102.Tb_ms","毫秒(ms)",base.DEC,nil,0xFF03)
-	local f_Tb_sec=ProtoField.uint8("sd102.Tb_sec","秒(sec)",base.DEC,nil,0xFC)
+	local f_Tb_ms=ProtoField.uint16("sd102.Tb_ms","毫秒(ms)",base.DEC,nil,0x03FF)
+	local f_Tb_sec=ProtoField.uint16("sd102.Tb_sec","秒(sec)",base.DEC,nil,0xFC00)
 	local f_Tb_min=ProtoField.uint8("sd102.Tb_min","分钟(min)",base.DEC,nil,0x3F)
-	local f_Tb_tis=ProtoField.uint8("sd102.Tb_tis","费率陈述",base.HEX,
+	local f_Tb_tis=ProtoField.uint8("sd102.Tb_tis","费率陈述(tis)",base.HEX,
 	{[0]="断开OFF",[1]="合上ON"},0x40)
-	local f_Tb_iv=ProtoField.uint8("sd102.Tb_iv","时间陈述无效标志",base.HEX,
+	local f_Tb_iv=ProtoField.uint8("sd102.Tb_iv","时间陈述无效标志(iv)",base.HEX,
 	{[0]="有效",[1]="无效"},0x80)
 	local f_Tb_hour=ProtoField.uint8("sd102.Tb_hour","小时(hour)",base.DEC,nil,0x1F)
 	local f_Tb_day=ProtoField.uint8("sd102.Tb_day","日(day)",base.DEC,nil,0x1F)
@@ -114,19 +122,19 @@ do
 	local f_Tb_year=ProtoField.uint8("sd102.Tb_year","年(year)",base.DEC,nil,0x7F)
 	local f_Tb_su=ProtoField.uint8("sd102.Tb_su","标准时间(SU)",
 	base.HEX,{[0]="标准时间",[1]="夏时制"},0x80)
-	local f_Tb_pti=ProtoField.uint8("sd102.Tb_pti","功率费率",
+	local f_Tb_pti=ProtoField.uint8("sd102.Tb_pti","功率费率(pti)",
 	base.HEX,{[0]="功率费率"},0xC0)
-	local f_Tb_eti=ProtoField.uint8("sd102.Tb_eti","能量费率",
+	local f_Tb_eti=ProtoField.uint8("sd102.Tb_eti","能量费率(eti)",
 	base.HEX,{[0]="能量费率"},0x30)
-	local f_msgaddr_start = ProtoField.uint8("sd102.msgaddr","起始消息体地址",base.DEC)
-	local f_msgaddr_end = ProtoField.uint8("sd102.msgaddr","终止消息体地址",base.DEC)
+	local f_msgaddr_start = ProtoField.uint8("sd102.msgaddr","起始消息体地址(IOA)",base.DEC)
+	local f_msgaddr_end = ProtoField.uint8("sd102.msgaddr","终止消息体地址(IOA)",base.DEC)
 	local f_msg = ProtoField.string("sd102.msg","消息")
 	--Ta
 	local f_Ta = ProtoField.bytes("sd102.Ta","时间(Ta)",base.HEX)
 	local f_Ta_min = ProtoField.uint8("sd102.Ta_min","分钟(min)",base.HEX,nil,0x3F)
 	local f_Ta_hour = ProtoField.uint8("sd102.Ta_hour","小时(hour)",base.HEX,nil,0x1F)
 	local f_Ta_day = ProtoField.uint8("sd102.Ta_day","日(day)",base.HEX,nil,0x3F)
-	local f_Ta_week = ProtoField.uint8("sd102.Ta_week","周次(week)",base.HEX,nil,0xE0)
+	local f_Ta_week = ProtoField.uint8("sd102.Ta_week","周几(week)",base.HEX,nil,0xE0)
 	local f_Ta_mon = ProtoField.uint8("sd102.Ta_mon","月(month)",base.HEX,nil,0x0F)
 	local f_Ta_year = ProtoField.uint8("sd102.Ta_year","年(year)",base.HEX,nil,0x7F)
 	local f_onebyte = ProtoField.uint8("sd102.onebyte","单字节",base.HEX)
@@ -243,6 +251,7 @@ do
 			return false
 		end
 		if buf(len-1,1):uint() ~= 0x16 then --结束符错误
+			t:add("结束符不等于0x16: ",buf(len-1,1):uint())
 			return false
 		end
 		--全部判断完成:
@@ -293,8 +302,8 @@ do
 				--什么都不做,信息体为空
 			elseif buf(7,1):uint() == 128 then --设置终端时间
 				local Tb = t:add(f_Tb,buf(13,7))			
-				Tb:add(f_Tb_ms,buf(13,2))
-				Tb:add(f_Tb_sec,buf(14,1))
+				Tb:add_le(f_Tb_ms,buf(13,2))
+				Tb:add_le(f_Tb_sec,buf(13,2))
 				Tb:add(f_Tb_min,buf(15,1))
 				Tb:add(f_Tb_tis,buf(15,1))
 				Tb:add(f_Tb_iv,buf(15,1))
@@ -328,9 +337,9 @@ do
 		else -----------上行 -------
 			--按TYP分类
 			if buf(7,1):uint() == 72 then --返回当前系统时间
-				local Tb = t:add(f_Tb,buf(13,7))			
-				Tb:add(f_Tb_ms,buf(13,2))
-				Tb:add(f_Tb_sec,buf(14,1))
+				local Tb = t:add(f_Tb,buf(13,7))		
+				Tb:add_le(f_Tb_ms,buf(13,2))
+				Tb:add_le(f_Tb_sec,buf(13,2))
 				Tb:add(f_Tb_min,buf(15,1))
 				Tb:add(f_Tb_tis,buf(15,1))
 				Tb:add(f_Tb_iv,buf(15,1))
@@ -345,7 +354,7 @@ do
 				--Tb:add("上行,72")
 			elseif buf(7,1):uint() == 128 then --电能累计量数据终端系统时间同步确认
 				local Tb = t:add(f_Tb,buf(13,7))			
-				Tb:add(f_Tb_ms,buf(13,2))
+				Tb:add_le(f_Tb_ms,buf(13,2))
 				Tb:add(f_Tb_sec,buf(14,1))
 				Tb:add(f_Tb_min,buf(15,1))
 				Tb:add(f_Tb_tis,buf(15,1))
