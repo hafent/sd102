@@ -183,13 +183,19 @@ if("S2:发送/确认帧"){ //分类: 1.复位链路(FC0) 2.传输数据(FC3)
 if("S3:请求/响应帧"){ //分类: 1.召唤1级(FC10) 2.召唤2级(FC11) 3.链路请求(FC9)
 分类:
 1.召唤1级数据(FC10):
+	if(有1级数据){
+		回答:	以数据回答(-FC8)
+	}
 2.召唤2级数据(FC11):
+	if(有2级数据){
+		回答:	以数据回答(-FC8)
+	}
 	if(没有2级数据){
 		if(有 1级数据){
 			回答:	(M_NV_NA_2)(-FC9)
 		}
 		if(没有1级数据){
-			回答:	E5
+			回答:	E5 (否定回答)NACK (Negative ACKnowledgment)
 		}
 	}
 3.链路请求(C_LKR_NA_2)(FC9):
@@ -473,7 +479,7 @@ int Csd102::process_short_frame(u8 const *farme_in ,int const len_in,
 	}
 	//分类解析
 	switch(farme->c_down.funcode) {
-	case FN_C_RESET://复位
+	case FN_C_RCU://复位
 		//PRINT_HERE;
 		farme_up->c_up.funcode=FN_M_CON;
 		farme_up->c_up.acd=0;
@@ -486,7 +492,7 @@ int Csd102::process_short_frame(u8 const *farme_in ,int const len_in,
 	case FN_C_TRANS_DAT:
 		PRINT_HERE;
 		break;
-	case FN_C_CALL_LINK://请求链路状态
+	case FN_C_RLK://请求链路状态
 		//if()
 		farme_up->c_up.funcode=FN_M_RSP;
 		farme_up->c_up.acd=0;
@@ -497,7 +503,7 @@ int Csd102::process_short_frame(u8 const *farme_in ,int const len_in,
 		farme_up->farme_tail.cs=cs;
 		//PRINT_HERE;
 		break;
-	case FN_C_CLASS1:
+	case FN_C_PL1:
 		PRINT_HERE;
 		break;
 	case FN_C_CLASS2:
