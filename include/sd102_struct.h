@@ -408,6 +408,14 @@ struct Short_farme {
 	struct Farme_tail farme_tail;
 };
 
-
+//
+//回复 读取时间帧
+struct stFarme_C_TI_NA_2{
+	struct Farme_head farme_head;
+	struct Lpdu_head lpdu_head;
+	struct Asdu_head asdu_head;
+	struct Tb tb; //信息一仅包含一个信息元素:Tb
+	struct Farme_tail farme_tail;
+};
 
 #endif // SD102_STRUCT_H

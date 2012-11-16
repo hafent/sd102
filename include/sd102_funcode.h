@@ -16,7 +16,7 @@ const link_fun_code_t FN_C_TRANS_DAT  =3;//传输数据 trans date
 //帧类型 9,10,11 请求/响应 帧 S3
 const link_fun_code_t FN_C_RLK  =9;//召唤链路 call link 请求链路状态
 const link_fun_code_t FN_C_PL1 =10;//召唤1级链路 call class 1 data
-const link_fun_code_t FN_C_CLASS2 =11;//召唤2级链路 call class 2 date
+const link_fun_code_t FN_C_PL2 =11;//召唤2级链路 call class 2 date
 const link_fun_code_t FN_C_RES1=12;//备用1
 const link_fun_code_t FN_C_RES2=13;//备用2
 
