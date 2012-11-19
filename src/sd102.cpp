@@ -1,12 +1,12 @@
 /* File encode:	 GB2312
-   filename:	sd102.h
-É½¶«102¹æÔ¼ ÊµÏÖÎÄ¼ş ÒıÓÃ DL/T719-2000£¨IEC60870-5-102£º1996£©
-ÒıÓÃ GB/T 18657.2-2002 µÈĞ§Óë IEC60870-5-2:1990 Á´Â·´«Êä¹æÔò*/
+ filename:	sd102.h
+ å±±ä¸œ102è§„çº¦ å®ç°æ–‡ä»¶ å¼•ç”¨ DL/T719-2000ï¼ˆIEC60870-5-102ï¼š1996ï¼‰
+ å¼•ç”¨ GB/T 18657.2-2002 ç­‰æ•ˆä¸ IEC60870-5-2:1990 é“¾è·¯ä¼ è¾“è§„åˆ™*/
 #include <sys/msg.h>
 #include <stdio.h>
 #include <string>
 #include <unistd.h>
-#include <arpa/inet.h> //×Ö½ÚĞòÏà¹Ø
+#include <arpa/inet.h> //å­—èŠ‚åºç›¸å…³
 #include "define.h"
 #include "sys_utl.h"
 #include "loopbuf.h"
@@ -21,69 +21,83 @@
 extern "C" CProtocol *CreateCProto_sd102()
 {
 	PRINT_HERE
-			//return NULL;
-			printf("**** create sd1021111\n");
-	return  new Csd102;
+	;
+	//return NULL;
+	printf("**** create sd1021111\n");
+	return new Csd102;
 }
 
 Csd102::Csd102()
 {
-	syn_char_num=6;
-	//Syn_Head_Rece_Flag=0;
-	m_ACD=0;
-	Command=0;
-	m_Resend=0;
-	Continue_Flag=0;
-	Send_DataEnd=0;
-	Send_num=0;
-	Send_Times=0;
-	Send_RealTimes=0;
-	SendT_RealTimes=0;
-	Send_Total=0;
-	Info_Size=0;
-	c_FCB=0;
-	c_FCB_Tmp=0xff;
-	c_TI_tmp=0xff;
-	memset(mirror_buf,0,sizeof(mirror_buf));
+	syn_char_num = 6;
+//Syn_Head_Rece_Flag=0;
+	m_ACD = 0;
+	Command = 0;
+	m_Resend = 0;
+	Continue_Flag = 0;
+	Send_DataEnd = 0;
+	Send_num = 0;
+	Send_Times = 0;
+	Send_RealTimes = 0;
+	SendT_RealTimes = 0;
+	Send_Total = 0;
+	Info_Size = 0;
+	c_FCB = 0;
+	c_FCB_Tmp = 0xff;
+	c_TI_tmp = 0xff;
+	memset(mirror_buf, 0, sizeof(mirror_buf));
 	PRINT_HERE
-			//¿ªÊ¼Ê±±¸·İÖ¡Ó¦¸Ã±»Çå¿Õ
-			//memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
-			//this->reci_farme_bak_len=0;
+
+	link_addr = 0;
+	this->exist_backup_frame = false;
+	this->has_class1_dat = false;
+	this->has_class2_dat = false;
+	this->status = 0;
+	set_has_mirror_farme(false);
+
+//å¼€å§‹æ—¶å¤‡ä»½å¸§åº”è¯¥è¢«æ¸…ç©º
+//memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
+//this->reci_farme_bak_len=0;
 }
 Csd102::~Csd102()
 {
 	PRINT_HERE
-			//memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
-			//this->reci_farme_bak_len=0;
+	;
+//memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
+//this->reci_farme_bak_len=0;
 }
 int Csd102::Init(struct stPortConfig *tmp_portcfg)
 {
-	has_class1_dat=false;
-	has_class2_dat=false;
-	c_Link_Address_H=tmp_portcfg->m_ertuaddr>>8;
-	c_Link_Address_L=(unsigned char)tmp_portcfg->m_ertuaddr;
-	link_addr=tmp_portcfg->m_ertuaddr;
-	m_checktime_valifalg=tmp_portcfg->m_checktime_valiflag;
-	m_suppwd=tmp_portcfg->m_usrsuppwd;
-	m_pwd1=tmp_portcfg->m_usrpwd1;
-	m_pwd2=tmp_portcfg->m_usrpwd2;
-	m_retransmit_table=tmp_portcfg->m_retransmit_mtr;//×ª·¢±í
-	retran_table_valid=(m_retransmit_table.empty())?0:1;
-	m_Max_Mtrnum=(!retran_table_valid)?(sysConfig->meter_num):(m_retransmit_table.size());
-	this->exist_backup_frame=false;
+
+	last_typ = M_UNUSED;
+	has_class1_dat = false;
+	has_class2_dat = false;
+	c_Link_Address_H = tmp_portcfg->m_ertuaddr>>8;
+	c_Link_Address_L = (unsigned char) tmp_portcfg->m_ertuaddr;
+	link_addr = tmp_portcfg->m_ertuaddr;
+	m_checktime_valifalg = tmp_portcfg->m_checktime_valiflag;
+	m_suppwd = tmp_portcfg->m_usrsuppwd;
+	m_pwd1 = tmp_portcfg->m_usrpwd1;
+	m_pwd2 = tmp_portcfg->m_usrpwd2;
+	m_retransmit_table = tmp_portcfg->m_retransmit_mtr;		//è½¬å‘è¡¨
+	retran_table_valid = (m_retransmit_table.empty()) ? 0 : 1;
+	m_Max_Mtrnum = (!retran_table_valid) ?
+	                                       (sysConfig->meter_num) :
+	                                       (m_retransmit_table.size());
+	this->exist_backup_frame = false;
 	return 0;
 }
 
-//ÖÕ¶Ë(´ÓÕ¾)Ö÷¶¯·¢ËÍ.ÔÚÉ½¶«102,·ÇÆ½ºâ´«ÊäÖĞ(Ğ­Òé¹æ¶¨)²»ĞèÒª
+//ç»ˆç«¯(ä»ç«™)ä¸»åŠ¨å‘é€.åœ¨å±±ä¸œ102,éå¹³è¡¡ä¼ è¾“ä¸­(åè®®è§„å®š)ä¸éœ€è¦
 void Csd102::SendProc(void)
 {
 	return;
 }
-//ÏÔÊ¾µÈ´ı×´Ì¬
+//æ˜¾ç¤ºç­‰å¾…çŠ¶æ€
 void Csd102::show_wait(u32 &stat)
 {
 	printf("\rsd102:Wait for farme.");
-	switch(stat%4){
+	switch (stat%4) {
 	case 0:
 		printf("|");
 		break;
@@ -104,381 +118,441 @@ void Csd102::show_wait(u32 &stat)
 	return;
 }
 
-//½ÓÊÕ(´ÓÖ÷Õ¾·¢À´µÄ)±¨ÎÄ
+//æ¥æ”¶(ä»ä¸»ç«™å‘æ¥çš„)æŠ¥æ–‡
 int Csd102::ReciProc(void)
 {
-#if 0 //just for reci base debug
+#if 0 //just for receive base debug
 	m_transBuf.m_transceiveBuf[0]=0;
 	m_transBuf.m_transceiveBuf[1]=1;
 	m_transBuf.m_transceiveBuf[2]=2;
 	m_transBuf.m_transceiveBuf[3]=3;
 	m_transBuf.m_transCount=4;
 #endif
-	//u8 len,reallen;
-	int ret=-1;
-	u8 reci_farme[1024];//reci farme
-	int reci_len=0;//Ö¡,Ö¡³¤
-	//1. get farme [»áĞŞ¸ÄÀà³ÉÔ±]
-	ret=separate_msg(reci_farme,reci_len);
-	if(ret!=0) {
+//u8 len,real len;
+	int ret = -1;
+	u8 reci_farme[1024];			//receive frame
+	int reci_len = 0;			//å¸§,å¸§é•¿
+//1. get frame [ä¼šä¿®æ”¹ç±»æˆå‘˜]
+	ret = separate_msg(reci_farme, reci_len);
+	if (ret!=0) {
 		show_wait(status);
 		return 0;
 	}
-	printf("Receive Farme[%d]:",reci_len);
-	print_array(reci_farme,reci_len);
-	//2. verify farme
-	ret=verify_farme(reci_farme,reci_len);
-	if(ret!=0) {
+	printf("Receive Farme[%d]:", reci_len);
+	print_array(reci_farme, reci_len);
+//2. verify frame
+	ret = verify_frame(reci_farme, reci_len);
+	if (ret!=0) {
 		printf("verify err,ignord\n");
 		return 0;
 	}
-	//
-	union Ctrl_down c2=get_ctrl_field(reci_farme_bak,reci_farme_bak_len);
-	union Ctrl_down c=get_ctrl_field(reci_farme,reci_len);
-	//ÒÔÏÂÇé¿ö¿ªÊ¼ĞèÒª»ØÓ¦
+//
+	union Ctrl_down c2 = get_ctrl_field(reci_frame_bak, reci_frame_bak_len);
+	union Ctrl_down c = get_ctrl_field(reci_farme, reci_len);
+//ä»¥ä¸‹æƒ…å†µå¼€å§‹éœ€è¦å›åº”
 #if 0
-	//Ç°ºófcbÓ¦¸Ã²»Ò»Ñù
+//å‰åFCBåº”è¯¥ä¸ä¸€æ ·
 	printf("c.fcb=%d c_bak.fcb=%d || c.fcv=%d c_bak.fcv=%d\n"
-	       ,c.fcb,c2.fcb,c.fcv,c2.fcv);
+			,c.fcb,c2.fcb,c.fcv,c2.fcv);
 #endif
-	//	if(c.fcv==0 && c.fcb==0 && c.funcode==FN_C_RESET){//Á´Â·¸´Î»
-	//		printf("Reset Link\n");
-	//		Transfer(farme,farme_len);
-	//		save_reci_farme(farme,farme_len);
-	//		save_tran_farme(farme,farme_len);
-	//		return 0;
-	//	}
-	if(c.fcv==1 && c.fcb==c2.fcb && exist_backup_frame) { //Á´Â·ÖØ·¢
-		//ÖØ·¢±¾ÎÄµÄ·¢ËÍÖ¡,ÖØ·¢
+	if (c.fcv==1&&c.fcb==c2.fcb&&exist_backup_frame) {     //é“¾è·¯é‡å‘
+		//é‡å‘æœ¬æ–‡çš„å‘é€å¸§,é‡å‘
 		printf("Resend Farme\n");
-		Transfer(reci_farme_bak,reci_farme_bak_len);
-		save_reci_farme(reci_farme,reci_len);
-		save_tran_farme(reci_farme,reci_len,
-				this->tran_farme_bak,
-				this->tran_farme_bak_len,
-				this->exist_backup_frame);
+		transfer(reci_frame_bak, reci_frame_bak_len);
+		save_reci_frame(reci_farme, reci_len);
+		save_tran_frame(reci_farme, reci_len,
+		                this->tran_frame_bak,
+		                this->tran_frame_bak_len,
+		                this->exist_backup_frame);
 		return 0;
 	}
-	int send_len=0;
-	u8 tran_farme[4+255+2];//Ö¡
+	int send_len = 0;
+	u8 tran_farme[4+255+2];		//å¸§
 
-	bool need_to_trans=false;
-/*
+//bool need_to_trans=false;
+	/*
+	 if("S2:å‘é€/ç¡®è®¤å¸§"){ //åˆ†ç±»: 1.å¤ä½é“¾è·¯(FC0) 2.ä¼ è¾“æ•°æ®(FC3)
 
-if(ÖØ¸´Ö¡){
-	ÖØ·¢;
-	ÍË³ö;
-}
+	 if(é‡å¤å¸§){
+	 é‡å‘;
+	 é€€å‡º;
+	 }else(
+	 ä¿å­˜ç¡®è®¤å¸§(å¤æœ¬)
+	 }
 
-if("S2:·¢ËÍ/È·ÈÏÖ¡"){ //·ÖÀà: 1.¸´Î»Á´Â·(FC0) 2.´«ÊäÊı¾İ(FC3)
+	 1.å¤ä½é“¾è·¯(C_RCU_NA_2)(FC0):
+	 å›ç­”:	å¤ä½å¸§(FC0)
+	 å‘é€&å¤‡ä»½;
 
-1.¸´Î»Á´Â·(C_RCU_NA_2)(FC0):
-	»Ø´ğ:	¸´Î»Ö¡(FC0)
+	 2.0ä¼ è¾“æ•°æ®(FC3)
+	 å›ç­”:	ç¡®è®¤	ACK	E5
+	 å‘é€;
+	 å¹¶,å¼€å§‹å¤„ç†æ•°æ®,å¾—åˆ°æ•°æ®ä¿å­˜èµ·æ¥,å¤‡ç”¨
+	 å¤‡ä»½;
 
-2.0´«ÊäÊı¾İ(FC3)
-	»Ø´ğ:	È·ÈÏ	ACK	E5
+	 2.1æ—¶é—´åŒæ­¥(FC3):CF=0 1 FCB FCV 0 0 1 1(C SYN TA 2)
+	 å›ç­”:	ç³»ç»Ÿæ—¶é—´åŒæ­¥ç¡®è®¤(M SYN TA 2)(-FC0)
+	 å‘é€&å¤‡ä»½;
 
-2.1Ê±¼äÍ¬²½(FC3):CF=0 1 FCB FCV 0 0 1 1(C SYN TA 2)
-	»Ø´ğ:	ÏµÍ³Ê±¼äÍ¬²½È·ÈÏ(M SYN TA 2)(-FC0)
+	 }
 
-}
+	 if("S3:è¯·æ±‚/å“åº”å¸§"){ //åˆ†ç±»: 1.å¬å”¤1çº§(FC10) 2.å¬å”¤2çº§(FC11) 3.é“¾è·¯è¯·æ±‚(FC9)
 
-if("S3:ÇëÇó/ÏìÓ¦Ö¡"){ //·ÖÀà: 1.ÕÙ»½1¼¶(FC10) 2.ÕÙ»½2¼¶(FC11) 3.Á´Â·ÇëÇó(FC9)
+	 1.å¬å”¤1çº§æ•°æ®(FC10):
+	 if(æœ‰1çº§æ•°æ®){
+	 å›ç­”:	ä»¥æ•°æ®å›ç­”(-FC8)
+	 å‘é€&å¤‡ä»½;
+	 }else{
+	 å›ç­”:	NACK:	E5 (å¦å®šå›ç­”)NACK (Negative ACKnowledgment)
+	 å‘é€&å¤‡ä»½;
+	 }
 
-1.ÕÙ»½1¼¶Êı¾İ(FC10):
-	if(ÓĞ1¼¶Êı¾İ){
-		»Ø´ğ:	ÒÔÊı¾İ»Ø´ğ(-FC8)
-	}
+	 2.å¬å”¤2çº§æ•°æ®(FC11):
+	 if(æœ‰2çº§æ•°æ®){
+	 å›ç­”:	ä»¥æ•°æ®å›ç­”(-FC8)
+	 }
+	 if(æ²¡æœ‰2çº§æ•°æ®){
+	 if(æœ‰ 1çº§æ•°æ®){
+	 å›ç­”:	(M_NV_NA_2)(-FC9)
+	 }
+	 if(æ²¡æœ‰1çº§æ•°æ®){
+	 å›ç­”:	NACK:	E5 (å¦å®šå›ç­”)NACK (Negative ACKnowledgment)
+	 }
+	 }
 
-2.ÕÙ»½2¼¶Êı¾İ(FC11):
-	if(ÓĞ2¼¶Êı¾İ){
-		»Ø´ğ:	ÒÔÊı¾İ»Ø´ğ(-FC8)
-	}
-	if(Ã»ÓĞ2¼¶Êı¾İ){
-		if(ÓĞ 1¼¶Êı¾İ){
-			»Ø´ğ:	(M_NV_NA_2)(-FC9)
-		}
-		if(Ã»ÓĞ1¼¶Êı¾İ){
-			»Ø´ğ:	NACK:	E5 (·ñ¶¨»Ø´ğ)NACK (Negative ACKnowledgment)
-		}
-	}
+	 3.é“¾è·¯è¯·æ±‚(C_LKR_NA_2)(FC9):
+	 å›ç­”:	é“¾è·¯æ­£å¸¸M_LKR_NA_2(FC11);
+	 }
 
-3.Á´Â·ÇëÇó(C_LKR_NA_2)(FC9):
-	»Ø´ğ:	Á´Â·Õı³£M_LKR_NA_2(FC11);
-}
-
-±£´æ·¢ËÍÖ¡ºÍ½ÓÊÕÖ¡;
-ÍË³ö;
-*/
-	switch(c.funcode){
-	//S2 Ğ´Ö¸Áî
+	 å‘é€:
+	 å‘é€æ•°æ®åˆ°ä¸»ç«™;
+	 å¤‡ä»½:
+	 ä¿å­˜å‘é€å¸§å’Œæ¥æ”¶å¸§;
+	 é€€å‡º;
+	 */
+	switch (c.funcode) {
+//S2 å†™æŒ‡ä»¤
 	case FN_C_RCU:
-		//¸´Î»
-		fun_M_CON_NA_2(tran_farme,send_len);
-		//ÖØÖÃÖ¡¼ÆÊıÎ» TODO
-		PRINT_HERE;
-		goto OK;
+		//å¤ä½
+		fun_M_CON_NA_2(tran_farme, send_len);
+		// TODO é‡ç½®å¸§è®¡æ•°ä½
+
+		PRINT_HERE
+		goto SEND;
 		break;
 	case FN_C_TRANS_DAT:
-		//´«ÊäÊı¾İ Ó¦´ğ
-		confirm(tran_farme,send_len);
-		goto OK;
-		PRINT_HERE;
+		//ç«‹å³åº”ç­” E5
+		confirm(tran_farme, send_len);
+		transfer(tran_farme, send_len);
+		//åº”ç­”ä¹‹åå³åˆ» å¼€å§‹å¤„ç†äº‹åŠ¡
+		//TODO å¼€å§‹å‡†å¤‡æ•°æ®,åˆ†ç±»è®¨è®ºéœ€è¦çš„æ•°æ®
+		switch (reci_farme[0]) {
+		case START_SHORT_FRAME:
+			process_short_frame(reci_farme, reci_len,
+			                tran_farme, send_len);
+			break;
+		case START_LONG_FRAME:
+			process_long_frame(reci_farme, reci_len,
+			                tran_farme, send_len);
+			//printf("receive: tran_farme[0]=%x send_len=%d \n",tran_farme[0],send_len);
+			break;
+		default:
+			PRINT_HERE
+			break;
+		}
+		//ä¿å­˜1çº§æ•°æ® å¤‡ç”¨
+		save_dat(c1_dat.dat, tran_farme, send_len);
+		c1_dat.len = send_len;
+		printf("c1_dat.dat[0]=%x c1_dat.len=%d || send_len=%d\n"
+		                , c1_dat.dat[0], c1_dat.len, send_len);
+		//å½¢æˆæ­£ç¡®çš„å¤‡ä»½å¸§.
+		confirm(tran_farme, send_len);
+		goto BACKUP;
+		PRINT_HERE
 		break;
-	//S3 ¶ÁÊı¾İ
+		//S3 è¯»æ•°æ®
 	case FN_C_RLK:
-		fun_M_LKR_NA_2(tran_farme,send_len);//»Ø¸´Á´Â·×´Ì¬
-		PRINT_HERE;
+		fun_M_LKR_NA_2(tran_farme, send_len);		//å›å¤é“¾è·¯çŠ¶æ€
+		PRINT_HERE
 		break;
 	case FN_C_PL1:
-		if(has_class1_dat){
-			printf("has_class1_dat\n");
-		}else{
-			nack(tran_farme,send_len);
-			goto OK;
+		if (has_class1_dat) {
+			switch (last_typ) {
+			case C_TI_NA_2:
+				printf("send _class1_dat\n");
+				memcpy(tran_farme, c1_dat.dat, c1_dat.len);
+				send_len = c1_dat.len;
+				last_typ = 0;
+				//(c1_dat.dat,c1_dat.len,tran_farme,send_len);
+				//Transfer(c1_dat.dat,c1_dat.len	);
+				goto SEND;
+			case C_CI_NR_2://è¯»æ•°æ®
+				if (has_mirror_farme) {
+					set_has_mirror_farme(false);
+					printf("send mirror_farme\n");
+					memcpy(tran_farme, mirror_farme.dat, mirror_farme.len);
+					send_len = mirror_farme.len;
+				} else {
+					printf("send _class1_dat\n");
+					memcpy(
+					                tran_farme,
+					                c1_dat.dat,
+					                c1_dat.len);
+					send_len = c1_dat.len;
+					last_typ = 0;
+				}
+				//(c1_dat.dat,c1_dat.len,tran_farme,send_len);
+				//Transfer(c1_dat.dat,c1_dat.len	);
+				goto SEND;
+
+			}
+
+			//å¯¹äºç”µé‡,å…ˆæ‹›2çº§,è¿”å›æ²¡æœ‰,æ‹›1çº§,è¿”å›é•œåƒå¸§,
+			//å†æ‹›2çº§,åˆæ²¡æœ‰,å†æ‹›1çº§,è¿”å›æ•°æ®å¸§,
+			//if()
+
+			//TODO å‘é€1çº§æ•°æ®
+		} else {
+			nack(tran_farme, send_len);
+			goto SEND;
 		}
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case FN_C_PL2:
-		if(has_class2_dat){
-			printf("has_class2_dat\n");
-		}else{
-			if(has_class1_dat){
-				printf("has_class1_dat\n");
-				fun_M_NV_NA_2(tran_farme,send_len);
-				goto OK;
-			}else{
-				nack(tran_farme,send_len);
-				goto OK;
+		if (has_class2_dat) {
+			printf("send class2_dat\n");
+			//TODO å‘é€2çº§æ•°æ®
+		} else {
+			if (has_class1_dat) {
+				printf("no class2 dat ,has_class1_dat\n");
+				fun_M_NV_NA_2(tran_farme, send_len);
+				goto SEND;
+			} else {
+				nack(tran_farme, send_len);
+				goto SEND;
 			}
 		}
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case FN_C_RES1:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case FN_C_RES2:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	default:
-		PRINT_HERE;
-	}
-	printf("c.FC=%d\n",c.funcode);
-
-	switch(reci_farme[0]) {
-	case START_SHORT_FARME:
-		process_short_frame(reci_farme,reci_len,
-				    tran_farme,send_len);
+		PRINT_HERE
+		;
 		break;
-	case START_LONG_FARME:
-		process_long_frame(reci_farme,reci_len,
-				   tran_farme,send_len);
-		//printf("reci: tran_farme[0]=%x send_len=%d \n",tran_farme[0],send_len);
+	}
+	printf("c.FC=%d\n", c.funcode);
+
+	switch (reci_farme[0]) {
+	case START_SHORT_FRAME:
+		process_short_frame(reci_farme, reci_len,
+		                tran_farme, send_len);
+		break;
+	case START_LONG_FRAME:
+		process_long_frame(reci_farme, reci_len,
+		                tran_farme, send_len);
+		//printf("receive: tran_farme[0]=%x send_len=%d \n",tran_farme[0],send_len);
 		break;
 	default:
-		PRINT_HERE;
+		PRINT_HERE
+		;
+		break;
 	}
-	//´¦Àí....
-	//·ñ²â·¢ËÍ
-	//	printf("link respond \n");
-	//	printf(" len =%d  %02X %02X %02X %02X  \n",
-	//	       len,tran_farme[0],tran_farme[1],tran_farme[2],tran_farme[3]);
-	OK:
-	Transfer(tran_farme,send_len);
+	SEND:			//å‘é€å¸§
+	transfer(tran_farme, send_len);
 
-	//	switch(farme[0]){
-	//	case START_SHORT_FARME:
-	//		process_short_frame(farme,farme_len);
-	//		//PRINT_HERE;
-	//		break;
-	//	case START_LONG_FARME:
-	//		process_long_frame(farme,farme_len);
-	//		//PRINT_HERE;
-	//		break;
-	//	case START_SINGLE_FARME:
-	//		PRINT_HERE;
-	//		break;
-	//	default:
-	//		PRINT_HERE;
-	//		printf("err start byte of farme");
-	//	}
 #if 0
-	//»Ø¸´Ò»Ğ©¶«Î÷ ±íÊ¾ÊÕµ½ÁË
+//å›å¤ä¸€äº›ä¸œè¥¿ è¡¨ç¤ºæ”¶åˆ°äº†
 	m_transBuf.m_transceiveBuf[0]=0xab;
 	m_transBuf.m_transCount=1;
 #endif
-	//±£´æ ½ÓÊÕµ½µÄÖ¡
-	save_reci_farme(reci_farme,reci_len);
-	save_tran_farme(tran_farme,send_len,
-			this->tran_farme_bak,this->tran_farme_bak_len,
-			this->exist_backup_frame);
-	return 0;
-	/*#´Ó»º³åÇø½ØÈ¡ÕıÈ·µÄ±¨ÎÄ
-	  #ÅĞ¶Ï±¨ÎÄÀàĞÍ
-	  #¼ìÑé±¨ÎÄ
-	  #¸ù¾İ·ÖÀà, ²É¼¯·¢ËÍ,»òÕß·¢ËÍ¾µÏñÖ¡,»òÕß²»Ó¦´ğµÈ.
-	*/
-}
-/*S2:·¢ËÍ/È·ÈÏÖ¡ µÄÖÕ¶ËÓ¦´ğ(È·ÈÏ)
-*/
-int Csd102::confirm(u8 *farme_out,int &len_out)const
-{
-	farme_out[0]=SINGLE_CHARACTER;
-	len_out=sizeof(SINGLE_CHARACTER);
+	BACKUP:     //ä¿å­˜ å¤‡ä»½ æ¥æ”¶å¸§å’Œå‘é€å¸§ ,ä»…ç”¨äºä¸¢å¤±é‡å‘æœºåˆ¶
+//ä¿å­˜ æ¥æ”¶åˆ°çš„å¸§
+	save_reci_frame(reci_farme, reci_len);
+	save_tran_frame(tran_farme, send_len,
+	                this->tran_frame_bak, this->tran_frame_bak_len,
+	                this->exist_backup_frame);
 	return 0;
 }
-/*·ñ¶¨Ó¦´ğ
-*/
-int Csd102::nack(u8 *farme_out,int &len_out)const
-{
-	farme_out[0]=SINGLE_CHARACTER;
-	len_out=sizeof(SINGLE_CHARACTER);
+/*ä¿å­˜æ•°æ®
+ */
+int Csd102::save_dat(u8* ddat, const u8* sdat, const int slen) const
+        {
+	memcpy(ddat, sdat, slen);
+//printf(" slen=%d  \n",slen);
 	return 0;
 }
 
-/*·¢ËÍÖ¡ ½« farme Í¨¹ı¸´ÖÆµ½ m_transBuf ½á¹¹Ìå·¢ËÍ.
-in:	farme	×Ö½ÚÁ÷
-	farme_len	³¤¶È
-out:	m_transBuf	ĞŞ¸ÄµÄ·¢ËÍ»º³åÇø½á¹¹Ìå,·¢ËÍÊı¾İ[Àà³ÉÔ±,Òşº¬Ê¹ÓÃ!!]
-*/
-int Csd102::Transfer(const u8* farme,const int farme_len)
-{
-	printf("Send Farme[%d]:",farme_len);
-	print_array(farme,farme_len);
-	//printf("send: farme[0]=%x farme_len=%d \n",farme[0],farme_len);
-	memcpy(this->m_transBuf.m_transceiveBuf,farme,farme_len);
-	this->m_transBuf.m_transCount=farme_len;
+/*S2:å‘é€/ç¡®è®¤å¸§ çš„ç»ˆç«¯åº”ç­”(ç¡®è®¤) å½¢æˆç¡®è®¤å¸§
+ */
+int Csd102::confirm(u8 *farme_out, int &len_out) const
+        {
+	farme_out[0] = SINGLE_CHARACTER;
+	len_out = sizeof(SINGLE_CHARACTER);
+	return 0;
+}
+/*å¦å®šåº”ç­”	å½¢æˆå¦å®šå¸§(nack)
+ */
+int Csd102::nack(u8 *farme_out, int &len_out) const
+        {
+	farme_out[0] = SINGLE_CHARACTER;
+	len_out = sizeof(SINGLE_CHARACTER);
 	return 0;
 }
 
-/* ´ÓÖ¡ÖĞ»ñÈ¡¿ØÖÆÓò,Ò»¸ö×Ö½Ú
-in:	farme	Ö¡/×Ö½ÚÁ÷
-	farme_len	×Ö½ÚÁ÷³¤¶È
-out:	none
-return:	¿ØÖÆ×Ö½Ú(union Ctrl_down)
-*/
-union Ctrl_down Csd102::get_ctrl_field(const u8* farme,const int farme_len)
+/*å‘é€å¸§ å°† frame é€šè¿‡å¤åˆ¶åˆ° m_transBuf ç»“æ„ä½“å‘é€.
+ in:	frame	å­—èŠ‚æµ
+ farme_len	é•¿åº¦
+ out:	m_transBuf	ä¿®æ”¹çš„å‘é€ç¼“å†²åŒºç»“æ„ä½“,å‘é€æ•°æ®[ç±»æˆå‘˜,éšå«ä½¿ç”¨!!]
+ */
+int Csd102::transfer(const u8* farme, const int farme_len)
+{
+	printf("Send Farme[%d]:", farme_len);
+	print_array(farme, farme_len);
+//printf("send: frame[0]=%x farme_len=%d \n",frame[0],farme_len);
+	memcpy(this->m_transBuf.m_transceiveBuf, farme, farme_len);
+	this->m_transBuf.m_transCount = farme_len;
+	return 0;
+}
+
+/* ä»å¸§ä¸­è·å–æ§åˆ¶åŸŸ,ä¸€ä¸ªå­—èŠ‚
+ in:	frame	å¸§/å­—èŠ‚æµ
+ farme_len	å­—èŠ‚æµé•¿åº¦
+ out:	none
+ return:	æ§åˆ¶å­—èŠ‚(union Ctrl_down)
+ */
+union Ctrl_down Csd102::get_ctrl_field(const u8* farme, const int farme_len)
 {
 
 	union Ctrl_down c;
-	if(farme_len<(int)sizeof(struct Short_farme)) {
+	if (farme_len<(int) sizeof(struct Short_frame)) {
 		//PRINT_HERE;
-		//printf("farme len(%d) is too small\n",farme_len);
+		//printf("frame length(%d) is too small\n",farme_len);
 		return c;
 	}
-	switch(farme[0]) {
-	case START_SHORT_FARME:
-		c.val=farme[0+sizeof(START_SHORT_FARME)];//¿ªÊ¼×Ö½ÚºóÃæ¼ÈÊÇ¿ØÖÆÓò
+	switch (farme[0]) {
+	case START_SHORT_FRAME:
+		c.val = farme[0+sizeof(START_SHORT_FRAME)];	//å¼€å§‹å­—èŠ‚åé¢æ—¢æ˜¯æ§åˆ¶åŸŸ
 		break;
-	case START_LONG_FARME:
-		c.val=farme[0+sizeof(struct Farme_head)];//Ö¡Í·ºóÃæ¼ÈÊÇ¿ØÖÆÓò
+	case START_LONG_FRAME:
+		c.val = farme[0+sizeof(struct Frame_head)];	//å¸§å¤´åé¢æ—¢æ˜¯æ§åˆ¶åŸŸ
 		break;
 	default:
-		if(farme[0]==0 && farme[1]==0 && farme[2]==0) {
-			printf("back-up farme is empty \n");
+		if (farme[0]==0&&farme[1]==0&&farme[2]==0) {
+			printf("back-up frame is empty \n");
 		} else {
-			PRINT_HERE;
+			PRINT_HERE
+			;
 		}
+		break;
 	}
 	return c;
 }
 
-/*	³õ²½·ÖÀë³öÕıÈ·µÄ±¨ÎÄ.Ö¡Ç°µÄÊı¾İÇå³ı,Ö¡Î²µÄÊı¾İ±£ÁôÔÚ»º³å¶ÓÁĞ.
-	¸ßĞ§µÄ¹ıÂË´ó²¿·Ö²»ºÏ¸ñµÄ±¨ÎÄ
-	¾­¹ı´¦ÀíÖ®ºó×¼È·ÎŞÎóµÄ±¨ÎÄ±»±£´æÔÚ readbuf[len] Êı×éÖĞ,´«µİ³öÀ´
-m_recvBuf:	In/Out	ÊäÈë»º³åÇø/ĞŞ¸Ä [×¢Òâ:±»Òşº¬µÄÊ¹ÓÃ]
-readbuf:	Out	Êı×é
-len:	Out		Êı×é³¤¶È
-return:	0-³É¹¦
-	·Ç0-Ê§°Ü
-*/
-int Csd102::separate_msg(u8 *readbuf,int &len)
+/*	åˆæ­¥åˆ†ç¦»å‡ºæ­£ç¡®çš„æŠ¥æ–‡.å¸§å‰çš„æ•°æ®æ¸…é™¤,å¸§å°¾çš„æ•°æ®ä¿ç•™åœ¨ç¼“å†²é˜Ÿåˆ—.
+ é«˜æ•ˆçš„è¿‡æ»¤å¤§éƒ¨åˆ†ä¸åˆæ ¼çš„æŠ¥æ–‡
+ ç»è¿‡å¤„ç†ä¹‹åå‡†ç¡®æ— è¯¯çš„æŠ¥æ–‡è¢«ä¿å­˜åœ¨ readbuf[len] æ•°ç»„ä¸­,ä¼ é€’å‡ºæ¥
+ m_recvBuf:	In/Out	è¾“å…¥ç¼“å†²åŒº/ä¿®æ”¹ [æ³¨æ„:è¢«éšå«çš„ä½¿ç”¨]
+ readbuf:	Out	æ•°ç»„
+ len:	Out		æ•°ç»„é•¿åº¦
+ return:	0-æˆåŠŸ
+ é0-å¤±è´¥
+ */
+int Csd102::separate_msg(u8 *readbuf, int &len)
 {
-	int farme_len=0;
-	bool syn_head_ok=false;
-	//Syn_Head_Rece_Flag = 0;
-	len=get_num(&m_recvBuf);//»º³åÇø³¤¶È
+	int frame_len = 0;
+	bool syn_head_ok = false;
+//Syn_Head_Rece_Flag = 0;
+	len = get_num(&m_recvBuf);		//ç¼“å†²åŒºé•¿åº¦
 #if 0
-	printf("*get_num=%d\n",len);
+	                printf("*get_num=%d\n",len);
 #endif
-	if(!len) {
-		return 1;//³¤¶È²»¹»/»º³åÇøÃ»ÓĞÊı¾İ,·Ö¸î´íÎó
+	if (!len) {
+		return 1;		//é•¿åº¦ä¸å¤Ÿ/ç¼“å†²åŒºæ²¡æœ‰æ•°æ®,åˆ†å‰²é”™è¯¯
 	}
-	//1.²éÕÒ
-	while(len>=syn_char_num) {//¶ÓÁĞ³¤¶ÈÌ«¶Ì¾Í²»±ØÔÙ²éÕÒÁË
+//1.æŸ¥æ‰¾
+	while (len>=syn_char_num) {		//é˜Ÿåˆ—é•¿åº¦å¤ªçŸ­å°±ä¸å¿…å†æŸ¥æ‰¾äº†
 		copyfrom_buf(readbuf, &m_recvBuf, len);
 #if 0
 		printf("farme:");
 		print_array(readbuf,len);
 #endif
-		if(!sync_head(readbuf,farme_len)) {//²éÕÒµ½Ò»Ö¡
-			syn_head_ok=true;
+		if (!sync_head(readbuf, frame_len)) {		//æŸ¥æ‰¾åˆ°ä¸€å¸§
+			syn_head_ok = true;
 			break;
-		} else {//·ñÔò 1ÔªËØ³ö¶ÓÁĞ //·ÀÖ¹À¬»øÊı¾İ³öÏÖÔÚÕı³£Ö¡Ç°Ãæ
+		} else {		//å¦åˆ™ 1å…ƒç´ å‡ºé˜Ÿåˆ— //é˜²æ­¢åƒåœ¾æ•°æ®å‡ºç°åœ¨æ­£å¸¸å¸§å‰é¢
 			pop_char(&m_recvBuf);
-			len=get_num(&m_recvBuf);
+			len = get_num(&m_recvBuf);
 #if 0
 			printf("else get_num=%d\n",len);
 #endif
 		}
 	}
-	//2.ÅĞ¶Ï
-	if(!syn_head_ok) {
+//2.åˆ¤æ–­
+	if (!syn_head_ok) {
 		return 2;
 	}
-	//2.2ÕÒµ½Ö¡,´¦Àí¶ÓÁĞ
-	len=get_num(&m_recvBuf);
-	if(len>=farme_len) {//½Ø¶Ïµ½ Ö¡Î²,Ê£ÏÂµÄÁôÔÚ»º³åÇø
-		len=get_buff(readbuf, &m_recvBuf,farme_len);
-		if(len!=farme_len) {
-			PRINT_HERE;
+//2.2æ‰¾åˆ°å¸§,å¤„ç†é˜Ÿåˆ—
+	len = get_num(&m_recvBuf);
+	if (len>=frame_len) {		//æˆªæ–­åˆ° å¸§å°¾,å‰©ä¸‹çš„ç•™åœ¨ç¼“å†²åŒº
+		len = get_buff(readbuf, &m_recvBuf, frame_len);
+		if (len!=frame_len) {
+			PRINT_HERE
 			printf("error:farme!=len\n");
 			return 3;
 		}
-		//printf("Ê£Óà %d\n",get_num(&m_recvBuf));
+		//printf("å‰©ä½™ %d\n",get_num(&m_recvBuf));
 		/*
-			printf("gx102 recieve:");
-			for(int i=0;i<reallen;i++)
-			printf(" %02x",readbuf[i]);
-			printf("\n");
-			*/
+		 printf("gx102 receive:");
+		 for(int i=0;i<reallen;i++)
+		 printf(" %02x",readbuf[i]);
+		 printf("\n");
+		 */
 		//return len;
 	}
 	return 0;
 }
-/*·ÖÀë±¨ÎÄ×Ó²Ù×÷,°´ÕÕ¸ñÊ½·ÖÀë,
-  Í¨¹ı¼òµ¥µÄ±È½ÏÖ¡Í·,ÆğÊ¼×Ö½Ú,½áÊø×Ö½Ú,Ö¡³¤ Õâ¼¸Ñù
-in:	buf ÊäÈëÊı×Ö
-out:	farme_len ·ÖÀë³É¹¦ÔòÊä³öÖ¡³¤,Ê§°ÜÔòÊä³ö0
-return:	0-³É¹¦;	·Ç0-Ê§°Ü;
-*/
-int Csd102::sync_head(const u8 *buf,int &farme_len)const
-{
-	farme_len=0;
-	//¶¨³¤Ö¡
-	if(buf[0]==START_SHORT_FARME) {
-		int end_index=sizeof(struct Short_farme)-1;
-		if(buf[end_index]==END_BYTE) {
-			farme_len=sizeof(struct Short_farme);
+/*åˆ†ç¦»æŠ¥æ–‡å­æ“ä½œ,æŒ‰ç…§æ ¼å¼åˆ†ç¦»,
+ é€šè¿‡ç®€å•çš„æ¯”è¾ƒå¸§å¤´,èµ·å§‹å­—èŠ‚,ç»“æŸå­—èŠ‚,å¸§é•¿ è¿™å‡ æ ·
+ // in:	buffer è¾“å…¥æ•°å­—
+ out:	farme_len åˆ†ç¦»æˆåŠŸåˆ™è¾“å‡ºå¸§é•¿,å¤±è´¥åˆ™è¾“å‡º0
+ return:	0-æˆåŠŸ;	é0-å¤±è´¥;
+ */
+int Csd102::sync_head(const u8 *buffer, int &farme_len) const
+        {
+	farme_len = 0;
+//å®šé•¿å¸§
+	if (buffer[0]==START_SHORT_FRAME) {
+		int end_index = sizeof(struct Short_frame)-1;
+		if (buffer[end_index]==END_BYTE) {
+			farme_len = sizeof(struct Short_frame);
 			return 0;
 		} else {
 			return -1;
 		}
 	}
-	//±ä³¤Ö¡
-	if((buf[0]==START_LONG_FARME) && (buf[3]==START_LONG_FARME)
-			&& buf[1]==buf[2]) {
-		int len=buf[1];
-		//×îÄ©Î²µÄÔªËØµÄindex
-		int end_index=0+sizeof(struct Farme_head) //Ö¡Í·
-				+len				//Á´Â·Êı¾İµ¥Ôª(LPDU)³¤¶È
-				+sizeof(struct Farme_tail) //Ö¡Î²
-				-1;
+//å˜é•¿å¸§
+	if ((buffer[0]==START_LONG_FRAME)&&(buffer[3]==START_LONG_FRAME)
+	                &&buffer[1]==buffer[2]) {
+		int len = buffer[1];
+		//æœ€æœ«å°¾çš„å…ƒç´ çš„index
+		int end_index = 0+sizeof(struct Frame_head)     //å¸§å¤´
+		                +len				//é“¾è·¯æ•°æ®å•å…ƒ(LPDU)é•¿åº¦
+		                +sizeof(struct Frame_tail)     //å¸§å°¾
+		-1;
 		//printf("end_index=%d\n",end_index);
-		if(buf[end_index]==END_BYTE) {
+		if (buffer[end_index]==END_BYTE) {
 			//printf("#end_index=%d\n",end_index);
-			farme_len=sizeof(struct Farme_head)+len
-					+sizeof(struct Farme_tail);
+			farme_len = sizeof(struct Frame_head)+len
+			                +sizeof(struct Frame_tail);
 			return 0;
 		} else {
 			return -1;
@@ -486,380 +560,406 @@ int Csd102::sync_head(const u8 *buf,int &farme_len)const
 	}
 	return -1;
 }
-/* ½øÒ»²½¼ìÑéÖ¡. ºÍĞ£Ñé,µØÖ·¼ì²â.²»»áĞ´ÀàµÄ³ÉÔ±±äÁ¿(const[this])
-  ¼ì²â ¹Ì¶¨Ö¡ ºÍ ±ä³¤Ö¡
-  in:	dat	Êı¾İÊı×é
-	len	Êı×é³¤¶È
-  return:	0-Í¨¹ı¼ì²â;·Ç0-Î´Í¨¹ı¼ì²â
-*/
-int Csd102::verify_farme(const u8  *dat, const int len)const
-{
-	struct Short_farme* farme;//ÓÃÓÚ¹Ì¶¨Ö¡
-	struct Lpdu_head* lpdu_head;//ÓÃÓÚ±ä³¤Ö¡
-	struct Farme_tail* farme_tail;//Ö¡Î²,ÓÃÓÚ±ä³¤Ö¡
+/* è¿›ä¸€æ­¥æ£€éªŒå¸§. å’Œæ ¡éªŒ,åœ°å€æ£€æµ‹.ä¸ä¼šå†™ç±»çš„æˆå‘˜å˜é‡(const[this])
+ æ£€æµ‹ å›ºå®šå¸§ å’Œ å˜é•¿å¸§
+ in:	dat	æ•°æ®æ•°ç»„
+ len	æ•°ç»„é•¿åº¦
+ return:	0-é€šè¿‡æ£€æµ‹;é0-æœªé€šè¿‡æ£€æµ‹
+ */
+int Csd102::verify_frame(const u8 *dat, const int len) const
+        {
+	struct Short_frame* farme;     //ç”¨äºå›ºå®šå¸§
+	struct Lpdu_head* lpdu_head;     //ç”¨äºå˜é•¿å¸§
+	struct Frame_tail* farme_tail;     //å¸§å°¾,ç”¨äºå˜é•¿å¸§
 	union Ctrl_down c;
-	u16 farme_link_addr=0;//Á´Â·µØÖ·
-	u8 farme_cs=0;//±¾Ö¡µÄcs
-	u8 cs=0;//¼ÆËãµÃµ½µÄcs
-	const u8  C_PRM_DOWN=1;//ÏÂĞĞ·½Ïò±êÖ¾(1-ÏÂĞĞ;0-ÉÏĞĞ)
-	switch(dat[0]) { //·ÖÀàÌÖÂÛ
-	case START_SHORT_FARME:
-		farme=(struct Short_farme *)(dat);
-		cs=check_sum(dat+sizeof(START_SHORT_FARME),
-			     sizeof(union Ctrl_down)+sizeof(link_addr_t));
-		//Í³Ò»
-		farme_link_addr=farme->link_addr;
-		c.prm=farme->c_down.prm;
-		farme_cs=farme->farme_tail.cs;
+	u16 farme_link_addr = 0;     //é“¾è·¯åœ°å€
+	u8 farme_cs = 0;     //æœ¬å¸§çš„cs
+	u8 cs = 0;     //è®¡ç®—å¾—åˆ°çš„cs
+	const u8 C_PRM_DOWN = 1;     //ä¸‹è¡Œæ–¹å‘æ ‡å¿—(1-ä¸‹è¡Œ;0-ä¸Šè¡Œ)
+	switch (dat[0]) {     //åˆ†ç±»è®¨è®º
+	case START_SHORT_FRAME:
+		farme = (struct Short_frame *) (dat);
+		cs = check_sum(dat+sizeof(START_SHORT_FRAME),
+		                sizeof(union Ctrl_down)+sizeof(link_addr_t));
+		//ç»Ÿä¸€å˜é‡,ç”±ä¸‹é¢å¤„ç†
+		farme_link_addr = farme->link_addr;
+		c.prm = farme->c_down.prm;
+		farme_cs = farme->farme_tail.cs;
 		break;
-	case START_LONG_FARME:
-		lpdu_head=(struct Lpdu_head *)(dat+sizeof(struct Farme_head));
-		//·Ö½âÖ¡Î²
-		farme_tail=(struct Farme_tail*)
-				(dat+len-sizeof(struct Farme_tail));
-		//Ğ£Ñé:È¥µôÍ·,(¸ÂàÔ´à),È¥Ö¡µôÎ².Ğ£ÑéÖĞ¼ä²¿·Ö
-		cs=check_sum(dat+sizeof(struct Farme_head),
-			     len-sizeof(struct Farme_head)
-			     -sizeof(struct Farme_tail));
-		//Í³Ò»
-		farme_link_addr=lpdu_head->link_addr;
-		c.prm=lpdu_head->c_down.prm;
-		farme_cs=farme_tail->cs;
+	case START_LONG_FRAME:
+		lpdu_head =(struct Lpdu_head *) (dat
+		                                +sizeof(struct Frame_head));
+		//åˆ†è§£å¸§å°¾
+		farme_tail = (struct Frame_tail*)
+		                (dat+len-sizeof(struct Frame_tail));
+		//æ ¡éªŒ:å»æ‰å¤´,(å˜å˜£è„†),å»å¸§æ‰å°¾.æ ¡éªŒä¸­é—´éƒ¨åˆ†
+		cs = check_sum(dat+sizeof(struct Frame_head),
+		                len-sizeof(struct Frame_head)
+		                                -sizeof(struct Frame_tail));
+		//ç»Ÿä¸€
+		farme_link_addr = lpdu_head->link_addr;
+		c.prm = lpdu_head->c_down.prm;
+		farme_cs = farme_tail->cs;
 		break;
 	default:
-		PRINT_HERE;
+		PRINT_HERE
 		return 0x10;
 		break;
 	}
-	//1.ºÍĞ£Ñé
-	//printf("farme_cs=%02X  cs=%02X \n",farme_cs,cs);
-	if(farme_cs!=cs) {
-		PRINT_HERE;
-		printf("CS err farme_cs=0x%02X but Calculate cs=0x%02X ,Ignore.\n",
-		       farme_cs,cs);
+//1.å’Œæ ¡éªŒ
+//printf("farme_cs=%02X  check sum=%02X \n",farme_cs,cs);
+	if (farme_cs!=cs) {
+		PRINT_HERE
+		printf("CS err farme_cs=0x%02X but "
+			"Calculate cs=0x%02X ,Ignore.\n",
+		                farme_cs,
+		                cs);
 		return 0x11;
 	}
-	//2.ÅĞ¶ÏÊÇ·ñÏÂĞĞÖ¡
-	if(c.prm!=C_PRM_DOWN){
-		PRINT_HERE;
+//2.åˆ¤æ–­æ˜¯å¦ä¸‹è¡Œå¸§,çµ‚ç«¯åªæ¥æ”¶ä¸‹è¡Œçš„å¹€,ä¸æ˜¯ä¸‹è¡Œçš„ä¸€å®šæ™‚éŒ¯èª¤çš„ã€‚
+	if (c.prm!=C_PRM_DOWN) {
+		PRINT_HERE
 		printf("c.prm[%d] !=C_PRM_DOWN[%d] ,Ignore.\n",
-		       c.prm,C_PRM_DOWN);
+		c.prm, C_PRM_DOWN);
 		return 0x12;
 	}
-	//3.ÅĞ¶ÏÊÇ·ñ´«µİ¸ø±¾ÖÕ¶Ë
-	if(farme_link_addr!=this->link_addr) {
-		PRINT_HERE;
+//3.åˆ¤æ–­æ˜¯å¦ä¼ é€’ç»™æœ¬ç»ˆç«¯
+	if (farme_link_addr!=this->link_addr) {
+		PRINT_HERE
 		printf("link_addr=%d farme.link_addr=%d \n",
-		       link_addr,farme->link_addr);
+		                link_addr, farme->link_addr);
 		return 0x13;
 	}
-	//4. Ö¡¼ìÑé½áÊø: Í¨¹ı¼ìÑé ·µ»Ø0;
-	return 0;
+	return 0;//4. ç»“æŸ
 }
 
-/*½âÎö FT1.2 ¹Ì¶¨Ö¡³¤Ö¡
-in:	farme_in	ÊäÈëÖ¡
-	len_in	ÊäÈëÖ¡³¤¶È
-out:	farme_out	Êä³öÖ¡
-	len_out	Êä³öÖ¡³¤¶È
-return:	0	ÕıÈ·´¦Àí
-	·Ç0	´¦ÀíÊ§°Ü
-*/
-int Csd102::process_short_frame(const u8  *farme_in ,const int len_in,
-				u8 *farme_out,int &len_out)const
-{
-	struct Short_farme *farme=(struct Short_farme *)farme_in;
-	struct Short_farme *farme_up=(struct Short_farme *)farme_out;
-	u8 cs=0;
-	if(len_in<6) {
-		PRINT_HERE;
-		printf("len(%d) too small\n",len_in);
+/*è§£æ FT1.2 å›ºå®šå¸§é•¿å¸§
+ in:	farme_in	è¾“å…¥å¸§
+ len_in	è¾“å…¥å¸§é•¿åº¦
+ out:	farme_out	è¾“å‡ºå¸§
+ len_out	è¾“å‡ºå¸§é•¿åº¦
+ return:	0	æ­£ç¡®å¤„ç†
+ é0	å¤„ç†å¤±è´¥
+ */
+int Csd102::process_short_frame(const u8 *farme_in, const int len_in,
+        u8 *farme_out, int &len_out) const
+        {
+	struct Short_frame *farme = (struct Short_frame *) farme_in;
+	struct Short_frame *frame_up = (struct Short_frame *) farme_out;
+	u8 cs = 0;
+	if (len_in<6) {
+		PRINT_HERE
+		;
+		printf("length(%d) too small\n", len_in);
 	}
-	//·ÖÀà½âÎö
-	switch(farme->c_down.funcode) {
-	case FN_C_RCU://¸´Î»
-		//PRINT_HERE;
-		farme_up->c_up.funcode=FN_M_CON;
-		farme_up->c_up.acd=0;
-		farme_up->c_up.dfc=0;
-		farme_up->link_addr=link_addr;
-		cs=check_sum((u8*)farme_up+sizeof(START_SHORT_FARME),
-			     sizeof(union Ctrl_down)+sizeof(link_addr_t));
-		farme_up->farme_tail.cs=cs;
+//åˆ†ç±»è§£æ
+	switch (farme->c_down.funcode) {
+	case FN_C_RCU:     //å¤ä½
+//PRINT_HERE;
+		frame_up->c_up.funcode = FN_M_CON;
+		frame_up->c_up.acd = 0;
+		frame_up->c_up.dfc = 0;
+		frame_up->link_addr = link_addr;
+		cs = check_sum((u8*) frame_up+sizeof(START_SHORT_FRAME),
+		                sizeof(union Ctrl_down)+sizeof(link_addr_t));
+		frame_up->farme_tail.cs = cs;
 		break;
 	case FN_C_TRANS_DAT:
-		PRINT_HERE;
+		PRINT_HERE
 		break;
-	case FN_C_RLK://ÇëÇóÁ´Â·×´Ì¬
-		//if()
-		farme_up->c_up.funcode=FN_M_RSP;
-		farme_up->c_up.acd=0;
-		farme_up->c_up.dfc=0;
-		farme_up->link_addr=link_addr;
-		cs=check_sum((u8*)farme_up+sizeof(START_SHORT_FARME),
-			     sizeof(union Ctrl_down)+sizeof(link_addr_t));
-		farme_up->farme_tail.cs=cs;
+	case FN_C_RLK:		//è¯·æ±‚é“¾è·¯çŠ¶æ€
+//if()
+		frame_up->c_up.funcode = FN_M_RSP;
+		frame_up->c_up.acd = 0;
+		frame_up->c_up.dfc = 0;
+		frame_up->link_addr = link_addr;
+		cs = check_sum((u8*) frame_up+sizeof(START_SHORT_FRAME),
+		                sizeof(union Ctrl_down)+sizeof(link_addr_t));
+		frame_up->farme_tail.cs = cs;
 		//PRINT_HERE;
 		break;
 	case FN_C_PL1:
-		PRINT_HERE;
+		PRINT_HERE
 		break;
 	case FN_C_PL2:
-		PRINT_HERE;
+		PRINT_HERE
 		break;
 	case FN_C_RES1:
-		PRINT_HERE;
+		PRINT_HERE
 		break;
 	case FN_C_RES2:
-		PRINT_HERE;
+		PRINT_HERE
 		break;
 	default:
-		PRINT_HERE;
+		PRINT_HERE
 		break;
 	}
-	//memcpy(farme_out,&farme_up,sizeof(struct Short_farme));
-	//ÆäËû¹«¹²µÄĞÅÏ¢ ÉÏĞĞ/¿ªÊ¼/½áÊø
-	farme_up->start_byte=START_SHORT_FARME;
-	farme_up->farme_tail.end_byte=END_BYTE;
-	farme_up->c_up.prm=0;
-	farme_up->c_up.res=0;
-	len_out=sizeof(struct Short_farme);
-	//	printf("send_farme.start_byte=%x Tfarme[0]=%x t_len=%d\n"
-	//	       ,send_farme.start_byte,Tfarme[0],t_len);
+//memcpy(farme_out,&farme_up,sizeof(struct Short_farme));
+//å…¶ä»–å…¬å…±çš„ä¿¡æ¯ ä¸Šè¡Œ/å¼€å§‹/ç»“æŸ
+	frame_up->start_byte = START_SHORT_FRAME;
+	frame_up->farme_tail.end_byte = END_BYTE;
+	frame_up->c_up.prm = 0;
+	frame_up->c_up.res = 0;
+	len_out = sizeof(struct Short_frame);
+//	printf("send_farme.start_byte=%x T frame[0]=%x t_len=%d\n"
+//	       ,send_farme.start_byte,T frame[0],t_len);
 	return 0;
 }
-/*½âÎö FT1.2 ±äÖ¡³¤Ö¡
-  ½ÓÊÕ±ä³¤Ö¡,°´typ·ÖÀà´¦ÀíÏÂĞĞ±¨ÎÄ(Ö÷Õ¾·¢³öµÄ)
-  */
-int Csd102::process_long_frame(u8 const *farme_in,int const len_in, u8 *farme_out, int &len_out)
+/*è§£æ FT1.2 å˜å¸§é•¿å¸§
+ æ¥æ”¶å˜é•¿å¸§,æŒ‰ type(TYP)åˆ†ç±»å¤„ç†ä¸‹è¡ŒæŠ¥æ–‡(ä¸»ç«™å‘å‡ºçš„)
+ */
+int Csd102::process_long_frame(u8 const *farme_in, int const len_in,
+        u8 *farme_out, int &len_out)
 {
 	int ret;
-	/*´ÓÊäÈëÖ¡ÖĞ·Ö½â³öÒ»Ğ©Êı¾İµ¥Ôª
-		:Lpdu_head + Asdu_head + (ĞÅÏ¢ÌåÎ´½âÎö) + Farme_tail*/
-	struct Lpdu_head *lpdu_head=(struct Lpdu_head *)
-			(farme_in+
-			 sizeof(struct Farme_head));
-	struct Asdu_head  *asdu_head=(struct Asdu_head  *)
-			(farme_in+
-			 sizeof(struct Farme_head)+
-			 sizeof(struct Lpdu_head));
-	struct Farme_tail *farme_tail=(struct Farme_tail *)
-			(farme_in+
-			 len_in-sizeof(struct Farme_tail));
+	/*ä»è¾“å…¥å¸§ä¸­åˆ†è§£å‡ºä¸€äº›æ•°æ®å•å…ƒ
+	 :Lpdu_head + Asdu_head + (ä¿¡æ¯ä½“æœªè§£æ) + Farme_tail*/
+	struct Lpdu_head *lpdu_head = (struct Lpdu_head *)
+	                (farme_in+sizeof(struct Frame_head));
+	struct Asdu_head *asdu_head = (struct Asdu_head *)
+	                (farme_in+sizeof(struct Frame_head)+
+	                                sizeof(struct Lpdu_head));
+	struct Frame_tail *frame_tail = (struct Frame_tail *)
+	                (farme_in+
+	                                len_in-sizeof(struct Frame_tail));
 #if 0
 	printf("addr=%d , cf=%02X \n",
-	       lpdu_head->link_addr ,lpdu_head->c_down.val);
+			lpdu_head->link_addr ,lpdu_head->c_down.val);
 	printf("asdu_head->typ=%d , asdu_head->rad=%02X \n",
-	       asdu_head->typ ,asdu_head->rad);
+			asdu_head->typ ,asdu_head->rad);
 	printf("farme_tail->cs=%02X , farme_tail->end_byte=%02X \n",
-	       farme_tail->cs ,farme_tail->end_byte);
+			frame_tail->cs ,frame_tail->end_byte);
 #endif
-	switch(asdu_head->typ) {
+	last_typ = asdu_head->typ;
+	switch (asdu_head->typ) {
 	case C_RD_NA_2:
-		PRINT_HERE;
+		PRINT_HERE
 		break;
 	case C_SP_NA_2:
-		PRINT_HERE;
+		PRINT_HERE
 		break;
 	case C_SP_NB_2:
-		PRINT_HERE;
+		PRINT_HERE
+
 		break;
-	case C_TI_NA_2://¶ÁÈ¡Ê±¼ä
-		ret=fun_C_TI_NA_2(farme_out, len_out);
-		if(ret==0){
-			has_class1_dat=true;
-		}else{
-			has_class1_dat=false;
+	case C_TI_NA_2:     //è¯»å–æ—¶é—´
+		ret = fun_M_TI_TA_2(farme_out, len_out);
+		if (ret==0) {
+			has_class1_dat = true;
+		} else {
+			has_class1_dat = false;
 		}
 		//printf("farme_out[0]=%d\n",farme_out[0]);
 		//PRINT_HERE;
 		return 0;
 		break;
-	case C_CI_NR_2:
-		PRINT_HERE;
+	case C_CI_NR_2:		//è¯»å–ç”µé‡
+//ä¿å­˜é•œåƒå¸§ ä¹‹åç”¨äºè¿”å›
+		set_has_mirror_farme(true);
+		save_dat(mirror_farme.dat, farme_in, len_in);
+		mirror_farme.len = len_in;
+		ret = fun_M_IT_TA_2(farme_in, len_in, farme_out, len_out);
+		if (ret==0) {
+			has_class1_dat = true;
+		} else {
+			has_class1_dat = false;
+		}
+		//PRINT_HERE;
+		return 0;
 		break;
 	case C_CI_NS_2:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case C_SYN_TA_2:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case C_CI_NA_B_2:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case C_YC_TA_2:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case C_CI_NA_C_2:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case C_XL_NB_2:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	case C_CI_NA_D_2:
-		PRINT_HERE;
+		PRINT_HERE
+		;
 		break;
 	default:
-		PRINT_HERE;
+		PRINT_HERE
+		;
+		break;
 	}
-	//
-	farme_out[0]=0xAB;
-	len_out=1;
+//
+	farme_out[0] = 0xAB;
+	len_out = 1;
 	return 0;
 }
-//±¸·İ½ÓÊÕÖ¡
-int Csd102::save_reci_farme(void * farme,int len)
+//å¤‡ä»½æ¥æ”¶å¸§
+int Csd102::save_reci_frame(void * farme, int len)
 {
-	if(memcpy(this->reci_farme_bak,farme,len)==NULL) {
-		PRINT_HERE;
+	if (memcpy(this->reci_frame_bak, farme, len)==NULL) {
+		PRINT_HERE
+		;
 		return -1;
 	}
-	this->reci_farme_bak_len=len;
+	this->reci_frame_bak_len = len;
 	return 0;
 }
-//±¸·İ·¢ËÍÖ¡
-int Csd102::save_tran_farme(void * farme,int len,
-			    u8* bakfarme,int &bakfarme_len,bool &hasbaked)
+//å¤‡ä»½å‘é€å¸§
+int Csd102::save_tran_frame(void * frame, int len,
+        u8* bakframe, int &bakframe_len, bool &hasbaked)
 {
-	if(memcpy(bakfarme,farme,len)==NULL) {
-		PRINT_HERE;
+	if (memcpy(bakframe, frame, len)==NULL) {
+		PRINT_HERE
+		;
 		return -1;
 	}
-	bakfarme_len=len;
-	hasbaked=true;
+	bakframe_len = len;
+	hasbaked = true;
 	return 0;
 }
 int Csd102::clear_fcv(void)
 {
-	struct Short_farme farme;
-	memcpy(&farme,this->reci_farme_bak,sizeof(farme));
-	farme.c_down.fcv=0;
+	struct Short_frame frame;
+	memcpy(&frame, this->reci_frame_bak, sizeof(frame));
+	frame.c_down.fcv = 0;
 	return 0;
 }
-/*	ÕÙ»½2¼¶Êı¾İ,Ã»ÓĞ2¼¶Êı¾İ,µ«ÊÇÓĞ1¼¶Êı¾İ
- »Ø¸´M_NV_NA_2,fc:FN_M_NO_DAT Ã»ÓĞËùÕÙ»½µÄÊı¾İ(µ«ÊÇÓĞ1¼¶Êı¾İACD=1)
-	Reset Communication Unit
-*/
-int Csd102::fun_M_NV_NA_2(u8 *farme_out, int &len_out )const
-{
-	struct Short_farme * farme=(struct Short_farme *)farme_out;
-	len_out=sizeof(struct Short_farme);
-	farme->start_byte=START_SHORT_FARME;
-	farme->farme_tail.end_byte=END_BYTE;
-	farme->link_addr=this->link_addr;
-	farme->c_up.funcode=FN_M_NO_DAT;
-	farme->c_up.acd=1;
-	farme->farme_tail.cs=check_sum((u8*)farme+sizeof(START_SHORT_FARME),
-				       sizeof(union Ctrl_up )
-				       +sizeof( link_addr_t));
-	return 0;
-
-}
-/*	»Ø¸´Á´Â·×´Ì¬ÇëÇó(FN_C_RLK FC9)µÄÖ¡
-	»Ø¸´: M_LKR_NA_2 FN_M_RSP FC11 ÒÔÁ´Â·×´Ì¬»ØÓ¦
-*/
-int Csd102::fun_M_LKR_NA_2(u8 *farme_out, int &len_out )const
-{
-	struct Short_farme * farme=(struct Short_farme *)farme_out;
-	len_out=sizeof(struct Short_farme);
-	farme->start_byte=START_SHORT_FARME;
-	farme->farme_tail.end_byte=END_BYTE;
-	farme->link_addr=this->link_addr;
-	farme->c_up.prm=0;//ÉÏ´«
-	farme->c_up.funcode=FN_M_RSP;
-	farme->c_up.acd=0;
-	farme->c_up.dfc=0;//¿ÉÒÔ½ÓÊÕÊı¾İ
-	farme->farme_tail.cs=check_sum((u8*)farme+sizeof(START_SHORT_FARME),
-				       sizeof(union Ctrl_up )
-				       +sizeof( link_addr_t));
+/*	å¬å”¤2çº§æ•°æ®,æ²¡æœ‰2çº§æ•°æ®,ä½†æ˜¯æœ‰1çº§æ•°æ®
+ å›å¤M_NV_NA_2,fc:FN_M_NO_DAT æ²¡æœ‰æ‰€å¬å”¤çš„æ•°æ®(ä½†æ˜¯æœ‰1çº§æ•°æ®ACD=1)
+ Reset Communication Unit
+ */
+int Csd102::fun_M_NV_NA_2(u8 *frame_out, int &len_out) const
+        {
+	struct Short_frame * frame = (struct Short_frame *) frame_out;
+	len_out = sizeof(struct Short_frame);
+	frame->start_byte = START_SHORT_FRAME;
+	frame->farme_tail.end_byte = END_BYTE;
+	frame->link_addr = this->link_addr;
+	frame->c_up.funcode = FN_M_NO_DAT;
+	frame->c_up.acd = 1;		//æœ‰1çº§æ•°æ®
+	frame->farme_tail.cs = check_sum((u8*) frame+sizeof(START_SHORT_FRAME),
+	                sizeof(union Ctrl_up)
+	                                +sizeof(link_addr_t));
 	return 0;
 
 }
-/*	¸´Î»Ô¶·½Á´Â·È·ÈÏÖ¡ »Ø¸´C_RCU_NA_2(¸´Î»Ô¶·½Á´Â·[Í¨Ñ¶µ¥Ôª])
-	Reset Communication Unit
-*/
-int Csd102::fun_M_CON_NA_2(u8 *farme_out, int &len_out )const
-{
-	struct Short_farme * farme=(struct Short_farme *)farme_out;
-	len_out=sizeof(struct Short_farme);
-	farme->start_byte=START_SHORT_FARME;
-	farme->farme_tail.end_byte=END_BYTE;
-	farme->c_up.funcode=FN_M_CON;
-	farme->link_addr=this->link_addr;
-	farme->farme_tail.cs=check_sum((u8*)farme+sizeof(START_SHORT_FARME),
-				       sizeof(union Ctrl_up )
-				       +sizeof( link_addr_t));
+/*	å›å¤é“¾è·¯çŠ¶æ€è¯·æ±‚(FN_C_RLK FC9)çš„å¸§
+ å›å¤: M_LKR_NA_2 FN_M_RSP FC11 ä»¥é“¾è·¯çŠ¶æ€å›åº”
+ */
+int Csd102::fun_M_LKR_NA_2(u8 *frame_out, int &len_out) const
+        {
+	struct Short_frame * frame = (struct Short_frame *) frame_out;
+	len_out = sizeof(struct Short_frame);
+	frame->start_byte = START_SHORT_FRAME;
+	frame->farme_tail.end_byte = END_BYTE;
+	frame->link_addr = this->link_addr;
+	frame->c_up.prm = 0;		//ä¸Šä¼ 
+	frame->c_up.funcode = FN_M_RSP;
+	frame->c_up.acd = 0;
+	frame->c_up.dfc = 0;		//å¯ä»¥æ¥æ”¶æ•°æ®
+	frame->farme_tail.cs = check_sum((u8*) frame+sizeof(START_SHORT_FRAME),
+	                sizeof(union Ctrl_up)
+	                                +sizeof(link_addr_t));
 	return 0;
 
 }
-/*·µ»ØÖÕ¶ËÊ±¼ä
- out:	farme_out	·µ»Ø/·¢ËÍµ½Ö÷Õ¾µÄÖ¡
-	len_out		Ö¡³¤
-return:	0	³É¹¦
-*/
-int Csd102::fun_C_TI_NA_2(u8 *farme_out, int &len_out )const
-{
+/*	å¤ä½è¿œæ–¹é“¾è·¯ç¡®è®¤å¸§ å›å¤C_RCU_NA_2(å¤ä½è¿œæ–¹é“¾è·¯[é€šè®¯å•å…ƒ])
+ 	 Reset Communication Unit
+ */
+int Csd102::fun_M_CON_NA_2(u8 *frame_out, int &len_out) const
+        {
+	struct Short_frame * farme = (struct Short_frame *) frame_out;
+	len_out = sizeof(struct Short_frame);
+	farme->start_byte = START_SHORT_FRAME;
+	farme->farme_tail.end_byte = END_BYTE;
+	farme->c_up.funcode = FN_M_CON;
+	farme->link_addr = this->link_addr;
+	farme->farme_tail.cs = check_sum((u8*) farme+sizeof(START_SHORT_FRAME),
+	                sizeof(union Ctrl_up)
+	                                +sizeof(link_addr_t));
+	return 0;
 
+}
+/*è¿”å›ç»ˆç«¯æ—¶é—´å¸§ M_TI TA_2
+ out:	farme_out	è¿”å›/å‘é€åˆ°ä¸»ç«™çš„å¸§
+ len_out		å¸§é•¿
+ return:	0	æˆåŠŸ
+ */
+int Csd102::fun_M_TI_TA_2(u8 *frame_out, int &len_out) const
+        {
 	struct m_tSystime systime;
-	struct stFarme_C_TI_NA_2 *pfarme;
-	const u8 InfoObj_num=1;//ĞÅÏ¢ÌåÊıÁ¿
+	struct stFrame_M_TI_TA_2 *pframe;
+	const u8 InfoObj_num = 1;		//ä¿¡æ¯ä½“æ•°é‡
 	GetSystemTime_RTC(&systime);
-	pfarme =(struct stFarme_C_TI_NA_2 * )(farme_out);
-	memset(pfarme,0,sizeof(struct stFarme_C_TI_NA_2));
-	len_out=sizeof(struct stFarme_C_TI_NA_2);
+	pframe = (struct stFrame_M_TI_TA_2 *) (frame_out);
+	memset(pframe, 0, sizeof(struct stFrame_M_TI_TA_2));
+	len_out = sizeof(struct stFrame_M_TI_TA_2);
 
 	//pfarme->farme_head.len1=1;
-	//printf("rtu time test:farme_head.len1=%d\n",pfarme->farme_head.len1);
-	//ÕûºÏ:
-	//pfarme->farme_head.
-	pfarme->farme_head.start_byte1=START_LONG_FARME;
-	pfarme->farme_head.len1=sizeof(struct Lpdu_head)+
-			sizeof(struct Tb) ;
-	pfarme->farme_head.len2=pfarme->farme_head.len1;
-	pfarme->farme_head.start_byte2=START_LONG_FARME;
-	pfarme->lpdu_head.c_up.funcode=FN_M_SEND_DAT;
-	pfarme->lpdu_head.c_up.prm=0;
-	pfarme->lpdu_head.c_up.acd=0;
-	pfarme->lpdu_head.c_up.dfc=0;
-	pfarme->lpdu_head.link_addr=this->link_addr;
-	pfarme->asdu_head.typ=M_TI_TA_2;
-	pfarme->asdu_head.vaq.sq=0;
-	pfarme->asdu_head.vaq.n=1;
-	pfarme->asdu_head.cot.val=COT_REQUEST;
-	pfarme->asdu_head.asdu_addr=(InfoObj_num/255)+1;//¸ù¾İĞÅÏ¢ÌåµÄÊıÁ¿Ã»Ôö¼Ó255,Öµ¼Ó1,´Ó1¿ªÊ¼.
-	pfarme->asdu_head.rad=0;
-	//TODO °ÑÆäËûÊı¾İ ÒâÒåÅªÇåºó¸³Öµ
-	pfarme->tb.ms=systime.msec;
-	//pfarme->tb.eti=0;
-	pfarme->tb.second=systime.sec;
-	pfarme->tb.min=systime.min;
-	pfarme->tb.hour=systime.hour;
-	pfarme->tb.day=systime.day;
-	pfarme->tb.month=systime.mon;
-	pfarme->tb.year=systime.year;
-	pfarme->tb.week=systime.week;
-	pfarme->tb.su=0;//·ÇÏÄÁîÊ±¼ä(±ê×¼Ê±¼ä)
-	pfarme->tb.iv=0;//ÓĞĞ§
-	pfarme->tb.res1=0;//±¸ÓÃÖÃÁã
-	pfarme->tb.res2=0;
-	pfarme->farme_tail.cs=check_sum(farme_out+sizeof(struct Farme_head)
-					,len_out-sizeof(struct Farme_head)
-					-sizeof(struct Farme_tail));
-	pfarme->farme_tail.end_byte=END_BYTE;
-	//
+	//printf("RTU time test:farme_head.len1=%d\n",pfarme->farme_head.len1);
+	//æ•´åˆ:
+	pframe->farme_head.start_byte1 = START_LONG_FRAME;
+	pframe->farme_head.len1 = sizeof(struct Lpdu_head)+
+	                sizeof(struct Tb);
+	pframe->farme_head.len2 = pframe->farme_head.len1;
+	pframe->farme_head.start_byte2 = START_LONG_FRAME;
+	pframe->lpdu_head.c_up.funcode = FN_M_SEND_DAT;
+	pframe->lpdu_head.c_up.prm = 0;
+	pframe->lpdu_head.c_up.acd = 1;
+	pframe->lpdu_head.c_up.dfc = 0;
+	pframe->lpdu_head.link_addr = this->link_addr;
+	pframe->asdu_head.typ = M_TI_TA_2;
+	pframe->asdu_head.vaq.sq = 0;
+	pframe->asdu_head.vaq.n = 1;//ä¸€ä¸ªä¿¡æ¯ä½“
+	pframe->asdu_head.cot.cause = COT_REQUEST;     //cotä¼ è¾“åŸå› 
+	pframe->asdu_head.cot.pn = 0;     //
+	pframe->asdu_head.cot.t = 0;     //ä¸æ˜¯æµ‹è¯•(çœŸæ­£è¿›è¡Œæ“ä½œ)
+	pframe->asdu_head.asdu_addr = (InfoObj_num/256)+1;     //æ ¹æ®ä¿¡æ¯ä½“çš„æ•°é‡æ²¡å¢åŠ 255,å€¼åŠ 1,ä»1å¼€å§‹.
+	pframe->asdu_head.rad = 0;
+	//TODO æŠŠå…¶ä»–æ•°æ® æ„ä¹‰å¼„æ¸…åèµ‹å€¼
+	pframe->tb.ms = systime.msec;
+	//pfarme->tb.eti=0;//è´¹ç‡
+	pframe->tb.second = systime.sec;
+	pframe->tb.min = systime.min;
+	pframe->tb.hour = systime.hour;
+	pframe->tb.day = systime.day;
+	pframe->tb.month = systime.mon;
+	pframe->tb.year = systime.year;
+	pframe->tb.week = systime.week;
+	pframe->tb.su = 0;     //éå¤ä»¤æ—¶é—´(æ ‡å‡†æ—¶é—´)
+	pframe->tb.iv = 0;     //æœ‰æ•ˆ
+	pframe->tb.res1 = 0;  //å¤‡ç”¨ç½®é›¶
+	pframe->tb.res2 = 0;
+	pframe->farme_tail.cs = check_sum(frame_out+sizeof(struct Frame_head)
+	                , len_out-sizeof(struct Frame_head)
+	                -sizeof(struct Frame_tail));
+	pframe->farme_tail.end_byte = END_BYTE;
+//
 	printf("time=%d-%d-%d %d:%d:%d %dms \n",
-	       systime.year,systime.mon,systime.day,
-	       systime.hour,systime.min,systime.sec,systime.msec);
-	//	printf("rtu time test:farme_head.len1=%d sizeof farme=%d len_out=%d\n"
-	//	       "farme_out[0]= %x farme_out[1]= %x\n"
-	//	       ,pfarme->farme_head.len1,sizeof(struct Farme_time),len_out,
-	//	       farme_out[0],farme_out[1]);
+	                systime.year, systime.mon, systime.day,
+	                systime.hour, systime.min, systime.sec, systime.msec);
+//	printf("RTU time test:farme_head.len1=%d sizeof frame=%d len_out=%d\n"
+//	       "farme_out[0]= %x farme_out[1]= %x\n"
+//	       ,pfarme->farme_head.len1,sizeof(struct Farme_time),len_out,
+//	       farme_out[0],farme_out[1]);
 	return 0;
 #if 0
 	unsigned char i,ptr,sum;
 
 	m_ACD=0;
-	//m_TI=M_TI_TA_GX2;
+//m_TI=M_TI_TA_GX2;
 	m_VSQ=1;
 	m_COT=0x05;
 	ptr=0;
@@ -885,7 +985,7 @@ int Csd102::fun_C_TI_NA_2(u8 *farme_out, int &len_out )const
 	m_transBuf.m_transceiveBuf[ptr++]=systime.year;
 	sum=0;
 	for(i=4; i<ptr; i++)
-	{ sum+=m_transBuf.m_transceiveBuf[i]; }
+	{	sum+=m_transBuf.m_transceiveBuf[i];}
 	m_transBuf.m_transceiveBuf[ptr++]=sum;
 	m_transBuf.m_transceiveBuf[ptr++]=0x16;
 	m_transBuf.m_transCount=ptr;
@@ -895,28 +995,54 @@ int Csd102::fun_C_TI_NA_2(u8 *farme_out, int &len_out )const
 	return 0;
 #endif
 }
-/*Ò»°ãĞ£ÑéºÍ³ÌĞò.
-in:	a	Êı×é(u8 *)
-	len	Êı×é³¤¶È(int)
-out	ÎŞ
-return:		Ò»¸ö×Ö½ÚĞ£ÑéºÍ(u8)
-		  */
-u8 Csd102::check_sum(u8 const *a,int const len )const
-{
-	// i;
-	u8 sum=0;
-	for(int i=0; i<len; i++) {
-		sum+=a[i];
+/*å¸¦æ—¶æ ‡(T)çš„ç”µé‡(IT) ä¿¡æ¯fun_M_IT_TA_2
+ in:	frame_in
+ len_in
+ out:	frame_out	è¿”å›/å‘é€åˆ°ä¸»ç«™çš„å¸§
+ len_out		å¸§é•¿
+ return:	0	æˆåŠŸ
+ */
+int Csd102::fun_M_IT_TA_2(const u8 *frame_in, const int len_in,
+        u8 *frame_out, int &len_out) const
+        {
+	struct stFrame_C_CI_NR_2 *fin = (struct stFrame_C_CI_NR_2 *) frame_in;
+	printf("fin->start_addr=%d\n", fin->start_addr);
+	printf("fin->end_addr=%d\n", fin->end_addr);
+//è°ƒè¯•è¿”å›å¸§
+	frame_out[0] = 1;
+	frame_out[1] = 2;
+	frame_out[2] = 3;
+	frame_out[3] = 4;
+	frame_out[4] = 5;
+	len_out = 5;
+	return 0;
+}
+/*ä¸€èˆ¬æ ¡éªŒå’Œç¨‹åº.
+ in:	a	æ•°ç»„(u8 *)
+ len	æ•°ç»„é•¿åº¦(int)
+ out	æ— 
+ return:		ä¸€ä¸ªå­—èŠ‚æ ¡éªŒå’Œ(u8)
+ */
+u8 Csd102::check_sum(u8 const *a, int const len) const
+        {
+// i;
+	u8 sum = 0;
+	for (int i = 0; i<len; i++) {
+		sum += a[i];
 	}
 	return sum;
 }
-/*´òÓ¡×Ö·ûÊı×é*/
-void Csd102::print_array(const u8 *transbuf,const int len)const
-{
+/*æ‰“å°å­—ç¬¦æ•°ç»„*/
+void Csd102::print_array(const u8 *transbuf, const int len) const
+        {
 	int i;
-	for(i=0; i<len; i++) {
-		printf("%02X ",transbuf[i]);
+	for (i = 0; i<len; i++) {
+		printf("%02X ", transbuf[i]);
 	}
 	printf("\n");
-	return ;
+	return;
+}
+void Csd102::set_has_mirror_farme(bool val)
+{
+	this->has_mirror_farme=val;
 }

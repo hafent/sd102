@@ -6,8 +6,18 @@
 #include "CBASE102s.h"
 #include "sd102_struct.h"
 #include "typedefine.h"
-extern "C" CProtocol *CreateCProto_sd102();
+#define MAX_FRAME_LEN (4+255+2) //æœ€å¤§å¹€é•·,å¸§å¤´+len+å¸§å°¾
 
+struct Farme {
+	u8 dat[MAX_FRAME_LEN];
+	int len;
+};
+//1çº§æ•°æ®
+struct class1dat{
+	u8 dat[4+255+2];
+	int len;
+};
+extern "C" CProtocol *CreateCProto_sd102();
 //class Csd102 :public CProtocol
 class Csd102 :public CBASE102
 {
@@ -24,43 +34,54 @@ private:
 	void show_wait(u32 &stat);
 	int sync_head(const u8 *buf, int &farme_len) const;
 	int separate_msg(u8 *readbuf, int &len);
-	int verify_farme(const u8 *dat, const int len) const;
+	int verify_frame(const u8 *c1_dat, const int len) const;
 	union Ctrl_down get_ctrl_field(const u8 *farme,const int farme_len);
 	int confirm(u8 *farme_out,int &len_out)const;
 	int nack(u8 *farme_out,int &len_out)const;
-	int Transfer(const u8 *farme,const int farme_len);
+	int transfer(const u8 *farme,const int farme_len);
 	int process_short_frame(const u8 *recifarme, const int len,
 				u8 *farme_out, int &len_out) const;
 	int process_long_frame(const u8 *farme_in,const int len_in,
 			       u8 *farme_out, int &len_out);
-	//·ÖÀà¹¦ÄÜ
-	int fun_C_TI_NA_2(u8 *farme_out, int &len_out) const;
+	//åˆ†ç±»åŠŸèƒ½
+	int fun_M_TI_TA_2(u8 *farme_out, int &len_out) const;
 	int fun_M_CON_NA_2(u8 *farme_out, int &len_out )const;
 	int fun_M_NV_NA_2(u8 *farme_out, int &len_out )const;
 	int fun_M_LKR_NA_2(u8 *farme_out, int &len_out )const;
+	int fun_M_IT_TA_2(const u8  *farme_in ,const int len_in,
+				  u8 *farme_out, int &len_out )const;
 	u8 check_sum(const u8 *a,const int len ) const;
-	//±¸·İµÄ ½ÓÊÕÖ¡
-	u8 reci_farme_bak[4+255+2];//Ö¡
-	int reci_farme_bak_len;//Ö¡
-	//±¸·İµÄ ·¢ËÍÖ¡
-	u8 tran_farme_bak[4+255+2];//Ö¡
-	int tran_farme_bak_len;//Ö¡
-	//·¢ËÍÖ¡
 
-	int tran_farme_len;//Ö¡
+	//å¤‡ä»½çš„ æ¥æ”¶å¸§
+	u8 reci_frame_bak[MAX_FRAME_LEN];//å¸§
+	int reci_frame_bak_len;//å¸§
+	//å¤‡ä»½çš„ å‘é€å¸§
+	u8 tran_frame_bak[MAX_FRAME_LEN];//å¸§
+	int tran_frame_bak_len;//å¸§
+	//å‘é€å¸§
+
+	int tran_frame_len;//å¸§
 	int clear_fcv(void);
 	void print_array(const u8 *transbuf,const int len) const;
-	int save_reci_farme(void *farme,int len);
-	int save_tran_farme(void *farme,int len,
+	int save_reci_frame(void *farme,int len);
+	int save_tran_frame(void *farme,int len,
 			    u8 *bakfarme, int &bakfarme_len, bool &hasbaked);
+	int save_dat(u8* ddat,const u8 *sdat,const int slen)const;
 private:
-	u32 status;
+	typ_t last_typ;
+	struct Farme mirror_farme;
+	bool has_mirror_farme;
+	//int mirror_farme;
+	//u8 mfarme[MAX_FARME_LEN];
+	//int mfarme_len;
+	u32 status;//ç”¨äºæ˜¾ç¤ºæ¥æ”¶æ•°æ®çŠ¶æ€.ä¸æ˜¯å¾ˆé‡è¦
 	u16 link_addr;
-	union Ctrl_down c_bak;//Óë±¸·İÖ¡ÈßÓà
-	bool exist_backup_frame;//´æÔÚÓĞĞ§µÄ±¸·İÖ¡.×î¿ªÊ¼Ê±ÊÇÃ»ÓĞ±¸·İµÄ,Ö»ÓĞÕıÈ·´«Êä¹ıÒ»´ÎÖ®ºó²Å»á±£´æ±¸·İ
+	//union Ctrl_down c_bak;//ä¸å¤‡ä»½å¸§å†—ä½™
+	bool exist_backup_frame;//å­˜åœ¨æœ‰æ•ˆçš„å¤‡ä»½å¸§.æœ€å¼€å§‹æ—¶æ˜¯æ²¡æœ‰å¤‡ä»½çš„,åªæœ‰æ­£ç¡®ä¼ è¾“è¿‡ä¸€æ¬¡ä¹‹åæ‰ä¼šä¿å­˜å¤‡ä»½
 	bool has_class1_dat;
 	bool has_class2_dat;
-
+	struct Farme c1_dat;
+	void set_has_mirror_farme(bool val);
 #endif
 };
 #endif // SD102_H

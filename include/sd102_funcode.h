@@ -1,4 +1,4 @@
-/*¶¨ÒåÁ´Â·¹¦ÄÜÂë Link function code
+/*å®šä¹‰é“¾è·¯åŠŸèƒ½ç  Link function code
 */
 #ifndef SD102_FUNCODE_H
 #define SD102_FUNCODE_H
@@ -6,28 +6,28 @@
 
 typedef u8 link_fun_code_t;//u8:4
 
-//S2	·¢ËÍ/È·ÈÏ	ÓÉ¿ØÖÆÕ¾ÏòµçÄÜÀÛ¼ÆÁ¿Êı¾İÖÕ¶Ë·¢ËÍÃüÁîµÈ(Ğ´Ö¸Áî)
-//S3	ÇëÇó/ÏìÓ¦	ÓÉ¿ØÖÆÕ¾ÏòµçÄÜÀÛ¼ÆÁ¿Êı¾İÖÕ¶ËÕÙ»½Êı¾İ»òÊÂ¼ş(¶ÁÊı¾İ)
+//S2	å‘é€/ç¡®è®¤	ç”±æ§åˆ¶ç«™å‘ç”µèƒ½ç´¯è®¡é‡æ•°æ®ç»ˆç«¯å‘é€å‘½ä»¤ç­‰(å†™æŒ‡ä»¤)
+//S3	è¯·æ±‚/å“åº”	ç”±æ§åˆ¶ç«™å‘ç”µèƒ½ç´¯è®¡é‡æ•°æ®ç»ˆç«¯å¬å”¤æ•°æ®æˆ–äº‹ä»¶(è¯»æ•°æ®)
 
-// C3.2.5 ¹¦ÄÜÂë:¿ØÖÆÕ¾ÏòµçÄÜÀÛ¼ÆÁ¿Êı¾İÖÕ¶Ë´«ÊäµÄÖ¡ÖĞ¹¦ÄÜÂëµÄ¶¨Òå Ctrl(ÏÂĞĞ)
-//Ö¡ÀàĞÍ 0,3 ·¢ËÍ/È·ÈÏ Ö¡ S2
-const link_fun_code_t FN_C_RCU  =0;//¸´Î» Reset Communication Unit
-const link_fun_code_t FN_C_TRANS_DAT  =3;//´«ÊäÊı¾İ trans date
-//Ö¡ÀàĞÍ 9,10,11 ÇëÇó/ÏìÓ¦ Ö¡ S3
-const link_fun_code_t FN_C_RLK  =9;//ÕÙ»½Á´Â· call link ÇëÇóÁ´Â·×´Ì¬
-const link_fun_code_t FN_C_PL1 =10;//ÕÙ»½1¼¶Á´Â· call class 1 data
-const link_fun_code_t FN_C_PL2 =11;//ÕÙ»½2¼¶Á´Â· call class 2 date
-const link_fun_code_t FN_C_RES1=12;//±¸ÓÃ1
-const link_fun_code_t FN_C_RES2=13;//±¸ÓÃ2
+// C3.2.5 åŠŸèƒ½ç :æ§åˆ¶ç«™å‘ç”µèƒ½ç´¯è®¡é‡æ•°æ®ç»ˆç«¯ä¼ è¾“çš„å¸§ä¸­åŠŸèƒ½ç çš„å®šä¹‰ Ctrl(ä¸‹è¡Œ)
+//å¸§ç±»å‹ 0,3 å‘é€/ç¡®è®¤ å¸§ S2
+const link_fun_code_t FN_C_RCU  =0;//å¤ä½ Reset Communication Unit
+const link_fun_code_t FN_C_TRANS_DAT  =3;//ä¼ è¾“æ•°æ® Transport date
+//å¸§ç±»å‹ 9,10,11 è¯·æ±‚/å“åº” å¸§ S3
+const link_fun_code_t FN_C_RLK  =9;//å¬å”¤é“¾è·¯ call link è¯·æ±‚é“¾è·¯çŠ¶æ€
+const link_fun_code_t FN_C_PL1 =10;//å¬å”¤1çº§é“¾è·¯ call class 1 data
+const link_fun_code_t FN_C_PL2 =11;//å¬å”¤2çº§é“¾è·¯ call class 2 date
+const link_fun_code_t FN_C_RES1=12;//å¤‡ç”¨1
+const link_fun_code_t FN_C_RES2=13;//å¤‡ç”¨2
 
 
-// C3.3.4 ¹¦ÄÜÂë:µçÄÜÀÛ¼ÆÁ¿Êı¾İÖÕ¶ËÏò¿ØÖÆÕ¾´«ÊäµÄÖ¡ÖĞ¹¦ÄÜÂëµÄ¶¨Òå Monitor(ÉÏĞĞ)
-//Ö¡ÀàĞÍ: 0 1 È·ÈÏ S2
-const link_fun_code_t FN_M_CON =0;//È·ÈÏ Confirm
-const link_fun_code_t FN_M_LINK_BUSY	 =1;//Á´Â··±Ã¦ link busy
-//Ö¡ÀàĞÍ: 8 9 11 ÏìÓ¦ S3
-const link_fun_code_t FN_M_SEND_DAT  =8;//ÒÔÊı¾İÏìÓ¦ÇëÇóÖ¡ send data
-const link_fun_code_t FN_M_NO_DAT  =9;//Ã»ÓĞËùÕÙ»½µÄÊı¾İ no data
-const link_fun_code_t FN_M_RSP =11;//ÒÔÁ´Â·×´Ì¬»ò·ÃÎÊÇëÇó»Ø´ğÇëÇóÖ¡ Response
+// C3.3.4 åŠŸèƒ½ç :ç”µèƒ½ç´¯è®¡é‡æ•°æ®ç»ˆç«¯å‘æ§åˆ¶ç«™ä¼ è¾“çš„å¸§ä¸­åŠŸèƒ½ç çš„å®šä¹‰ Monitor(ä¸Šè¡Œ)
+//å¸§ç±»å‹: 0 1 ç¡®è®¤ S2
+const link_fun_code_t FN_M_CON =0;//ç¡®è®¤ Confirm
+const link_fun_code_t FN_M_LINK_BUSY =1;//é“¾è·¯ç¹å¿™ link busy
+//å¸§ç±»å‹: 8 9 11 å“åº” S3
+const link_fun_code_t FN_M_SEND_DAT  =8;//ä»¥æ•°æ®å“åº”è¯·æ±‚å¸§ send data
+const link_fun_code_t FN_M_NO_DAT  =9;//æ²¡æœ‰æ‰€å¬å”¤çš„æ•°æ® no data
+const link_fun_code_t FN_M_RSP =11;//ä»¥é“¾è·¯çŠ¶æ€æˆ–è®¿é—®è¯·æ±‚å›ç­”è¯·æ±‚å¸§ Response
 
 #endif // SD102_FUNCODE_H

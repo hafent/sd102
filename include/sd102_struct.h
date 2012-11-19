@@ -1,49 +1,50 @@
 /* File encode:	 GB2312
    filename:	sd102_struct.h
-É½¶«102¹æÔ¼ ½á¹¹Ìå¶¨ÒåÍ·ÎÄ¼ş
-Î´×¢Ã÷µÄÕÂ½ÚºÅÄÚÈİ²Î¿¼×ÊÁÏ1,ÆäËûÕÂ½ÚºÅ¼ûÆä¾ßÌåĞ­Òé±àºÅ.
-ÆäËûËµÃ÷:
-	Êı¾İ¸ñÊ½°´ÕÕ GB/T18657.4 dit IEC60870-5-4
-	*_t ÎªÎŞ·ûºÅÕûĞÍÊı¾İ(8Î»/16Î»µÈ)
-	Ê××ÖÄ¸´óĞ´µÄµ¥´ÊÎª½á¹¹ÌåÀàĞÍ/ÁªºÏÌå Èç  It Vsq
-²Î¿¼×ÊÁÏ:
-	1.É½¶«µçÍø DL/T 719-2000 µçÁ¦ÏµÍ³µçÄÜÀÛ¼ÆÁ¿´«ÊäÅäÌ×±ê×¼ÊµÊ©¹æ·¶(2011) ref IEC60870-5-102
+å±±ä¸œ102è§„çº¦ ç»“æ„ä½“å®šä¹‰å¤´æ–‡ä»¶
+æœªæ³¨æ˜çš„ç« èŠ‚å·å†…å®¹å‚è€ƒèµ„æ–™1,å…¶ä»–ç« èŠ‚å·è§å…¶å…·ä½“åè®®ç¼–å·.
+å…¶ä»–è¯´æ˜:
+	æ•°æ®æ ¼å¼æŒ‰ç…§ GB/T18657.4 idt IEC60870-5-4
+	*_t ä¸ºæ— ç¬¦å·æ•´å‹æ•°æ®(8ä½/16ä½ç­‰)
+	é¦–å­—æ¯å¤§å†™çš„å•è¯ä¸ºç»“æ„ä½“ç±»å‹/è”åˆä½“ å¦‚  It Vsq
+å‚è€ƒèµ„æ–™:
+	1.å±±ä¸œç”µç½‘ DL/T 719-2000 ç”µåŠ›ç³»ç»Ÿç”µèƒ½ç´¯è®¡é‡ä¼ è¾“é…å¥—æ ‡å‡†å®æ–½è§„èŒƒ(2011)
+	 	 ref IEC60870-5-102
 	2.http://en.wikipedia.org/wiki/IEC_60870-5
 */
 #ifndef SD102_STRUCT_H
 #define SD102_STRUCT_H
 #include "typedefine.h"
-//°üº¬¸÷ÖÖÇéĞÎµÄ·ÖÀà±àÂë
-#include "sd102_funcode.h" //¹¦ÄÜÂë
-#include "sd102_typ.h" //ÀàĞÍÂë
-#include "sd102_cot.h" //´«ÊäÔ­Òò·ÖÀà
-#include "sd102_start_char.h" //ÆğÊ¼Âë
-#pragma pack(1) //±¾ÎÄ¼şÄÚËùÓĞ½á¹¹ÌåÑ¹Ëõ!°´ÕÕ¹æÔ¼Ëù¹æ¶¨½ô´Õ·Ö²¼
-// ÊÂ¼ş
-#define SPQ_ERTU_RST_GX	1
-#define SPQ_ERTU_CLOSE_GX	1 //ÏµÍ³µôµç
-#define SPQ_SYN_TIME_GX 	2//¶ÔÊ±
-#define SPQ_PARA_MOD_GX	1//²ÎÊıĞŞ¸Ä
-#define SPQ_COMM_ERR_GX 48//±í¼ÆÍ¨Ñ¶¹ÊÕÏ
-#define SPQ_COMM_SUCCESS 49//±í¼ÆÍ¨Ñ¶³É¹¦
-#define SPQ_LOW_VA_GX  53	//
-#define SPQ_LOW_VB_GX   54	//
-#define SPQ_LOW_VC_GX   55 	//
-#define SPA_ERTU_RST_GX	1
-#define SPA_ERTU_CLOSE_GX 3 //ÏµÍ³µôµç
-#define SPA_SYN_TIME_GX 	7//¶ÔÊ±
-#define SPA_PARA_MOD_GX	8//²ÎÊıĞŞ¸Ä
-//6.1´«ÊäÖ¡¸ñÊ½
-typedef u16 link_addr_t;//Á´Â·µØÖ·
-//7.2.2 ¿É±ä½á¹¹ÏŞ¶¨´Ê£¨VARIABLE OF STRUCTURE QUALIFIER£©
+//åŒ…å«å„ç§æƒ…å½¢çš„åˆ†ç±»ç¼–ç 
+#include "sd102_funcode.h" //åŠŸèƒ½ç 
+#include "sd102_typ.h" //ç±»å‹ç 
+#include "sd102_cot.h" //ä¼ è¾“åŸå› åˆ†ç±»
+#include "sd102_start_char.h" //èµ·å§‹ç 
+#pragma pack(1) //æœ¬æ–‡ä»¶å†…æ‰€æœ‰ç»“æ„ä½“å‹ç¼©!æŒ‰ç…§è§„çº¦æ‰€è§„å®šç´§å‡‘åˆ†å¸ƒ
+// äº‹ä»¶
+#define SPQ_ERTU_RST_GX		1
+#define SPQ_ERTU_CLOSE_GX	1//ç³»ç»Ÿæ‰ç”µ
+#define SPQ_SYN_TIME_GX 	2//å¯¹æ—¶
+#define SPQ_PARA_MOD_GX		1//å‚æ•°ä¿®æ”¹
+#define SPQ_COMM_ERR_GX 	48//è¡¨è®¡é€šè®¯æ•…éšœ
+#define SPQ_COMM_SUCCESS 	49//è¡¨è®¡é€šè®¯æˆåŠŸ
+#define SPQ_LOW_VA_GX  		53//
+#define SPQ_LOW_VB_GX   	54//
+#define SPQ_LOW_VC_GX   	55//
+#define SPA_ERTU_RST_GX		1
+#define SPA_ERTU_CLOSE_GX 	3 //ç³»ç»Ÿæ‰ç”µ
+#define SPA_SYN_TIME_GX 	7//å¯¹æ—¶
+#define SPA_PARA_MOD_GX		8//å‚æ•°ä¿®æ”¹
+//6.1ä¼ è¾“å¸§æ ¼å¼
+typedef u16 link_addr_t;//é“¾è·¯åœ°å€
+//7.2.2 å¯å˜ç»“æ„é™å®šè¯ï¼ˆVARIABLE OF STRUCTURE QUALIFIERï¼‰
 union  Vsq {
 	u8 val;
 	struct {
 		u8 n:7;
-		u8 sq:1;//nµÄÑ°Ö··½Ê½:0-Ë³Ğò 1-µ¥¶À.
+		u8 sq:1;//nçš„å¯»å€æ–¹å¼:0-é¡ºåº 1-å•ç‹¬.
 	};
 };
-//7.2.3 ´«ËÍÔ­Òò (Cause Of Transmission)
+//7.2.3 ä¼ é€åŸå›  (Cause Of Transmission)
 union Cot {
 	u8 val;
 	struct {
@@ -52,28 +53,28 @@ union Cot {
 		u8 t:1;
 	};
 };
-//7.2.4 µçÄÜÀÛ¼ÆÁ¿Êı¾İÖÕ¶ËÉè±¸µØÖ·(Ó¦ÓÃ·şÎñµ¥Ôª¹«¹²µØÖ·)ASDU_addr
-typedef u16 asdu_addr_t; //Ğ­ÒéÒ»Ğ¡Î²¶Ë·½Ê½´æ´¢,Í¬ÊÇĞ¡Î²¶Ë²»ĞèÒª×ª»»
-//7.2.5 ¼ÇÂ¼µØÖ·(RAD)	Record Address
+//7.2.4 ç”µèƒ½ç´¯è®¡é‡æ•°æ®ç»ˆç«¯è®¾å¤‡åœ°å€(åº”ç”¨æœåŠ¡å•å…ƒå…¬å…±åœ°å€)ASDU_addr
+typedef u16 asdu_addr_t; //åè®®ä¸€å°å°¾ç«¯æ–¹å¼å­˜å‚¨,åŒæ˜¯å°å°¾ç«¯ä¸éœ€è¦è½¬æ¢
+//7.2.5 è®°å½•åœ°å€(RAD)	Record Address
 typedef u8 rad_t;
-//7.2.6 ĞÅÏ¢ÌåµØÖ·(IOA) Information Object Address
+//7.2.6 ä¿¡æ¯ä½“åœ°å€(IOA) Information Object Address
 typedef u8 ioa_t;
-//7.2.7.1 ĞòÁĞºÅºÍÊı¾İ×´Ì¬ ×Ö½Ú //sd102ÖĞÈ«¸ÄÎª×´Ì¬Î»,
+//7.2.7.1 åºåˆ—å·å’Œæ•°æ®çŠ¶æ€ å­—èŠ‚ //sd102ä¸­å…¨æ”¹ä¸ºçŠ¶æ€ä½,
 union Seq_number {
 	u8 val;
 	struct {
-		u8 sn:5;//ĞòÁĞºÅ
+		u8 sn:5;//åºåˆ—å·
 		u8 cy:1;//carry
-		u8 ca:1;//¼ÆÊıÆ÷±»µ÷Õû(CA£½counter was adjusted)
-		u8 iv:1;//ÎŞĞ§(IV£½invalid)
+		u8 ca:1;//è®¡æ•°å™¨è¢«è°ƒæ•´(CAï¼counter was adjusted)
+		u8 iv:1;//æ— æ•ˆ(IVï¼invalid)
 	};
 };
-//7.2.7.1 ĞòÁĞºÅºÍÊı¾İ×´Ì¬ ×Ö½Ú //Ìæ´úÉÏÃæµÄ
+//7.2.7.1 åºåˆ—å·å’Œæ•°æ®çŠ¶æ€ å­—èŠ‚ //æ›¿ä»£ä¸Šé¢çš„
 union Data_status {
 	u8 val;
 	struct {
 		u8 lv:1;//lost v
-		u8 phb:1;//¶ÏÏà
+		u8 phb:1;//æ–­ç›¸
 		u8 lc:1;//lose current
 		u8 wph:1;// wrong phase
 		u8 blv:1;//Battery lose voltage
@@ -82,46 +83,46 @@ union Data_status {
 		u8 iv:1;//invalid
 	};
 };
-//7.2.7.1 µçÄÜÀÛ¼ÆÁ¿ IT (Integrated total)
+//7.2.7.1 ç”µèƒ½ç´¯è®¡é‡ IT (Integrated total)
 struct	It {
 	u32 dat;
 	union Data_status d_status;
 };
-//7.2.7.2 Ê±¼äĞÅÏ¢ a(Time information a,·ÖÖÁÄê)
+//7.2.7.2 æ—¶é—´ä¿¡æ¯ a(Time information a,åˆ†è‡³å¹´)
 struct Ta {
 	u8 min:6;
-	u8 tis:1;//·ÑÂÊĞÅÏ¢¿ª¹Ø 0-off tariff information switch
-	u8 iv:1;//Ê±¼ä³ÂÊöÎŞĞ§±êÖ¾Î» invalid
+	u8 tis:1;//è´¹ç‡ä¿¡æ¯å¼€å…³ 0-off tariff information switch
+	u8 iv:1;//æ—¶é—´é™ˆè¿°æ— æ•ˆæ ‡å¿—ä½ invalid
 	//
 	u8 hour:5;
-	u8 res1:2;//±¸ÓÃ reserve 1 <0>
-	u8 su:1;//ÏÄÁîÊ± summer time
+	u8 res1:2;//å¤‡ç”¨ reserve 1 <0>
+	u8 su:1;//å¤ä»¤æ—¶ summer time
 	//
-	u8 day:5;//¼¸ºÅ 1-31
-	u8 week:3;//ĞÇÆÚ¼¸ 1-7
+	u8 day:5;//å‡ å· 1-31
+	u8 week:3;//æ˜ŸæœŸå‡  1-7
 	//
 	u8 month:4;
-	u8 eti:2; //ÄÜÁ¿·ÑÂÊĞÅÏ¢(ETI£½energy tariff information)
-	u8 pti:2;//¹¦ÂÊ·ÑÂÊĞÅÏ¢(PTI£½power tariff information)
+	u8 eti:2; //èƒ½é‡è´¹ç‡ä¿¡æ¯(ETIï¼energy tariff information)
+	u8 pti:2;//åŠŸç‡è´¹ç‡ä¿¡æ¯(PTIï¼power tariff information)
 	//
 	u8 year:7;
-	u8 res2:1;//±¸ÓÃ2(RES2£½reserve 2) <0>
+	u8 res2:1;//å¤‡ç”¨2(RES2ï¼reserve 2) <0>
 };
-//7.2.7.3 Ê±¼äĞÅÏ¢ b(Time information b,ºÁÃëÖÁÄê)
+//7.2.7.3 æ—¶é—´ä¿¡æ¯ b(Time information b,æ¯«ç§’è‡³å¹´)
 struct Tb {
-	u16 ms:10;//ºÁÃë <0..999>
+	u16 ms:10;//æ¯«ç§’ <0..999>
 	u16 second:6;
 	//
 	u8 min:6;
-	u8 tis:1;//·ÑÂÊĞÅÏ¢¿ª¹Ø 0-off tariff information switch
-	u8 iv:1;//Ê±¼ä³ÂÊöÎŞĞ§±êÖ¾Î» invalid
+	u8 tis:1;//è´¹ç‡ä¿¡æ¯å¼€å…³ 0-off tariff information switch
+	u8 iv:1;//æ—¶é—´é™ˆè¿°æ— æ•ˆæ ‡å¿—ä½ invalid
 	//
 	u8 hour:5;
-	u8 res1:2;//±¸ÓÃ reserve 1
-	u8 su:1;//ÏÄÁîÊ± summer time
+	u8 res1:2;//å¤‡ç”¨ reserve 1
+	u8 su:1;//å¤ä»¤æ—¶ summer time
 	//
-	u8 day:5;//¼¸ºÅ 1-31
-	u8 week:3;//ĞÇÆÚ¼¸ 1-7
+	u8 day:5;//å‡ å· 1-31
+	u8 week:3;//æ˜ŸæœŸå‡  1-7
 	//
 	u8 month:4;// <1..12>
 	u8 eti:2; //energy tariff information
@@ -130,169 +131,169 @@ struct Tb {
 	u8 year:7;
 	u8 res2:1;//reserve 2
 };
-//7.2.7.4 ±ê×¼µÄÈÕÆÚ(DOS)Date of standard
+//7.2.7.4 æ ‡å‡†çš„æ—¥æœŸ(DOS)Date of standard
 struct Dos {
-	u8 month:4;//ÔÂ <1..12>
-	u8 year:4;//Äê <	0..9>
+	u8 month:4;//æœˆ <1..12>
+	u8 year:4;//å¹´ <	0..9>
 };
-//7.2.7.5 ÖÆÔì³§±àÂë Manufactuer code
+//7.2.7.5 åˆ¶é€ å‚ç¼–ç  Manufacturer code
 typedef u8 factcode_t; //<0..255>
-//7.2.7.6 ²úÆ·±àÂë product code ;BS32 bit strings 32bits
+//7.2.7.6 äº§å“ç¼–ç  product code ;BS32 bit strings 32bits
 typedef u32 productcode_bs;
-//7.2.7.7 ´øµØÖ·ºÍÏŞ¶¨´ÊµÄµ¥µãĞÅÏ¢ single-piont information
+//7.2.7.7 å¸¦åœ°å€å’Œé™å®šè¯çš„å•ç‚¹ä¿¡æ¯ single-point information
 struct Spinfo {
-	u8 spa;//single-point addr
+	u8 spa;//single-point address
 	u8 spi:1;//
 	u8 spq:7;//
 };
-//7.2.7.8 µçÄÜÀÛ¼ÆÁ¿Êı¾İ±£»¤µÄĞ£ºË TODO:ÔÙÏêÏ¸²éÔÄ¹æÔ¼,²éÑ¯¶ÔÄÇ¼¸²¿·ÖCS
+//7.2.7.8 ç”µèƒ½ç´¯è®¡é‡æ•°æ®ä¿æŠ¤çš„æ ¡æ ¸ TODO:å†è¯¦ç»†æŸ¥é˜…è§„çº¦,æŸ¥è¯¢å¯¹é‚£å‡ éƒ¨åˆ†CS
 typedef u8 signature_t;
-//7.2.7.9 ³õÊ¼»¯Ô­Òò Cause of initialization
+//7.2.7.9 åˆå§‹åŒ–åŸå›  Cause of initialization
 union Coi {
 	u8 val;
 	struct {
-		u8 coi:7;
+		u8 coi:7;//åˆå§‹åŒ–åŸå› 
 		u8 bs:1;
 	};
 };
-//7.2.7.10 ¸´·ÑÂÊµçÄÜÀÛ¼ÆÁ¿ Multi-rate  Integrated total
+//7.2.7.10 å¤è´¹ç‡ç”µèƒ½ç´¯è®¡é‡ Multi-rate  Integrated total
 struct Multi_it {
 	u32 total;
-	u32 rate1;//·ÑÂÊ1
+	u32 rate1;//è´¹ç‡1
 	u32 rate2;
 	u32 rate3;
 	u32 rate4;
-	u32 rate5;//±£ÁôÎª0
+	u32 rate5;//ä¿ç•™ä¸º0
 	union Data_status d_status;
 };
-//7.2.7.11 ÔÂ½áËã¸´·ÑÂÊµçÄÜÀÛ¼ÆÁ¿ Monthly balance sheet multi-rate  IT
+//7.2.7.11 æœˆç»“ç®—å¤è´¹ç‡ç”µèƒ½ç´¯è®¡é‡ Monthly balance sheet multi-rate  IT
 struct Month_mit {
 	u32 total;
-	u32 rate1;//·ÑÂÊ1
+	u32 rate1;//è´¹ç‡1
 	u32 rate2;
 	u32 rate3;
 	u32 rate4;
-	u32 rate5;//±£ÁôÎª0
+	u32 rate5;//ä¿ç•™ä¸º0
 	union Data_status d_status;
 };
-//7.2.7.12 ÔÂ×Ü×î´óĞèÁ¿¼°·¢ÉúÊ±¼ä Monthly total demand and time
+//7.2.7.12 æœˆæ€»æœ€å¤§éœ€é‡åŠå‘ç”Ÿæ—¶é—´ Monthly total demand and time
 struct Month_maxdemand {
-	u32 total_maxdemand;//ÔÂ×Ü×î´óĞèÁ¿Öµ
+	u32 total_maxdemand;//æœˆæ€»æœ€å¤§éœ€é‡å€¼
 	struct Ta occur_time;
 };
-//7.2.7.13 Ò£²âÁ¿ Remote measurement
+//7.2.7.13 é¥æµ‹é‡ Remote measurement
 struct	Remote_measure {
 	u32 dat;
 	union Data_status d_status;
 };
-//7.2.7.14 ±í¼ÆĞ³²¨Êı¾İ Meter harmonic data
+//7.2.7.14 è¡¨è®¡è°æ³¢æ•°æ® Meter harmonic data
 struct Harmonic_data {
 	u32  fa_thd ;//forward active Total harmonic power
 	u32  ra_thd;//Reverse active total harmonic power
 	u32  ta_distortion;//Total active the harmonic power consumption distortion rate
 	u32  v_distortion;//Total voltage harmonic distortion
 	u32  c_distortion;//Total current harmonic distortion
-	u32  res1;//±¸ÓÃ1 reserve 1
-	u32  res2;//±¸ÓÃ2
-	u32  res3;//±¸ÓÃ3
+	u32  res1;//å¤‡ç”¨1 reserve 1
+	u32  res2;//å¤‡ç”¨2
+	u32  res3;//å¤‡ç”¨3
 };
-/*ÌØ¶¨Ó¦ÓÃ·şÎñÊı¾İµ¥ÔªµÄ¶¨ÒåºÍ±íÊ¾
+/*ç‰¹å®šåº”ç”¨æœåŠ¡æ•°æ®å•å…ƒçš„å®šä¹‰å’Œè¡¨ç¤º
   APDU(Application Service Data Unit)
   */
-//7.3.1 ÔÚ¼àÊÓ·½ÏòÉÏµÄ¹ı³ÌĞÅÏ¢µÄÓ¦ÓÃ·şÎñÊı¾İµ¥Ôª
-//7.3.1.1 ¼àÊÓ(Monitor)·½Ïò ´øÊ±±êµÄµ¥µãĞÅÏ¢(Single-Point)
+//7.3.1 åœ¨ç›‘è§†æ–¹å‘ä¸Šçš„è¿‡ç¨‹ä¿¡æ¯çš„åº”ç”¨æœåŠ¡æ•°æ®å•å…ƒ
+//7.3.1.1 ç›‘è§†(Monitor)æ–¹å‘ å¸¦æ—¶æ ‡çš„å•ç‚¹ä¿¡æ¯(Single-Point)
 struct M_SP_TA_2_InfoObj {
 	struct Spinfo sp;
 	struct Tb tb;
 };
-//7.3.1.2 µçÄÜÀÛ¼ÆÁ¿ information object
+//7.3.1.2 ç”µèƒ½ç´¯è®¡é‡ information object
 struct M_IT_TA_2_InfoObj {
 	ioa_t ioa;//
 	struct It it_power;
-	signature_t cs;//µçÄÜÀÛ¼ÆÁ¿Êı¾İ±£»¤µÄĞ£ºË
+	signature_t cs;//ç”µèƒ½ç´¯è®¡é‡æ•°æ®ä¿æŠ¤çš„æ ¡æ ¸
 };
-//7.3.1.3 ¸´·ÑÂÊ¼ÇÕÊ(¼Æ·Ñ)µçÄÜÀÛ¼ÆÁ¿ information object
+//7.3.1.3 å¤è´¹ç‡è®°å¸(è®¡è´¹)ç”µèƒ½ç´¯è®¡é‡ information object
 struct M_IT_TA_B_2_InfoObj {
 	ioa_t ioa;//
 	struct Multi_it mit;
-	signature_t cs;//µçÄÜÀÛ¼ÆÁ¿Êı¾İ±£»¤µÄĞ£ºË
+	signature_t cs;//ç”µèƒ½ç´¯è®¡é‡æ•°æ®ä¿æŠ¤çš„æ ¡æ ¸
 };
-//7.3.1.4Ò£²âÀúÊ·Á¿ History of remote measurement -information object
+//7.3.1.4é¥æµ‹å†å²é‡ History of remote measurement -information object
 struct M_YC_TA_2_InfoObj {
 	ioa_t ioa;//
 	struct Remote_measure rm;
 };
-//7.3.1.5 ÔÂ×î´óĞèÁ¿¼°·¢ÉúÊ±¼ä Ë³ĞòĞÅÏ¢Ìå(SQ=0) Information Object
+//7.3.1.5 æœˆæœ€å¤§éœ€é‡åŠå‘ç”Ÿæ—¶é—´ é¡ºåºä¿¡æ¯ä½“(SQ=0) Information Object
 struct M_MMD_TA_InfoObj {
 	ioa_t ioa;//
 	struct Month_maxdemand mmd;
 };
-//7.3.1.6 ÔÂ½áËã¸´·ÑÂÊµçÄÜÀÛ¼ÆÁ¿ Information Object
+//7.3.1.6 æœˆç»“ç®—å¤è´¹ç‡ç”µèƒ½ç´¯è®¡é‡ Information Object
 struct M_MMIT_InfoObj {
 	ioa_t ioa;//
 	struct Month_mit mmit;
 };
-//7.3.1.7 ±í¼ÆĞ³²¨Êı¾İ Ë³ĞòĞÅÏ¢Ìå(SQ=0) information object
+//7.3.1.7 è¡¨è®¡è°æ³¢æ•°æ® é¡ºåºä¿¡æ¯ä½“(SQ=0) information object
 struct M_THD_InfoObj {
 	ioa_t ioa;//
 	struct Harmonic_data mhd;
 };
-//7.3.2 ÔÚ¼àÊÓ·½ÏòÉÏµÄÏµÍ³ĞÅÏ¢µÄÓ¦ÓÃ·şÎñÊı¾İµ¥Ôª
-//7.3.2.1 ³õÊ¼»¯½áÊø
+//7.3.2 åœ¨ç›‘è§†æ–¹å‘ä¸Šçš„ç³»ç»Ÿä¿¡æ¯çš„åº”ç”¨æœåŠ¡æ•°æ®å•å…ƒ
+//7.3.2.1 åˆå§‹åŒ–ç»“æŸ
 struct M_EI_NA_2_InfoObj {
 	ioa_t ioa;//
 	union Coi coi;
 };
-//7.3.2.2 µçÄÜÀÛ¼ÆÁ¿Êı¾İÖÕ¶ËÉè±¸µÄÖÆÔì³§ºÍ²úÆ·µÄ¹æ·¶
+//7.3.2.2 ç”µèƒ½ç´¯è®¡é‡æ•°æ®ç»ˆç«¯è®¾å¤‡çš„åˆ¶é€ å‚å’Œäº§å“çš„è§„èŒƒ
 struct P_MP_NA_2_iObj {
 	struct Dos dos;
 	factcode_t fcode;
 	productcode_bs pcode;
 };
-//7.3.2.3  µçÄÜÀÛ¼ÆÁ¿Êı¾İÖÕ¶ËÉè±¸Ä¿Ç°µÄÏµÍ³Ê±¼ä
+//7.3.2.3  ç”µèƒ½ç´¯è®¡é‡æ•°æ®ç»ˆç«¯è®¾å¤‡ç›®å‰çš„ç³»ç»Ÿæ—¶é—´
 struct M_TI_TA_2_iObj {
 	struct Tb Time;
 };
-//7.3.3 ÔÚ¿ØÖÆ·½ÏòÉÏµÄÏµÍ³ĞÅÏ¢µÄÓ¦ÓÃ·şÎñÊı¾İµ¥Ôª
-//7.3.3.1 ¶ÁÖÆÔì³§ºÍ²úÆ·µÄ¹æ·¶
+//7.3.3 åœ¨æ§åˆ¶æ–¹å‘ä¸Šçš„ç³»ç»Ÿä¿¡æ¯çš„åº”ç”¨æœåŠ¡æ•°æ®å•å…ƒ
+//7.3.3.1 è¯»åˆ¶é€ å‚å’Œäº§å“çš„è§„èŒƒ
 //struct C_RD_NA_2_iObj{
-//	//Ã»ÓĞĞÅÏ¢Ìå = =
+//	//æ²¡æœ‰ä¿¡æ¯ä½“ = =
 //};
-//7.3.3.2 ¶Á´øÊ±±êµÄµ¥µãĞÅÏ¢¼ÇÂ¼
+//7.3.3.2 è¯»å¸¦æ—¶æ ‡çš„å•ç‚¹ä¿¡æ¯è®°å½•
 /*struct C_SP NA_2{
-	 //Ã»ÓĞĞÅÏ¢Ìå
+	 //æ²¡æœ‰ä¿¡æ¯ä½“
  };*/
-//7.3.3.3 ¶ÁÑ¡¶¨Ê±¼ä·¶Î§µÄ´øÊ±±êµÄµ¥µã(SP)ĞÅÏ¢¼ÇÂ¼
+//7.3.3.3 è¯»é€‰å®šæ—¶é—´èŒƒå›´çš„å¸¦æ—¶æ ‡çš„å•ç‚¹(SP)ä¿¡æ¯è®°å½•
 struct C_SP_NB_2_iObj {
 	struct Ta starttime;
 	struct Ta endtime;
 };
-//7.3.3.4 ¶ÁµçÄÜÀÛ¼ÆÁ¿Êı¾İÖÕ¶ËÉè±¸µÄÄ¿Ç°µÄÏµÍ³Ê±¼ä
+//7.3.3.4 è¯»ç”µèƒ½ç´¯è®¡é‡æ•°æ®ç»ˆç«¯è®¾å¤‡çš„ç›®å‰çš„ç³»ç»Ÿæ—¶é—´
 /*struct C_TI_NA_2_iObj{
-	//Ã»ÓĞĞÅÏ¢Ìå
+	//æ²¡æœ‰ä¿¡æ¯ä½“
 };*/
-//7.3.3.5 ¶ÁÒ»¸öÑ¡¶¨µÄÊ±¼ä·¶Î§ºÍÒ»¸öÑ¡¶¨µÄµØÖ··¶Î§µÄÔÂ½áËã¸´·ÑÂÊµçÄÜÀÛ¼ÆÁ¿
+//7.3.3.5 è¯»ä¸€ä¸ªé€‰å®šçš„æ—¶é—´èŒƒå›´å’Œä¸€ä¸ªé€‰å®šçš„åœ°å€èŒƒå›´çš„æœˆç»“ç®—å¤è´¹ç‡ç”µèƒ½ç´¯è®¡é‡
 struct C_CI_NA_D_2_iObj {
 	ioa_t start_ioa;
 	ioa_t end_ioa;
 	struct Ta Tstart;
 	struct Ta Tend;
 };
-//7.3.3.6 ¶ÁÒ»¸öÑ¡¶¨Ê±¼ä·¶Î§ºÍÑ¡¶¨µØÖ··¶Î§µÄÒ£²â(YC)Á¿;
+//7.3.3.6 è¯»ä¸€ä¸ªé€‰å®šæ—¶é—´èŒƒå›´å’Œé€‰å®šåœ°å€èŒƒå›´çš„é¥æµ‹(YC)é‡;
 struct C_YC_TA_2_iObj {
 	ioa_t start_ioa;
 	ioa_t end_ioa;
 	struct Ta Tstart;
 	struct Ta Tend;
 };
-//7.3.3.7 ¶ÁÒ»¸öÑ¡¶¨Ê±¼ä·¶Î§ºÍÑ¡¶¨µØÖ··¶Î§µÄÔÂ×î´óĞèÁ¿(XL)
+//7.3.3.7 è¯»ä¸€ä¸ªé€‰å®šæ—¶é—´èŒƒå›´å’Œé€‰å®šåœ°å€èŒƒå›´çš„æœˆæœ€å¤§éœ€é‡(XL)
 struct C_XL_NB_2_iObj {
 	ioa_t start_ioa;
 	ioa_t end_ioa;
 	struct Ta Tstart;
 	struct Ta Tend;
 };
-//7.3.3.8 ¶ÁÒ»¸öÑ¡¶¨Ê±¼ä·¶Î§ºÍÑ¡¶¨µØÖ··¶Î§µÄ±í¼ÆĞ³²¨Êı¾İ
+//7.3.3.8 è¯»ä¸€ä¸ªé€‰å®šæ—¶é—´èŒƒå›´å’Œé€‰å®šåœ°å€èŒƒå›´çš„è¡¨è®¡è°æ³¢æ•°æ®
 struct C_CI_NA_C_2_iObj {
 	ioa_t start_ioa;
 	ioa_t end_ioa;
@@ -300,35 +301,34 @@ struct C_CI_NA_C_2_iObj {
 	struct Ta Tend;
 };
 
-//C3.1 ¿ØÖÆÓò Ö÷Õ¾->ÖÕ¶Ë(ÏÂĞĞ)
+//C3.1 æ§åˆ¶åŸŸ ä¸»ç«™->ç»ˆç«¯(ä¸‹è¡Œ)
 union Ctrl_down {
 	u8 val;
 	struct {
 		u8 funcode:4;
 		u8 fcv:1;
 		u8 fcb:1;
-		u8 prm:1;//1 Ö÷Õ¾ÏòÖÕ¶Ë
-		u8 dir:1;//·ÇÆ½ºâ´«Êä,Ó¦±£ÁôÎª0
+		u8 prm:1;//1 ä¸»ç«™å‘ç»ˆç«¯
+		u8 dir:1;//éå¹³è¡¡ä¼ è¾“,åº”ä¿ç•™ä¸º0
 	};
 } ;
-//C3.1 ¿ØÖÆÓò ÖÕ¶Ë->Ö÷Õ¾(ÉÏĞĞ)
+//C3.1 æ§åˆ¶åŸŸ ç»ˆç«¯->ä¸»ç«™(ä¸Šè¡Œ)
 union Ctrl_up {
 	u8 val;
 	struct {
 		u8 funcode:4;
 		u8 dfc:1;
 		u8 acd:1;
-		u8 prm:1;//0 ÖÕ¶ËÏòÖ÷Õ¾
-		u8 res:1; //±¾¹æÔ¼±¸ÓÃ
+		u8 prm:1;//0 ç»ˆç«¯å‘ä¸»ç«™
+		u8 res:1; //æœ¬è§„çº¦å¤‡ç”¨
 	};
 };
-
-/* ±ä³¤Ö¡½á¹¹:
-|                                    |     º¬Òå    |  ³¤¶È |  Ğ¡½Ú  |
+/* å˜é•¿å¸§ç»“æ„:
+|                                    |     å«ä¹‰    |  é•¿åº¦ |  å°èŠ‚  |
 +-------+------------------------------------------+------+--------+
 |       |                                 0x68     |1 byte|        |
-| Farme |                                 lenth    |1 byte|4 Bytes |
-| head  |                             lenth(copy)  |1 byte|        |
+| Frame |                                 length    |1 byte|4 Bytes |
+| head  |                             length(copy)  |1 byte|        |
 |       |                                 0x68     |1 byte|        |
 +-------+---------+--------------------------------+------+--------+
 |       |         |                     Ctrl Field |1 byte|        |
@@ -345,77 +345,145 @@ union Ctrl_up {
 |       |         |(APDU)|           |             |      |        |
 |       |         |      |           | Information |  ?   |        |
 |       |         |      |           | Object(Obj1)|      |        |
-|       |         |      | ASDU body | (necessary) |      | Unkown |
+|       |         |      | ASDU body | (necessary) |      |Unknown |
 |       |         |      |           Z-------------Z      |        |
 |       |         |      |           |     ...     |      |        |
 |       |         |      |           Z-------------Z      |        |
 |       |         |      |           |    Obj N    |      |        |
-|       |         |      |           | (Optainal)  |      |        |
+|       |         |      |           | (Optional)  |      |        |
 +-------+---------+------+-----------+-------------+------+--------+
-| Farme |                                  CS      |1 byte|2 Bytes |
+| Frame |                                  CS      |1 byte|2 Bytes |
 | Tail  |                                 0x16     |1 byte|        |
 +-------+------------------------------------------+------+--------+
 */
-// C1.1 ¿É±äÖ¡³¤Ö¡ - Ö¡Í· Farme head
-struct Farme_head {
+// C1.1 å¯å˜å¸§é•¿å¸§ - å¸§å¤´ Frame head
+struct Frame_head {
 	u8 start_byte1;
 	u8 len1;
 	u8 len2;
 	u8 start_byte2;
 };
-// 7.1 Á´Â·¹æÔ¼Êı¾İµ¥Ôª Link Proctol Data Unit
+// 7.1 é“¾è·¯è§„çº¦æ•°æ®å•å…ƒ Link Protocol Data Unit
 struct Lpdu_head {
-	union { //¿ØÖÆÓò
+	union { //æ§åˆ¶åŸŸ
 		union Ctrl_down c_down;
 		union Ctrl_up c_up;
 	};
 	link_addr_t link_addr;
 };
-// 7.1 Êı¾İµ¥Ôª±êÊ¶(Ó¦ÓÃ·şÎñÊı¾İµ¥ÔªÍ·),Application Service Data Unit(ASDU)
-struct Asdu_head { //ASDUÍ·¼´ Êı¾İµ¥Ôª±êÊ¶ Data unit identifier
+// 7.1 æ•°æ®å•å…ƒæ ‡è¯†(åº”ç”¨æœåŠ¡æ•°æ®å•å…ƒå¤´),Application Service Data Unit(ASDU)
+struct Asdu_head { //ASDUå¤´å³ æ•°æ®å•å…ƒæ ‡è¯† Data unit identifier
 	typ_t typ;
 	union  Vsq vaq;
 	union Cot cot;
 	asdu_addr_t asdu_addr;//
 	rad_t rad;
 };
-//Information Object ĞÅÏ¢Ìå,°´ÕÕ²»Í¨ÀàĞÍ²»Í¨.
-// C1.1  ±ä³¤/¶¨³¤Ö¡Î² Farme Tail
-struct Farme_tail {
+//Information Object ä¿¡æ¯ä½“,æŒ‰ç…§ä¸é€šç±»å‹ä¸é€š.
+// C1.1  å˜é•¿/å®šé•¿å¸§å°¾ Frame Tail
+struct Frame_tail {
 	u8 cs;
 	u8 end_byte;
 };
 
-/*C1.2 ¹Ì¶¨Ö¡³¤Ö¡ - Ö¡Ìå
+/*C1.2 å›ºå®šå¸§é•¿å¸§ - å¸§ä½“
 +------------+-----------------+-------+
-| Farme head | 0x10(Start byte)|1 byte |
+| Frame head | 0x10(Start byte)|1 byte |
 +------------+-----------------+-------+
 |            | Ctrl Field      |1 byte |
 | LPDU(head) | Link addr lo    |1 byte |
 |            | Link addr hi    |1 byte |
 +------------+-----------------+-------+
-| Farme Tail |     CS          |1 byte |
+| Frame Tail |     CS          |1 byte |
 |            | 0x16(End byte)  |1 byte |
 +------------+-----------------+-------+
 */
-struct Short_farme {
-	u8 start_byte; //¿ªÊ¼×Ö½Ú
-	union { //¿ØÖÆÓò
+struct Short_frame {
+	u8 start_byte; //å¼€å§‹å­—èŠ‚
+	union { //æ§åˆ¶åŸŸ
 		union Ctrl_down c_down;
 		union Ctrl_up c_up;
 	};
 	link_addr_t link_addr;
-	struct Farme_tail farme_tail;
+	struct Frame_tail farme_tail;
 };
 
-//
-//»Ø¸´ ¶ÁÈ¡Ê±¼äÖ¡
-struct stFarme_C_TI_NA_2{
-	struct Farme_head farme_head;
+
+/*  ä»¥ä¸‹ å®šä¹‰ä¸€äº›å›ºå®šçš„å¸§é•¿çš„åŠŸèƒ½çš„å¸§ ä¸»è¦æ˜¯ä¸‹è¡Œå¸§ç»“æ„,
+ * ä¸Šè¡Œçš„å¾ˆå¤šé•¿åº¦éƒ½æ˜¯ç”±(è¯»å–æ•°æ®)ç­‰å‚æ•°ç¡®å®šçš„,æ¯”å¦‚è¯»å–åœ°å€aåˆ°åœ°å€b,
+ */
+//å›å¤ è¯»å–æ—¶é—´å¸§ C_TI_NA_2 -> M_TI_TA_2 (ä¸Šè¡Œ)
+struct stFrame_M_TI_TA_2{
+	struct Frame_head farme_head;
 	struct Lpdu_head lpdu_head;
 	struct Asdu_head asdu_head;
-	struct Tb tb; //ĞÅÏ¢Ò»½ö°üº¬Ò»¸öĞÅÏ¢ÔªËØ:Tb
-	struct Farme_tail farme_tail;
+	struct Tb tb; //ä¿¡æ¯ä¸€ä»…åŒ…å«ä¸€ä¸ªä¿¡æ¯å…ƒç´ :Tb
+	struct Frame_tail farme_tail;
 };
+// C_CI_NR_2 è¯»ç”µé‡
+struct stFrame_C_CI_NR_2{
+	struct Frame_head farme_head;
+	struct Lpdu_head lpdu_head;
+	struct Asdu_head asdu_head;
+	ioa_t start_addr; //å¼€å§‹åœ°å€
+	ioa_t end_addr;//ç»“æŸåœ°å€
+	struct Ta start_time;//å¼€å§‹æ—¶é—´
+	struct Ta end_time;//ç»“æŸæ—¶é—´
+	struct Frame_tail farme_tail;
+};
+// C_CI_NS_2 è¯»å–å‘¨æœŸå¤ä½çš„ç”µèƒ½ç´¯ç§¯é‡
+struct stFrame_C_CI_NS_2{
+	struct Frame_head farme_head;
+	struct Lpdu_head lpdu_head;
+	struct Asdu_head asdu_head;
+	ioa_t start_addr;
+	ioa_t end_addr;
+	struct Ta start_time;
+	struct Ta end_time;
+	struct Frame_tail farme_tail;
+};
+// C_RD_NA_2 è¯»åˆ¶é€ å‚å’Œäº§å“çš„è§„èŒƒ
+struct stFrame_C_RD_NA_2{
+	struct Frame_head farme_head;
+	struct Lpdu_head lpdu_head;
+	struct Asdu_head asdu_head;
+	struct Frame_tail farme_tail;
+};
+
+// C_YC_TA_2 è¯»é¥æµ‹é‡
+struct stFrame_C_YC_TA_2{
+	struct Frame_head farme_head;
+	struct Lpdu_head lpdu_head;
+	struct Asdu_head asdu_head;
+	ioa_t start_addr;
+	ioa_t end_addr;
+	struct Ta start_time;
+	struct Ta end_time;
+	struct Frame_tail farme_tail;
+};
+
+// C_XL_NB_2 è¯»æœ€å¤§éœ€é‡;
+struct stFrame_C_XL_NB_2{
+	struct Frame_head farme_head;
+	struct Lpdu_head lpdu_head;
+	struct Asdu_head asdu_head;
+	ioa_t start_addr;
+	ioa_t end_addr;
+	struct Ta start_time;
+	struct Ta end_time;
+	struct Frame_tail farme_tail;
+};
+//è¯»ä¸€ä¸ªé€‰å®šæ—¶é—´èŒƒå›´å’Œé€‰å®šåœ°å€èŒƒå›´çš„è¡¨è®¡è°æ³¢æ•°æ®
+struct stFrame_C_CI_NA_C_2{
+	struct Frame_head farme_head;
+	struct Lpdu_head lpdu_head;
+	struct Asdu_head asdu_head;
+	ioa_t start_addr;
+	ioa_t end_addr;
+	struct Ta start_time;
+	struct Ta end_time;
+	struct Frame_tail farme_tail;
+};
+
 
 #endif // SD102_STRUCT_H

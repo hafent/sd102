@@ -1,24 +1,24 @@
-/* File encode:	 GB2312
+   /* File encode:	 GB2312
    filename:	typedefine.h
-¶¨ÒåÒ»Ğ©½ÏÎªÍ¨ÓÃµÄ×Ô¶¨ÒåÀàĞÍ*/
+å®šä¹‰ä¸€äº›è¾ƒä¸ºé€šç”¨çš„è‡ªå®šä¹‰ç±»å‹*/
 #ifndef TYPEDEFINE_H
 #define TYPEDEFINE_H
-//´òÓ¡ÔËĞĞĞÅÏ¢.×îÔ­Ê¼µÄµ÷ÊÔ·½Ê½
-#define PRINT_HERE {				\
+//æ‰“å°è¿è¡Œä¿¡æ¯.æœ€åŸå§‹çš„è°ƒè¯•æ–¹å¼
+#define PRINT_HERE {					\
 	printf("[File:%s Line:%d] Fun:%s\n",	\
-	__FILE__, __LINE__, __FUNCTION__);	\
+	__FILE__, __LINE__, __FUNCTION__);		\
 	}
 typedef unsigned char u8;
 typedef unsigned short int u16;
 typedef unsigned int u32;
-//¸ù¾İ gbt18657-5-4Ó¦ÓÃÌâÔªËØµÄ¶¨ÒåºÍ±àÂëÖĞ¶¨ÒåµÄÊı¾İ¸ñÊ½ idt IEC60870-5-4Êı¾İ±íÊ¾¸ñÊ½
+//æ ¹æ® gbt18657-5-4åº”ç”¨é¢˜å…ƒç´ çš„å®šä¹‰å’Œç¼–ç ä¸­å®šä¹‰çš„æ•°æ®æ ¼å¼ idt IEC60870-5-4æ•°æ®è¡¨ç¤ºæ ¼å¼
 typedef unsigned char UI8;
 typedef unsigned short int UI16;
 typedef unsigned int UI32;
 typedef  char I8;
 typedef  short int I16;
 typedef  int I32;
-typedef float R16;// 2×Ö½Ú
-typedef double R32 ;//4×Ö½Ú ¸¡µãÊµÊıÀàĞÍ
+typedef float R16;// 2å­—èŠ‚
+typedef double R32 ;//4å­—èŠ‚ æµ®ç‚¹å®æ•°ç±»å‹
 typedef unsigned char BS8;
 #endif // TYPEDEFINE_H
