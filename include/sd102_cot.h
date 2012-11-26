@@ -60,5 +60,5 @@ const int COT_T_TEST		=1;//测试链路,不执行
 <128.. 255>：＝为特殊应用（专用范围） */
 const int RAD_DEFAULT=0;
 const int RAD_ALL_SP_INFO=51;
-
+#pragma pack()
 #endif // SD102_COT_H

@@ -84,7 +84,12 @@ private:
 			std::queue<struct Frame> &q) const;
 	u8 check_sum(const u8 *a, const int len) const;
 
-
+	int rightinput(struct stFrame_C_CI_NR_2 fin)const;
+	int time_range(const struct C_CI_XX_2_iObj obj)const ;
+	rtu_addr_t makeaddr(int obj_num )const;
+	void showtime(struct Ta t)const;
+	int ioa_range(const struct C_CI_XX_2_iObj obj)const;
+	int print_err_msg(int msg)const;
 	int clear_fcv(void);
 	void print_array(const u8 *transbuf, const int len) const;
 	int copyframe(struct Frame &df, const struct Frame sf) const;

@@ -2,7 +2,7 @@
 #define SD102_TYP_H
 #include "typedefine.h"
 #pragma pack(1)
-// 7.2.1.1 类型标识域值的语义的定义
+// 7.2.1.1 类型标识域值的语义的定义,
 typedef u8 typ_t;
 // ******(下行,主站发送)*****
 // 表6 类型标识的语义-在控制方向上的系统信息

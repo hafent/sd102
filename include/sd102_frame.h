@@ -23,10 +23,10 @@
 
 #ifndef SD102_FRAME_H_
 #define SD102_FRAME_H_
-#pragma pack(1)
 #include "sd102_struct.h" //定义了信息体元素,如Tb中的秒,分等
 #include "typedefine.h"
 #include  "sd102_typ.h" //标识 TYP (type)
+#pragma pack(1)
 #define VARIABLE_LENGTH_FRAME 1 //不固定长度的帧,通常时应为包含n个信息体
 #define INFO_OBJ_NUM 1 // 信息体数量,按照实际情况在定义帧时重新设置!
 
@@ -259,7 +259,7 @@ struct C_YC_TA_2_iObj {
 struct stFrame_C_YC_TA_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
-	struct Duid asdu_head;
+	struct Duid duid;
 	struct C_YC_TA_2_iObj obj;
 	struct Frame_tail farme_tail;
 };
@@ -273,7 +273,7 @@ struct C_XL_NB_2_iObj {
 struct stFrame_C_XL_NB_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
-	struct Duid asdu_head;
+	struct Duid duid;
 	struct C_XL_NB_2_iObj obj;
 	struct Frame_tail farme_tail;
 };
@@ -288,11 +288,11 @@ struct C_CI_NA_D_2_iObj {
 struct stFrame_C_CI_NA_D_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
-	struct Duid asdu_head;
+	struct Duid duid;
 	struct C_CI_NA_D_2_iObj obj;
 	struct Frame_tail farme_tail;
 };
-// C10.1 在监视方向的确认帧
+// C10.1 在控制方向的系统时间同步命令
 struct stFrame_C_SYN_TA_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
@@ -301,5 +301,5 @@ struct stFrame_C_SYN_TA_2{
 	struct Frame_tail farme_tail;
 };
 
-
+#pragma pack()
 #endif /* SD_102_FRAME_H_ */

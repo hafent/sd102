@@ -19,7 +19,7 @@
 #include "sd102_typ.h" //类型码
 #include "sd102_cot.h" //传输原因分类
 #include "sd102_start_char.h" //起始码
-#pragma pack(1) //本文件内所有结构体压缩!按照规约所规定紧凑分布
+#pragma pack(1)
 // 事件
 #define SPQ_ERTU_RST_GX		1
 #define SPQ_ERTU_CLOSE_GX	1//系统掉电
@@ -40,24 +40,42 @@ typedef u16 link_addr_t;//链路地址
 union  Vsq {
 	u8 val;
 	struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		u8 n:7;
 		u8 sq:1;//n的寻址方式:0-顺序 1-单独.
+#endif
+#if __BYTE_ORDER == __BIG_ENDIAN
+		u8 sq:1;
+		u8 n:7;
+#endif
 	};
 };
 const int VSQ_SQ_Similar =0;//在同一种类型的一些信息体中寻址一个个别的元素或综合的元素
 const int VSQ_SQ_sequence =1;//在一个体中寻址一个顺序的元素
-//7.2.3 传送原因 (Cause Of Transmission)
+/*7.2.3 传送原因 (Cause Of Transmission)
+ 7 6 5 4 3 2 1 0
++-+-+-+-+-+-+-+-+
+|T|P|  cause    |
++-+-+-+-+-+-+-+-+
+*/
 union Cot {
 	u8 val;
 	struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		u8 cause:6;//传送原因＝Cause of transmission
 		u8 pn:1;// 应答
 		u8 t:1;//test 试验
+#endif
+#if __BYTE_ORDER == __BIG_ENDIAN
+		u8 t:1
+		u8 pn:1
+		u8 cause:6
+#endif
 	};
 };
 
 /* 7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASDU_addr rtu addr */
-typedef u16 rtu_addr_t; //协议一小尾端方式存储,同是小尾端不需要转换
+typedef u16 rtu_addr_t; //协议一小尾端方式存储,不像通常的使用网络字节序
 /* 7.2.5 记录地址(RAD)	Record Address
 */
 typedef u8 rad_t;
@@ -68,16 +86,25 @@ typedef u8 ioa_t;
 union Seq_number {
 	u8 val;
 	struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		u8 sn:5;//序列号
 		u8 cy:1;//carry
 		u8 ca:1;//计数器被调整(CA＝counter was adjusted)
 		u8 iv:1;//无效(IV＝invalid)
+#endif
+#if __BYTE_ORDER == __BIG_ENDIAN
+		u8 iv:1;
+		u8 ca:1;
+		u8 cy:1;
+		u8 sn:5;
+#endif
 	};
 };
 //7.2.7.1 序列号和数据状态 字节 //替代上面的 1表示这种状态,0表示没有这种状态
 union Data_status {
 	u8 val;
 	struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		u8 lv:1;//失压 lost v
 		u8 phb:1;//断相
 		u8 lc:1;//lose current
@@ -86,6 +113,18 @@ union Data_status {
 		u8 ct:1;//timeout
 		u8 com_terminal:1;//Communication terminal
 		u8 iv:1;//invalid
+#endif
+#if __BYTE_ORDER == __BIG_ENDIAN
+		u8 iv:1;
+		u8 com_terminal:1;
+		u8 ct:1;
+		u8 blv:1;
+		u8 wph:1;
+		u8 lc:1;
+		u8 phb:1;
+		u8 lv:1;
+#endif
+
 	};
 };
 //7.2.7.1 电能累计量 IT (Integrated total)
@@ -95,23 +134,45 @@ struct	It {
 };
 //7.2.7.2 5字节时间信息 a(Time information a,分至年)
 struct Ta {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	//Byte 1
 	u8 min:6;
 	u8 tis:1;//费率信息开关 0-off tariff information switch
 	u8 iv:1;//时间陈述无效标志位 invalid
-	//
+	//Byte 2
 	u8 hour:5;
 	u8 res1:2;//备用 reserve 1 <0>
 	u8 su:1;//夏令时 summer time
-	//
+	//Byte 3
 	u8 day:5;//几号 1-31
 	u8 week:3;//星期几 1-7
-	//
+	//Byte 4
 	u8 month:4;
 	u8 eti:2; //能量费率信息(ETI＝energy tariff information)
 	u8 pti:2;//功率费率信息(PTI＝power tariff information)
-	//
+	//Byte 5
 	u8 year:7;
 	u8 res2:1;//备用2(RES2＝reserve 2) <0>
+#endif
+#if __BYTE_ORDER == __BIG_ENDIAN
+	u8 iv:1;
+	u8 tis:1;
+	u8 min:6;
+	//
+	u8 su:1;
+	u8 res1:2;
+	u8 hour:5;
+	//
+	u8 week:3;
+	u8 day:5;
+	//
+	u8 pti:2;
+	u8 eti:2;
+	u8 month:4;
+	//
+	u8 res2:1;
+	u8 year:7;
+#endif
 };
 //7.2.7.3 7字节时间信息 b(Time information b,毫秒至年)
 struct Tb {
@@ -203,7 +264,7 @@ struct Month_maxdemand {
 //7.2.7.13 遥测量 Remote measurement
 struct	Remote_measure {
 	u32 dat;
-	union Data_status d_status;
+	union Data_status dst;
 };
 //7.2.7.14 表计谐波数据 Meter harmonic data
 struct Harmonic_data {
@@ -275,7 +336,7 @@ struct Udat_head {
 // 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
 struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
 	typ_t typ;
-	union  Vsq vaq;
+	union  Vsq vsq;
 	union Cot cot;
 	/* 7.2.4 电能累计量数据终端设备的地址从1开始，
 	对于信息体每超过一次255个信息点的情况，
@@ -317,6 +378,5 @@ struct Short_frame {
 
 
 
-
-
+#pragma pack()
 #endif // SD102_STRUCT_H

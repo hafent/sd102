@@ -98,30 +98,6 @@ void Csd102::SendProc(void)
 {
 	return;
 }
-//显示等待状态(可选)
-void Csd102::show_wait(u32 &stat)const
-{
-	printf("\rsd102:Wait for farme.");
-	switch (stat % 4) {
-	case 0:
-		printf("|");
-		break;
-	case 1:
-		printf("/");
-		break;
-	case 2:
-		printf("-");
-		break;
-	case 3:
-		printf("\\");
-		break;
-	default:
-		printf("?");
-	}
-	stat++;
-	fflush(stdout);
-	return;
-}
 
 //接收(从主站发来的)报文
 int Csd102::ReciProc(void)
@@ -140,7 +116,7 @@ int Csd102::ReciProc(void)
 	//1. get frame [会修改类成员]
 	ret = this->separate_msg(&reci_frame);
 	if (ret != 0) {
-		show_wait(status);
+		//show_wait(status);
 		return 0;
 	}
 	//2. verify frame
@@ -150,17 +126,17 @@ int Csd102::ReciProc(void)
 		return 0;
 	}
 	//正式成为接收的报文
-	printf(PREFIX"Rece[%3d]:", reci_frame.len);
+	printf(PREFIX"Rece:");
 	print_array(reci_frame.dat, reci_frame.len);
 
 	//重发否?
 	c2.val = this->get_ctrl_field(reci_frame_bak);
 	c.val = this->get_ctrl_field(reci_frame);
 	//TODO 写成 函数 is_resend
-	bool chkresend=false ;//测试时不验证重发.
+	bool chkresend = false;		//测试时不验证重发.
 	if (chkresend && (c.fcv == 1) && (c.fcb == c2.fcb)) {     //链路重发
 		//重发本文的发送帧,重发
-		printf("Resend Farme\n");
+		printf("重发Resend Farme\n");
 		//前后FCB应该不一样
 		printf("c.fcb=%d c_bak.fcb=%d || c.fcv=%d c_bak.fcv=%d\n",
 				c.fcb, c2.fcb, c.fcv, c2.fcv);
@@ -171,8 +147,8 @@ int Csd102::ReciProc(void)
 	switch (c.funcode) {
 	//S2: **** 2类服务(写指令)
 	case FN_C_RCU:
-		ret=0;//TODO 终端施行复位操作
-		if(ret==0){
+		ret = 0;		//TODO 终端施行复位操作
+		if (ret == 0) {
 			fun_M_CON_NA_2(&send_frame);
 		}
 		//goto SEND;
@@ -188,8 +164,8 @@ int Csd102::ReciProc(void)
 			PRINT_HERE
 			break;
 		case START_LONG_FRAME:
-			ret=process_long_frame(reci_frame, this->qclass1);
-			if(ret!=0){
+			ret = process_long_frame(reci_frame, this->qclass1);
+			if (ret != 0) {
 				;
 			}
 			break;
@@ -197,7 +173,6 @@ int Csd102::ReciProc(void)
 			PRINT_HERE
 			break;
 		}
-		PRINT_HERE
 		break;
 		//S3: **** 3类服务(读数据)
 	case FN_C_RLK:		// 链路请求 FCV=0
@@ -209,14 +184,14 @@ int Csd102::ReciProc(void)
 		PRINT_HERE
 		break;
 	case FN_C_PL1:		//召唤1级数据
-		if (this->qclass1.empty()) { //没有数据,否定应答
-			printf("no class1 dat qsize=%d\n", qclass1.size());
+		if (this->qclass1.empty()) {  //没有数据,否定应答
+			printf("没有1类数据 qsize=%d\n", qclass1.size());
 			nack(send_frame);
 		} else {
 			//有数据,发送数据
-			send_frame = this->qclass1.front(); //出队列的也可能是之前的镜像帧
+			send_frame = this->qclass1.front();  //出队列的也可能是之前的镜像帧
 			this->qclass1.pop();
-			printf("send class1 dat [%d]:%X %X %X %X\n",
+			printf("发送1类数据 [%d]:%X %X %X %X\n",
 					send_frame.len, send_frame.dat[0],
 					send_frame.dat[1], send_frame.dat[2],
 					send_frame.dat[3]);
@@ -225,16 +200,16 @@ int Csd102::ReciProc(void)
 		break;
 	case FN_C_PL2:
 		if (!this->qclass2.empty()) {
-			printf("send qclass2_dat\n");
+			printf("发送2类数据\n");
 			//TODO 发送2级数据
 			PRINT_HERE
 		} else {
 			if (!this->qclass1.empty()) {
-				printf("no qclass2 dat ,has qdat1 \n");
+				printf("没有2类数据,但有1类数据 \n");
 				fun_M_NV_NA_2(&send_frame);
 				//print_array(send_frame.dat, send_frame.len);
 			} else {
-				printf("no class 1,2 dat \n");
+				printf("没有1,2类数据 \n");
 				nack(send_frame);
 			}
 		}
@@ -253,7 +228,8 @@ int Csd102::ReciProc(void)
 	//SEND:	//发送帧
 	transfer(send_frame);
 	//对于S3类 保存接收帧用于检测数据丢失,保存发送帧用于在数据丢失时重发
-	if (c.funcode==FN_C_RLK || c.funcode==FN_C_PL1 ||c.funcode== FN_C_PL2) {	//单字符帧不需要重发
+	if (c.funcode == FN_C_RLK || c.funcode == FN_C_PL1
+			|| c.funcode == FN_C_PL2) {  //单字符帧不需要重发
 		copyframe(send_frame_bak, send_frame);
 		copyframe(reci_frame_bak, reci_frame);
 	}
@@ -292,7 +268,7 @@ int Csd102::nack(struct Frame &f) const
  */
 int Csd102::transfer(const struct Frame f)
 {
-	printf(PREFIX"Send[%3d]:", f.len);
+	printf(PREFIX"Send:");
 	print_array(f.dat, f.len);
 	//printf("send: frame[0]=%x farme_len=%d \n",frame[0],farme_len);
 	memcpy(this->m_transBuf.m_transceiveBuf, f.dat, f.len);
@@ -306,7 +282,7 @@ int Csd102::transfer(const struct Frame f)
  out:	none
  return:	控制字节(union Ctrl_down)
  */
-u8 Csd102::get_ctrl_field(const struct Frame f)const
+u8 Csd102::get_ctrl_field(const struct Frame f) const
 {
 
 	union Ctrl_down c;
@@ -482,13 +458,15 @@ int Csd102::verify_frame(const struct Frame f) const
 		return 0x10;
 		break;
 	}
-//1.和校验
-//printf("farme_cs=%02X  check sum=%02X \n",farme_cs,cs);
+	//1.和校验
+	//printf("farme_cs=%02X  check sum=%02X \n",farme_cs,cs);
 	if (farme_cs != cs) {
+#if 0 //调试期间 先忽略校验
 		PRINT_HERE
 		printf("CS err farme_cs=0x%02X but "
 				"Calculate cs=0x%02X ,Ignore.\n", farme_cs, cs);
 		return 0x11;
+#endif
 	}
 	//2.判断是否下行帧,終端只接收下行的帧,不是下行的一定时错误的。
 	if (c.prm != C_PRM_DOWN) {
@@ -621,8 +599,6 @@ int Csd102::process_long_frame(const struct Frame fin,
 		return 0;
 		break;
 	case C_CI_NR_2:     //读取电量
-		//保存镜像帧  输入帧,至1类数据队列
-		q.push(fin);
 		// 读取数据至1类数据队列
 		ret = fun_M_IT_TA_2(fin, q);
 		if (ret != 0) {
@@ -647,23 +623,22 @@ int Csd102::process_long_frame(const struct Frame fin,
 		PRINT_HERE
 		break;
 	case C_YC_TA_2:
-		//保存镜像帧  输入帧,至1类数据队列
-		q.push(fin);
-		PRINT_HERE
+		ret = fun_M_YC_TA_2(fin, q);
+		if (ret != 0) {
+			PRINT_HERE
+		}
+//		PRINT_HERE
 		break;
 	case C_CI_NA_C_2:
-		//保存镜像帧  输入帧,至1类数据队列
-		q.push(fin);
+
 		PRINT_HERE
 		break;
 	case C_XL_NB_2:
-		//保存镜像帧  输入帧,至1类数据队列
-		q.push(fin);
+
 		PRINT_HERE
 		break;
 	case C_CI_NA_D_2:
-		//保存镜像帧  输入帧,至1类数据队列
-		q.push(fin);
+
 		PRINT_HERE
 		break;
 	default:
@@ -779,12 +754,12 @@ int Csd102::fun_M_SP_TA_2(const u8 *frame_in, const int len_in, u8 *frame_out,
 	udat_head->c_up.dfc = CF_DFC_NOT_FULL;
 	//struct Asdu_head
 	duid->typ = M_SP_TA_2;
-	duid->vaq.sq = VSQ_SQ_Similar;
-	duid->vaq.n = obj_num;
+	duid->vsq.sq = VSQ_SQ_Similar;
+	duid->vsq.n = obj_num;
 	duid->cot.cause = COT_REQUEST;
 	duid->cot.pn = COT_PN_ACK;
 	duid->cot.t = COT_T_NOT_TEST;
-	duid->rtu_addr = (obj_num / 256) + 1;	//FIXME
+	duid->rtu_addr = makeaddr(obj_num);
 	duid->rad = 0;
 
 	//FIXME 完成信息体
@@ -810,109 +785,117 @@ int Csd102::fun_M_SP_TA_2(const u8 *frame_in, const int len_in, u8 *frame_out,
 }
 
 /*	M_IT_TA_2 带时标(T)的电量(IT)
- in:	frame_in
- len_in
- out:	frame_out	返回/发送到主站的帧
- len_out		帧长
+ in:	fi	输入帧结构
+
+ out:	q	输出到队列
  return:	0	成功
  */
 int Csd102::fun_M_IT_TA_2(const struct Frame fi,
 		std::queue<struct Frame> &q) const
 {
 	struct Frame frame_out;
-	int i = 0;
-	int fno;	//一帧发不完的时候,帧序号
-	//TODO 数据过多时分帧发送
+	// 数据过多时分帧发送
 	//每帧最多可以包含的信息体个数,用户数据最多255,再根据单个信息体的大小确定
 	//不同类型的帧,因为包含的信息体大小不同,可能造成最多可包含数信息体数量不同
 	int maxperframe = 0;
 	struct m_tSystime systime;
-	struct stFrame_C_CI_NR_2 *fin = (struct stFrame_C_CI_NR_2 *) fi.dat;
+	struct stFrame_C_CI_NR_2 *fin = (stFrame_C_CI_NR_2 *) fi.dat;
 	printf("fin->obj.start_ioa=%d\n", fin->obj.start_ioa);
 	printf("fin->obj.end_io=%d\n", fin->obj.end_ioa);
 	printf("time: %d:%d - %d:%d \n", fin->obj.Tstart.hour,
 			fin->obj.Tstart.min, fin->obj.Tend.hour,
 			fin->obj.Tend.min);
+	//TODO 数据指令的有效性判断
+	if (this->rightinput(*fin) != 0/* 数据数据错误*/) {
+		fin->duid.cot.cause = COT_ACT_TREMINATE;
+		printf(PREFIX"input instruction err 输入指令无效\n");
+		q.push(fi);
+		return 1;
+	} else {	//有效 镜像帧
+		q.push(fi);
+	}
 	const int obj_num = (fin->obj.end_ioa - fin->obj.start_ioa + 1);
-	GetSystemTime_RTC(&systime);
-	maxperframe = (255 - sizeof(struct Udat_head) - sizeof(struct Duid)
-			- sizeof(struct Ta)) / sizeof(struct M_IT_TX_2_iObj);
-	printf("obj_num=%d max_iObj_num=%d\n", obj_num,maxperframe);
-	int frame_num=obj_num / maxperframe;//数据应该分解成多少帧[1..frame_num]
-	for (fno = 0; fno < frame_num + 1; fno++) {// [0,frame_num]
+	maxperframe = (255 - sizeof(Udat_head) - sizeof(Duid) - sizeof(Ta))
+			/ sizeof(M_IT_TX_2_iObj);
+	printf("obj_num=%d max_iObj_num=%d\n", obj_num, maxperframe);
+	int frame_num = obj_num / maxperframe;	//数据应该分解成多少帧[1..frame_num]
+	for (int fno = 0; fno < frame_num + 1; fno++) {  // [0,frame_num]
 		int n;	//本帧包含的信息体数量
-		bool lastframe=(fno==frame_num);//是最后一帧吗
-		if (lastframe) { //是最后一帧,个数为剩下的
+		bool islastframe = (fno == frame_num);	//是最后一帧吗
+		if (islastframe) {  //是最后一帧,个数为剩下的
 			n = obj_num % maxperframe;
-		} else { //不是最后一帧,数量为最大可以包含的数量
+		} else {  //不是最后一帧,数量为最大可以包含的数量
 			n = maxperframe;
 		}
-		printf("n=%d\n",n);
-		frame_out.len = sizeof(struct Frame_head) //
-		+ sizeof(struct Udat_head) //
-				+ sizeof(struct Duid) //
-				+ sizeof(struct M_IT_TX_2_iObj) * n //
-				+ sizeof(struct Ta) //
-				+ sizeof(struct Frame_tail); //
+		printf("n=%d\n", n);
+		frame_out.len = sizeof(Frame_head) + sizeof(Udat_head)
+				+ sizeof(Duid) + sizeof(M_IT_TX_2_iObj) * n
+				+ sizeof(Ta) + sizeof(Frame_tail);
 		//struct stFrame_M_IT_TA_2{
-		struct Frame_head* f_head =
-				(struct Frame_head*) ((u8*) frame_out.dat);
-		struct Udat_head* udat_head = (struct Udat_head*) ((u8*) f_head
-				+ sizeof(struct Frame_head));
-		struct Duid* duid = (struct Duid*) ((u8*) udat_head
-				+ sizeof(struct Udat_head));
-		struct M_IT_TX_2_iObj* obj =
-				(struct M_IT_TX_2_iObj *) ((u8*) duid
-						+ sizeof(struct Duid));
-		struct Ta* ta = (struct Ta *) (frame_out.dat + frame_out.len
-				- sizeof(struct Frame_tail) - sizeof(struct Ta));
-		struct Frame_tail* f_tail = (struct Frame_tail*) (frame_out.dat
-				+ frame_out.len - sizeof(struct Frame_tail));
+		Frame_head* f_head = (Frame_head*) ((u8*) frame_out.dat);
+		Udat_head* udat_head = (Udat_head*) ((u8*) f_head
+				+ sizeof(Frame_head));
+		Duid* duid = (Duid*) ((u8*) udat_head + sizeof(Udat_head));
+		M_IT_TX_2_iObj* obj = (M_IT_TX_2_iObj *) ((u8*) duid
+				+ sizeof(Duid));
+		Ta* ta = (Ta *) (frame_out.dat + frame_out.len
+				- sizeof(Frame_tail) - sizeof(Ta));
+		Frame_tail* f_tail = (Frame_tail*) (frame_out.dat
+				+ frame_out.len - sizeof(Frame_tail));
 		//};
 		//struct Frame_head
 		f_head->start_byte1 = START_LONG_FRAME;
-		f_head->len1 = sizeof(struct Udat_head) + sizeof(struct Duid)
-				+ sizeof(struct M_IT_TX_2_iObj) * n
-				+ sizeof(struct Ta);
+		f_head->len1 = sizeof(Udat_head) + sizeof(Duid)
+				+ sizeof(M_IT_TX_2_iObj) * n + sizeof(Ta);
 		f_head->len2 = f_head->len1;
 		f_head->start_byte2 = START_LONG_FRAME;
 		//struct Udat_head
 		udat_head->c_up.funcode = FN_M_SEND_DAT;
 		udat_head->c_up.prm = CF_PRM_UP;
-		//是最后一帧吗?
-		udat_head->c_up.acd = (lastframe) ? 0 : 1;
+		udat_head->c_up.acd = (islastframe) ? 0 : 1;	//是最后一帧吗?
 		udat_head->c_up.dfc = CF_DFC_NOT_FULL;
+		udat_head->c_up.res = CF_RES;
 		udat_head->link_addr = this->link_addr;
-		//struct Duid
-		duid->vaq.n = n;
 		duid->typ = M_IT_TA_2;
-		duid->cot.cause =(lastframe) ?
-				COT_ACT_TREMINATE : COT_REQUEST;
+		duid->vsq.n = n;
+		duid->vsq.sq = 0;
+		duid->cot.cause =
+				(islastframe) ? COT_ACT_TREMINATE : COT_REQUEST;
 		duid->cot.pn = COT_PN_ACK;
 		duid->cot.t = COT_T_NOT_TEST;
-		duid->rad = 0;
-		duid->rtu_addr = (obj_num / 256 + 1);
-		//M_IT_TX_2_iObj
-		for (i = 0; i < n; i++) {
-			obj[i].ioa = fin->obj.start_ioa + fno * maxperframe + i;
-			obj[i].it_power.dat = 0xFFFFFFFF;
-			obj[i].it_power.d_status.val = 0xAA;	//TODO 其他事件待定
+		duid->rad = RAD_DEFAULT;
+		duid->rtu_addr = makeaddr(obj_num );
+		//M_IT_TX_2_iObj []
+		for (u8 i = 0; i < n; i++) {//TODO 从文件读取历史数据
+			/*正向有功 addr = (电表号)*4+1	;ti=0
+			 *反向有功 addr = (电表号)*4+2	;ti=1
+			 *正向无功 addr = (电表号)*4+3	;ti=2
+			 *反向无功 addr = (电表号)*4+4	;ti=3
+			 */
+			int addr = fin->obj.start_ioa + fno * maxperframe + i;
+			int mtrno = addr / 4;		//表号 base 0
+			int ti = (addr - 1) % 4;		//电量类型
+			//数据无效标志,
+			bool iv;
+			obj[i].ioa = addr;
+			obj[i].it_power.dat = ti;
+			//TODO 其他事件待定
+			obj[i].it_power.d_status.val = 0xFF;
 			//TODO 校验的源待定.
-			obj[i].cs = check_sum((u8*) &obj[i], sizeof(struct It));
+			obj[i].cs = check_sum((u8*) &obj[i], sizeof(It));
 		}
+		GetSystemTime_RTC(&systime);
 		getsystime(systime, ta);
 		//struct Frame_tail
-		f_tail->cs = this->check_sum(
-				frame_out.dat + sizeof(struct Frame_head),
+		f_tail->cs = this->check_sum(frame_out.dat + sizeof(Frame_head),
 				f_head->len1);
 		f_tail->end_byte = END_BYTE;
 //		printf("duid->c_up.funcode:%d", udat_head->c_up.funcode);
 //		printf("f_tail->end_byte:%X", f_tail->end_byte);
 		//print_array(frame_out.dat, frame_out.len);
-		q.push(frame_out);
+		q.push(frame_out);		//这一帧加入到队列
 		printf("push to queue,qsize=%d\n", q.size());
-	}
-//
+	}		//fno 一帧结束
 	return 0;
 }
 /*	M_IT_TD_2 周期复位记账(计费)电能累计量,每个量为四个八位位组
@@ -934,6 +917,107 @@ int Csd102::fun_M_IT_TA_B_2(const struct Frame fi,
 int Csd102::fun_M_YC_TA_2(const struct Frame fi,
 		std::queue<struct Frame> &q) const
 {
+	struct Frame frame_out;
+	// 数据过多时分帧发送
+	//每帧最多可以包含的信息体个数,用户数据最多255,再根据单个信息体的大小确定
+	//不同类型的帧,因为包含的信息体大小不同,可能造成最多可包含数信息体数量不同
+	int maxperframe = 0;
+	struct m_tSystime systime;
+	struct stFrame_C_YC_TA_2 *fin = (stFrame_C_YC_TA_2 *) fi.dat;
+	printf("fin->obj.start_ioa=%d\n", fin->obj.start_ioa);
+	printf("fin->obj.end_io=%d\n", fin->obj.end_ioa);
+	showtime(fin->obj.Tstart);
+	showtime(fin->obj.Tend);
+	if (this->rightinput(*(stFrame_C_CI_NR_2*) fin) != 0) {
+		fin->duid.cot.cause = COT_ACT_TREMINATE;
+		printf(PREFIX"input instruction err 输入指令逻辑错误\n");
+		q.push(fi);
+		return 1;
+	} else {	//有效 镜像帧
+		q.push(fi);
+	}
+	const int obj_num = (fin->obj.end_ioa - fin->obj.start_ioa + 1);
+	maxperframe = (255 - sizeof(Udat_head) - sizeof(Duid)- sizeof(Ta))
+			/ sizeof(M_YC_TA_2_InfoObj);
+	printf("总信息体个数(个)=%d 每帧最大信息体数(个)=%d\n", obj_num, maxperframe);
+	int frame_num = obj_num / maxperframe;	//数据应该分解成多少帧[1..frame_num]
+	for (int fno = 0; fno < frame_num + 1; fno++) {  // [0,frame_num]
+		int n;
+		bool islastframe = (fno == frame_num);
+		if (islastframe) {
+			n = obj_num % maxperframe;
+		} else {
+			n = maxperframe;
+		}
+
+		frame_out.len = sizeof(Frame_head) + sizeof(Udat_head)
+				+ sizeof(Duid) + sizeof(M_YC_TA_2_InfoObj) * n
+				+ sizeof(Ta) + sizeof(Frame_tail);
+		printf("本帧信息体个数n=%d 长度 len=%d 最长<=261\n", n,frame_out.len);
+		//struct stFrame_M_IT_TA_2{
+		Frame_head* fhead = (Frame_head*) ((u8*) frame_out.dat);
+		Udat_head* ufead = (Udat_head*) ((u8*) fhead
+				+ sizeof(Frame_head));
+		Duid* duid = (Duid*) ((u8*) ufead + sizeof(Udat_head));
+		M_YC_TA_2_InfoObj* obj = (M_YC_TA_2_InfoObj *) ((u8*) duid
+				+ sizeof(Duid));
+		Ta* ta = (Ta *) (frame_out.dat + frame_out.len
+				- sizeof(Frame_tail) - sizeof(Ta));
+		Frame_tail* f_tail = (Frame_tail*) (frame_out.dat
+				+ frame_out.len - sizeof(Frame_tail));
+		//};
+		fhead->start_byte1 = START_LONG_FRAME;
+		fhead->len1 = sizeof(Udat_head) + sizeof(Duid)
+				+ sizeof(M_IT_TX_2_iObj) * n + sizeof(Ta);
+		fhead->len2 = fhead->len1;
+		fhead->start_byte2 = START_LONG_FRAME;
+		ufead->c_up.funcode = FN_M_SEND_DAT;
+		ufead->c_up.prm = CF_PRM_UP;
+		ufead->c_up.acd = (islastframe) ? 0 : 1;	//是最后一帧吗?
+		ufead->c_up.dfc = CF_DFC_NOT_FULL;
+		ufead->c_up.res = CF_RES;
+		ufead->link_addr = this->link_addr;
+		duid->typ = M_YC_TA_2;
+		duid->vsq.n = n;
+		duid->vsq.sq = 0;
+		duid->cot.cause =
+				(islastframe) ? COT_ACT_TREMINATE : COT_REQUEST;
+		duid->cot.pn = COT_PN_ACK;
+		duid->cot.t = COT_T_NOT_TEST;
+		duid->rad = RAD_DEFAULT;
+		duid->rtu_addr =  makeaddr(obj_num );
+		//M_YC_TA_2_InfoObj []
+		for (u8 i = 0; i < n; i++) {
+			/*（n - 1）×8 + 1总有功功率
+			 （n - 1）×8 + 2 总无功功率
+			 （n - 1）×8 + 3 A相电压
+			 （n - 1）×8 + 4 B相电压
+			 （n - 1）×8 + 5 C相电压
+			 （n - 1）×8 + 6 A相电流
+			 （n - 1）×8 + 7 B相电流
+			 （n - 1）×8 + 8 C相电流
+			 */
+			int addr = fin->obj.start_ioa + fno * maxperframe + i;
+			int mtrno = addr / 8;		//表号 base 0
+			int ti = (addr - 1) % 8;		//电量类型
+			//数据无效标志,
+			bool iv;
+			obj[i].ioa = addr;
+			obj[i].rm.dat = 0xFF0000FF;
+			obj[i].rm.dst.val = 0xAA;
+		}
+		GetSystemTime_RTC(&systime);
+		getsystime(systime, ta);
+		//struct Frame_tail
+		f_tail->cs = this->check_sum(frame_out.dat + sizeof(Frame_head),
+				fhead->len1);
+		f_tail->end_byte = END_BYTE;
+		//		printf("duid->c_up.funcode:%d", ufead->c_up.funcode);
+		//		printf("f_tail->end_byte:%X", f_tail->end_byte);
+		//print_array(frame_out.dat, frame_out.len);
+		q.push(frame_out);			//这一帧加入到队列
+		printf("push to queue,qsize=%d\n", q.size());
+	}			//fno 一帧结束
 	return 0;
 }
 /*	M_XL_TA_2 需量
@@ -975,18 +1059,18 @@ int Csd102::fun_M_EI_NA_2(std::queue<struct Frame> &q) const
 	//lpdu
 	frame->lpdu_head.c_up.funcode = FN_M_SEND_DAT;		//FIXME: 待确认
 	frame->lpdu_head.c_up.acd = 1;
-	frame->lpdu_head.c_up.dfc = CF_DFC_NOT_FULL; //1 bit
+	frame->lpdu_head.c_up.dfc = CF_DFC_NOT_FULL;  //1 bit
 	frame->lpdu_head.c_up.prm = CF_PRM_UP;  //1bit
 	frame->lpdu_head.c_up.res = CF_RES;  //1bit
 	frame->lpdu_head.link_addr = this->link_addr;
 	//asdu
 	frame->duid.typ = M_EI_NA_2;
-	frame->duid.vaq.sq = VSQ_SQ_Similar;
-	frame->duid.vaq.n = num_iobj;
+	frame->duid.vsq.sq = VSQ_SQ_Similar;
+	frame->duid.vsq.n = num_iobj;
 	frame->duid.cot.cause = COT_INIT;
 	frame->duid.cot.pn = COT_PN_ACK;
 	frame->duid.cot.t = COT_T_NOT_TEST;
-	frame->duid.rtu_addr = (num_iobj / 256) + 1;
+	frame->duid.rtu_addr =  makeaddr(num_iobj );
 	frame->duid.rad = 0;
 	//information object
 	frame->obj.ioa = 0;
@@ -1018,18 +1102,18 @@ int Csd102::fun_P_MP_NA_2(std::queue<struct Frame> &q) const
 	//lpdu
 	frame->udat_head.c_up.funcode = FN_M_SEND_DAT;		//FIXME: 待确认
 	frame->udat_head.c_up.acd = 1;
-	frame->udat_head.c_up.dfc = CF_DFC_NOT_FULL; //1 bit
+	frame->udat_head.c_up.dfc = CF_DFC_NOT_FULL;  //1 bit
 	frame->udat_head.c_up.prm = CF_PRM_UP;  //1bit
 	frame->udat_head.c_up.res = CF_RES;  //1bit
 	frame->udat_head.link_addr = this->link_addr;
 	//asdu
 	frame->duid.typ = P_MP_NA_2;
-	frame->duid.vaq.sq = VSQ_SQ_Similar;
-	frame->duid.vaq.n = num_iobj;
+	frame->duid.vsq.sq = VSQ_SQ_Similar;
+	frame->duid.vsq.n = num_iobj;
 	frame->duid.cot.cause = COT_INIT;  //FIXME
 	frame->duid.cot.pn = COT_PN_ACK;
 	frame->duid.cot.t = COT_T_NOT_TEST;
-	frame->duid.rtu_addr = (num_iobj / 256) + 1;
+	frame->duid.rtu_addr = makeaddr(num_iobj );
 	frame->duid.rad = 0;
 	//information object
 	frame->obj.fcode = FACT_ID;  //
@@ -1074,15 +1158,14 @@ int Csd102::fun_M_TI_TA_2(std::queue<struct Frame> &q) const
 	pf->lpdu_head.c_up.dfc = CF_DFC_NOT_FULL;
 	pf->lpdu_head.link_addr = this->link_addr;
 	pf->duid.typ = M_TI_TA_2;
-	pf->duid.vaq.sq = VSQ_SQ_Similar;
-	pf->duid.vaq.n = iObj_num;     //一个信息体
+	pf->duid.vsq.sq = VSQ_SQ_Similar;
+	pf->duid.vsq.n = iObj_num;     //一个信息体
 	pf->duid.cot.cause = COT_REQUEST;     //cot传输原因
 	pf->duid.cot.pn = COT_PN_ACK;     //
 	pf->duid.cot.t = COT_T_NOT_TEST;     //不是测试(真正进行操作)
-	//根据信息体的数量没增加255,值加1,从1开始.
-	pf->duid.rtu_addr = (iObj_num / 256) + 1;
+	//根据信息体的数量每增加255,值加1,从1开始.
+	pf->duid.rtu_addr =  makeaddr(iObj_num );
 	pf->duid.rad = 0;
-	//FIXME  把其他数据 意义弄清后赋值
 	getsystime(systime, &(pf->obj.t));
 	pf->farme_tail.cs = check_sum(f.dat + sizeof(struct Frame_head),
 			pf->farme_head.len1);
@@ -1147,8 +1230,8 @@ int Csd102::fun_M_NV_NA_2(struct Frame *f) const
 	struct Short_frame * frame = (struct Short_frame *) f->dat;
 	f->len = sizeof(struct Short_frame);
 	frame->start_byte = START_SHORT_FRAME;
-	frame->c_up.funcode = FN_M_NO_DAT; //4bit
-	frame->c_up.dfc = CF_DFC_NOT_FULL; //1 bit
+	frame->c_up.funcode = FN_M_NO_DAT;  //4bit
+	frame->c_up.dfc = CF_DFC_NOT_FULL;  //1 bit
 	frame->c_up.acd = 1;		//有1级数据
 	frame->c_up.prm = CF_PRM_UP;  //1bit
 	frame->c_up.res = CF_RES;  //1bit
@@ -1253,4 +1336,101 @@ void Csd102::print_array(const u8 *a, const int len) const
 	printf("\n");
 	return;
 }
+//显示等待状态(可选)
+void Csd102::show_wait(u32 &stat) const
+{
+	printf("\rsd102:Wait for farme.");
+	switch (stat % 4) {
+	case 0:
+		printf("|");
+		break;
+	case 1:
+		printf("/");
+		break;
+	case 2:
+		printf("-");
+		break;
+	case 3:
+		printf("\\");
+		break;
+	default:
+		printf("?");
+	}
+	stat++;
+	fflush(stdout);
+	return;
+}
+/*开始时间和结束时间是否正确*/
+int Csd102::time_range(const struct C_CI_XX_2_iObj obj) const
+{
+	u32 stime = Calc_Time_102(obj.Tstart.min, obj.Tstart.hour,
+			obj.Tstart.day, obj.Tstart.month, obj.Tstart.year);
+	u32 etime = Calc_Time_102(obj.Tend.min, obj.Tend.hour, obj.Tend.day,
+			obj.Tend.month, obj.Tend.year);
+	struct m_tSystime systime;
+	GetSystemTime_RTC(&systime);
+	u32 now = Calc_Time_102(systime.min, systime.hour, systime.day,
+			systime.mon, systime.year);
+	if (stime == 0) {
+		printf("开始时间错误\n");
+		return 1;
+	}
+	if (etime == 0) {
+		printf("结束时间错误\n");
+		return 2;
+	}
+	if (stime >= etime) {
+		printf("开始晚于结束时间\n");
+		return 3;
+	}
+	if (now == 0) {
+		printf("当前时间计算错误\n");
+		return 4;
+	}
+	if (etime > now) {
+		printf("结束时间晚于当前时间\n");
+		return 5;
+	}
+	return 0;
+}
+/*信息体地址发范围是否正确*/
+int Csd102::ioa_range(const struct C_CI_XX_2_iObj obj) const
+{
+	if (obj.start_ioa < 1u) {
+		printf("开始信息体地址小于1\n");
+		return 1;  //信息体地址从1开始编制的
+	}
+	if (obj.start_ioa >= obj.end_ioa) {
+		printf("开始信息体地址大于结束信息体地址\n");
+		return 2;
+	}
+	return 0;
+}
+/*输入帧 逻辑上是否正确*/
+int Csd102::rightinput(struct stFrame_C_CI_NR_2 fin) const
+{
+	if (this->time_range(fin.obj) != 0) {
+		printf("时间起止范围错误\n");
+		return 1;
+	}
+	if (this->ioa_range(fin.obj) != 0) {
+		printf("信息体地址范围错误\n");
+		return 2;
+	}
+	return 0;
+}
 
+int Csd102::print_err_msg(int msg) const
+{
+	return 0;
+}
+inline rtu_addr_t Csd102::makeaddr(int obj_num )const
+{
+	return (obj_num / 255) + 1;
+}
+inline void Csd102::showtime(struct Ta t)const
+{
+	printf(" %d-%d-%d %d:%d ",
+			t.year,t.month,t.day,t.hour,t.min);
+	return ;
+}

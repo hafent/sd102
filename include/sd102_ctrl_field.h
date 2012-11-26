@@ -62,4 +62,5 @@ const u8 CF_PRM_UP=0;//上行
 const u8 CF_RES=0;//保留
 const u8 CF_DFC_FULL=1;//数据满
 const u8 CF_DFC_NOT_FULL=0;//数据不满,可以采集
+#pragma pack()
 #endif // SD102_FUNCODE_H
