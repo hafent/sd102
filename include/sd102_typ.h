@@ -1,6 +1,7 @@
-   #ifndef SD102_TYP_H
+#ifndef SD102_TYP_H
 #define SD102_TYP_H
 #include "typedefine.h"
+#pragma pack(1)
 // 7.2.1.1 类型标识域值的语义的定义
 typedef u8 typ_t;
 // ******(下行,主站发送)*****

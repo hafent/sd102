@@ -1,26 +1,34 @@
-/*File encode:	 GB2312
-   filename:	sd102.h
-*/
+/**
+  * @file: sd102.h
+ */
 #ifndef SD102_H
 #define SD102_H
 #include "CBASE102s.h"
-#include "sd102_struct.h"
 #include "typedefine.h"
-#define MAX_FRAME_LEN (4+255+2) //最大幀長,帧头+len+帧尾
-
-struct Farme {
+#include "sd102_struct.h"
+#include "sd102_frame.h"
+#include <queue>
+#define PREFIX "[sd102]" //答应用的前缀,方便区分
+//标准发布日期,山东电力集团公司 发布 2011年3月24日
+#define  STANDARD_YEAR (11)
+#define  STANDARD_MONTH (3)
+//厂商编号,产品编号
+#define FACT_ID (0)
+#define PRODUCT_ID (0)
+//最大帧长
+#define MAX_FRAME_LEN (4+255+2) //sd102最大幀長,帧头+len+帧尾
+struct Frame {
 	u8 dat[MAX_FRAME_LEN];
 	int len;
 };
 //1级数据
-struct class1dat{
-	u8 dat[4+255+2];
+struct class1dat {
+	u8 dat[MAX_FRAME_LEN];
 	int len;
 };
 extern "C" CProtocol *CreateCProto_sd102();
 //class Csd102 :public CProtocol
-class Csd102 :public CBASE102
-{
+class Csd102: public CBASE102 {
 
 public:
 	Csd102();
@@ -31,57 +39,82 @@ public:
 	virtual int Init(struct stPortConfig *tmp_portcfg);
 #if 1
 private:
-	void show_wait(u32 &stat);
+	void show_wait(u32 &stat)const;
 	int sync_head(const u8 *buf, int &farme_len) const;
-	int separate_msg(u8 *readbuf, int &len);
-	int verify_frame(const u8 *c1_dat, const int len) const;
-	union Ctrl_down get_ctrl_field(const u8 *farme,const int farme_len);
-	int confirm(u8 *farme_out,int &len_out)const;
-	int nack(u8 *farme_out,int &len_out)const;
-	int transfer(const u8 *farme,const int farme_len);
-	int process_short_frame(const u8 *recifarme, const int len,
-				u8 *farme_out, int &len_out) const;
-	int process_long_frame(const u8 *farme_in,const int len_in,
-			       u8 *farme_out, int &len_out);
-	//分类功能
-	int fun_M_TI_TA_2(u8 *farme_out, int &len_out) const;
-	int fun_M_CON_NA_2(u8 *farme_out, int &len_out )const;
-	int fun_M_NV_NA_2(u8 *farme_out, int &len_out )const;
-	int fun_M_LKR_NA_2(u8 *farme_out, int &len_out )const;
-	int fun_M_IT_TA_2(const u8  *farme_in ,const int len_in,
-				  u8 *farme_out, int &len_out )const;
-	u8 check_sum(const u8 *a,const int len ) const;
+	int separate_msg(struct Frame *f);
+	int verify_frame(const struct Frame f) const;
+	u8 get_ctrl_field(const struct Frame  f)const;
+	int ack(struct Frame &f) const;
+	int nack(struct Frame &f) const;
+	int transfer(const struct Frame f);
+	int process_short_frame(const struct Frame fin,
+		struct Frame* f_out) const;
+	int process_long_frame(const  struct Frame fin ,
+			std::queue<struct Frame> &q);
+	int getsystime(const struct m_tSystime systime,struct Tb * t)const;
+	int getsystime(const struct m_tSystime systime,struct Ta * t)const;
+	// 8.4.7 分类功能
+	//监视方向上的**过程信息** 处理函数
+	int  fun_M_SP_TA_2(const u8 *farme_in, const int len_in,
+			u8 *farme_out,	int &len_out) const;
+	int fun_M_IT_TA_2(const struct Frame frame_in,
+			std::queue <struct Frame> &q) const;
+	int fun_M_IT_TD_2(const struct Frame fi,
+			std::queue<struct Frame> &q) const;
+	int fun_M_IT_TA_B_2(const struct Frame fi,
+			std::queue<struct Frame> &q) const;
+	int fun_M_YC_TA_2(const struct Frame fi,
+			std::queue<struct Frame> &q) const;
+	int fun_M_XL_TA_2(const struct Frame fi,
+			std::queue<struct Frame> &q) const;
+	int fun_M_IT_TA_C_2(const struct Frame fi,
+			std::queue<struct Frame> &q) const;
+	int fun_M_IT_TA_D_2(const struct Frame fi,
+			std::queue<struct Frame> &q) const;
 
-	//备份的 接收帧
-	u8 reci_frame_bak[MAX_FRAME_LEN];//帧
-	int reci_frame_bak_len;//帧
-	//备份的 发送帧
-	u8 tran_frame_bak[MAX_FRAME_LEN];//帧
-	int tran_frame_bak_len;//帧
-	//发送帧
+	//监视方向上的**系统信息** 处理函数
+	int fun_M_EI_NA_2(std::queue<struct Frame> &q) const;
+	int fun_P_MP_NA_2(std::queue<struct Frame> &q) const;
+	int fun_M_TI_TA_2(std::queue<struct Frame> &q) const;
+//??
+	int fun_M_CON_NA_2(struct Frame *f) const;
+	int fun_M_NV_NA_2(struct Frame *f) const;
+	int fun_M_LKR_NA_2(struct Frame *f) const;
+	int fun_M_SYN_TA_2(const struct Frame fi,
+			std::queue<struct Frame> &q) const;
+	u8 check_sum(const u8 *a, const int len) const;
 
-	int tran_frame_len;//帧
+
 	int clear_fcv(void);
-	void print_array(const u8 *transbuf,const int len) const;
-	int save_reci_frame(void *farme,int len);
-	int save_tran_frame(void *farme,int len,
-			    u8 *bakfarme, int &bakfarme_len, bool &hasbaked);
-	int save_dat(u8* ddat,const u8 *sdat,const int slen)const;
+	void print_array(const u8 *transbuf, const int len) const;
+	int copyframe(struct Frame &df, const struct Frame sf) const;
 private:
 	typ_t last_typ;
-	struct Farme mirror_farme;
-	bool has_mirror_farme;
+	u8 acd;
+	struct Frame mirror_farme;
+	struct Frame fout;
+	struct Frame send;
+	//bool has_mirror_farme;
 	//int mirror_farme;
-	//u8 mfarme[MAX_FARME_LEN];
+	//u8 mframe[MAX_FARME_LEN];
 	//int mfarme_len;
-	u32 status;//用于显示接收数据状态.不是很重要
+	u32 status;	//用于显示接收数据状态.不是很重要
 	u16 link_addr;
 	//union Ctrl_down c_bak;//与备份帧冗余
-	bool exist_backup_frame;//存在有效的备份帧.最开始时是没有备份的,只有正确传输过一次之后才会保存备份
+	bool exist_backup_frame;	//存在有效的备份帧.最开始时是没有备份的,只有正确传输过一次之后才会保存备份
 	bool has_class1_dat;
 	bool has_class2_dat;
-	struct Farme c1_dat;
-	void set_has_mirror_farme(bool val);
+	//备份的(上次接收的帧
+	struct Frame reci_frame_bak;
+	//备份的(上次发送的帧
+	struct Frame send_frame_bak;
+	//本次发送的帧
+	struct Frame send_frame;
+	//本次接收的帧
+	struct Frame reci_frame;
+	std::queue <struct Frame> qclass1;
+	std::queue <struct Frame> qclass2;
+	struct Frame c1_dat;
 #endif
 };
 #endif // SD102_H
