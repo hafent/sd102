@@ -97,6 +97,7 @@ int Csd102::Init(struct stPortConfig *tmp_portcfg)
 //终端(从站)主动发送.在山东102,可以用於非平衡传输(协议规定)不需要
 void Csd102::SendProc(void)
 {
+#if 1 //实现事件的上送,自发/突发 的实现,逻辑上不是很妥当
 	struct m_tSystime systime;
 	//模拟终端自发数据,保存数据到2类数据队列,主站轮询时发现有数据,就应该招过去.
 	//用于发送终端事件?
@@ -131,11 +132,11 @@ void Csd102::SendProc(void)
 	} else {
 		spon++;
 	}
+#endif
 	return;
-
 }
 
-//接收(从主站发来的)报文
+//接收(从主站发来的)报文 主处理流程
 int Csd102::ReciProc(void)
 {
 #if 0 //just for receive base debug
@@ -242,7 +243,8 @@ int Csd102::ReciProc(void)
 			printf(PREFIX"NACK 否定回答 qsize=%d\n", qclass1.size());
 			nack(send_frame);
 		} else {
-			printf(PREFIX"S3: 8-发送1类数据,qsize=%d\n", qclass1.size());
+			printf(PREFIX"S3: 8-发送1类数据,qsize=%d\n",
+					qclass1.size());
 			//有数据,发送数据
 			send_frame = this->qclass1.front();  //出队列的也可能是之前的镜像帧
 			this->qclass1.pop();
@@ -251,8 +253,8 @@ int Csd102::ReciProc(void)
 	case FCN_C_PL2:
 		printf(PREFIX"S3: 11-请求2类数据\n");
 		if (!this->qclass2.empty()) {
-			printf(PREFIX"S3: 8-发送2类数据,qsize=%d\n", qclass2.size());
-			//NOTE 发送2级数据,明确数据分类的依据,1类还是2类.
+			printf(PREFIX"S3: 8-发送2类数据,qsize=%d\n",
+					qclass2.size());
 			send_frame = this->qclass2.front();
 			this->qclass2.pop();
 		} else {
@@ -645,7 +647,7 @@ int Csd102::process_long_frame(const struct Frame fin,
 		send_P_MP_NA_2(q1);
 		PRINT_HERE
 		break;
-	case TYP_C_SP_NA_2:		//读单点数据 NOTE 区分 C_SP_NA_2 和  C_SP_NB_2
+	case TYP_C_SP_NA_2:		//读单点数据
 		ret = send_M_SP_TA_2(fin, q1);
 		printf("1类数据队列 size %d\n", q1.size());
 		if (ret!=0) {
@@ -851,7 +853,7 @@ int Csd102::send_M_SP_TA_2(const struct Frame fi,
 		duid->rad = RAD_DEFAULT;
 		duid->rtu_addr = makeaddr(obj_num);
 		//M_SP_TA_2_iObj []
-		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取数据
+		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取数据/事件?
 			int addr = 0;	//
 			obj[i].sp.spa = 1;
 			getsystime(systime, obj[i].tb);
@@ -1239,7 +1241,7 @@ int Csd102::send_M_EI_NA_2(std::queue<struct Frame> &q) const
 	frame->farme_head.len2 = frame->farme_head.len1;
 	frame->farme_head.start_byte2 = START_LONG_FRAME;
 	//lpdu
-	frame->lpdu_head.cf_m.fcn = FCN_M_CON;		//FIXME: 待确认
+	frame->lpdu_head.cf_m.fcn = FCN_M_CON;		//
 	frame->lpdu_head.cf_m.acd = ACD_NO_ACCESS;
 	frame->lpdu_head.cf_m.dfc = DFC_NOT_FULL;  //1 bit
 	frame->lpdu_head.cf_m.prm = PRM_UP;  //1bit
@@ -1281,7 +1283,7 @@ int Csd102::send_P_MP_NA_2(std::queue<struct Frame> &q) const
 	frame->farme_head.len2 = frame->farme_head.len1;
 	frame->farme_head.start_byte2 = START_LONG_FRAME;
 	//lpdu
-	frame->udat_head.cf_m.fcn = FCN_M_SEND_DAT;	//FIXME: 待确认
+	frame->udat_head.cf_m.fcn = FCN_M_SEND_DAT;	//
 	frame->udat_head.cf_m.acd = ACD_ACCESS;
 	frame->udat_head.cf_m.dfc = DFC_NOT_FULL;  //1 bit
 	frame->udat_head.cf_m.prm = PRM_UP;  //1bit
