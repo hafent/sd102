@@ -3,6 +3,7 @@
 定义一些较为通用的自定义类型*/
 #ifndef TYPEDEFINE_H
 #define TYPEDEFINE_H
+#define SD102_Special_structure //标识山东102特定的结构
 //打印运行信息.最原始的调试方式
 #define PRINT_HERE {					\
 	printf("[File:%s Line:%d] Fun:%s\n",	\

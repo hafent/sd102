@@ -1,8 +1,8 @@
-/*     filename: sd102_struct.h
-	山东102规约 结构体定义头文件
-	7.2  IEC 60870-5-4（应用信息元素的定义和编码）的选集
-未注明的章节号内容参考资料1,其他章节号见其具体协议编号.
-其他说明:
+/*     filename: sd102_element.h
+	定义7.2  IEC 60870-5-4（应用信息元素的定义和编码）的结构
+	application information elements(仅定义结构体)
+说明:
+	未注明的章节号内容参考资料1,其他章节号见其具体协议编号.
 	数据格式按照 GB/T18657.4 idt IEC60870-5-4
 	*_t 为无符号整型数据(8位/16位等)
 	首字母大写的单词为结构体类型/联合体 如  It Vsq
@@ -11,14 +11,9 @@
 	 	 ref IEC60870-5-102
 	2.http://en.wikipedia.org/wiki/IEC_60870-5
 */
-#ifndef SD102_STRUCT_H
-#define SD102_STRUCT_H
+#ifndef SD102_ELEMENT_H
+#define SD102_ELEMENT_H
 #include "typedefine.h"
-//包含各种情形的分类编码
-#include "sd102_ctrl_field.h" //功能码
-#include "sd102_typ.h" //类型码
-#include "sd102_cot.h" //传输原因分类
-#include "sd102_start_char.h" //起始码
 #pragma pack(1)
 // 事件
 #define SPQ_ERTU_RST_GX		1
@@ -34,8 +29,8 @@
 #define SPA_ERTU_CLOSE_GX 	3 //系统掉电
 #define SPA_SYN_TIME_GX 	7//对时
 #define SPA_PARA_MOD_GX		8//参数修改
-//6.1传输帧格式
-typedef u16 link_addr_t;//链路地址
+
+
 //7.2.2 可变结构限定词（VARIABLE OF STRUCTURE QUALIFIER）
 union  Vsq {
 	u8 val;
@@ -43,15 +38,14 @@ union  Vsq {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 		u8 n:7;
 		u8 sq:1;//n的寻址方式:0-顺序 1-单独.
-#endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#elif __BYTE_ORDER == __BIG_ENDIAN
 		u8 sq:1;
 		u8 n:7;
-#endif
+#else
+#warning "Unkown Byte Order __BYTE_ORDER "
+#endif /*__BYTE_ORDER*/
 	};
 };
-const int VSQ_SQ_Similar =0;//在同一种类型的一些信息体中寻址一个个别的元素或综合的元素
-const int VSQ_SQ_sequence =1;//在一个体中寻址一个顺序的元素
 /*7.2.3 传送原因 (Cause Of Transmission)
  7 6 5 4 3 2 1 0
 +-+-+-+-+-+-+-+-+
@@ -65,15 +59,14 @@ union Cot {
 		u8 cause:6;//传送原因＝Cause of transmission
 		u8 pn:1;// 应答
 		u8 t:1;//test 试验
-#endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#elif __BYTE_ORDER == __BIG_ENDIAN
 		u8 t:1
 		u8 pn:1
 		u8 cause:6
-#endif
+#else
+#endif /*__BYTE_ORDER*/
 	};
 };
-
 /* 7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASDU_addr rtu addr */
 typedef u16 rtu_addr_t; //协议一小尾端方式存储,不像通常的使用网络字节序
 /* 7.2.5 记录地址(RAD)	Record Address
@@ -91,15 +84,16 @@ union Seq_number {
 		u8 cy:1;//carry
 		u8 ca:1;//计数器被调整(CA＝counter was adjusted)
 		u8 iv:1;//无效(IV＝invalid)
-#endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#elif __BYTE_ORDER == __BIG_ENDIAN
 		u8 iv:1;
 		u8 ca:1;
 		u8 cy:1;
 		u8 sn:5;
-#endif
+#else
+#endif /*__BYTE_ORDER*/
 	};
 };
+#ifdef SD102_Special_structure
 //7.2.7.1 序列号和数据状态 字节 //替代上面的 1表示这种状态,0表示没有这种状态
 union Data_status {
 	u8 val;
@@ -113,8 +107,7 @@ union Data_status {
 		u8 ct:1;//timeout
 		u8 com_terminal:1;//Communication terminal
 		u8 iv:1;//invalid
-#endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#elif __BYTE_ORDER == __BIG_ENDIAN
 		u8 iv:1;
 		u8 com_terminal:1;
 		u8 ct:1;
@@ -123,10 +116,11 @@ union Data_status {
 		u8 lc:1;
 		u8 phb:1;
 		u8 lv:1;
-#endif
+#endif /*__BYTE_ORDER*/
 
 	};
 };
+#endif /*SD102_Special_structure*/
 //7.2.7.1 电能累计量 IT (Integrated total)
 struct	It {
 	u32 dat;
@@ -153,8 +147,7 @@ struct Ta {
 	//Byte 5
 	u8 year:7;
 	u8 res2:1;//备用2(RES2＝reserve 2) <0>
-#endif
-#if __BYTE_ORDER == __BIG_ENDIAN
+#elif __BYTE_ORDER == __BIG_ENDIAN
 	u8 iv:1;
 	u8 tis:1;
 	u8 min:6;
@@ -172,10 +165,12 @@ struct Ta {
 	//
 	u8 res2:1;
 	u8 year:7;
+#else
 #endif
 };
 //7.2.7.3 7字节时间信息 b(Time information b,毫秒至年)
 struct Tb {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 	u16 ms:10;//毫秒 <0..999>
 	u16 second:6;
 	//
@@ -196,13 +191,31 @@ struct Tb {
 	//
 	u8 year:7;
 	u8 res2:1;//reserve 2
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	u16 second:6;
+	u16 ms:10;
+	//
+	u8 iv:1;
+	u8 tis:1;
+	u8 min:6;
+	//
+	u8 su:1;
+	u8 res1:2;
+	u8 hour:5;
+	//
+	u8 week:3;//星期几 1-7
+	u8 day:5;//几号 1-31
+	//
+	u8 pti:2;//power tariff information
+	u8 eti:2; //energy tariff information
+	u8 month:4;// <1..12>
+	//
+	u8 res2:1;//reserve 2
+	u8 year:7;
+#else
+#endif /*__BYTE_ORDER*/
 };
-const int TB_VALID=0;//时间有效
-const int TB_INVALID=1;//时间无效
-const int TB_STANDARD_TIME=0;//标准时
-const int TB_SUMMER_TIME=1;//夏令时
-const int TB_RESERVE1=0;//保留1
-const int TB_RESERVE2=0;//保留2
+
 //7.2.7.4 标准的日期(DOS)Date of standard
 struct Dos {
 	u8 month:4;//月 <1..12>
@@ -228,14 +241,7 @@ union Coi {
 		u8 pc:1;//local parameter change. 0-unchanged 1-changed;
 	};
 };
-const int COI_LOC_POWON=0;
-const int COI_LOC_MANUAL_RESET=1;
-const int COI_RETOME_RESET=2;
-/*	<3..31> 为此配套标准的标准定义保留（兼容范围）
- * 	<32..127>：＝为特殊应用保留（专用范围）
- * */
-const int COI_PARAMETER_UNCHANGED=0;
-const int COI_PARAMETER_CHANGED=1;
+
 //7.2.7.10 复费率电能累计量 Multi-rate  Integrated total
 struct Multi_it {
 	u32 total;
@@ -277,104 +283,6 @@ struct Harmonic_data {
 	u32  res2;//备用2
 	u32  res3;//备用3
 };
-
-
-
-
-/* **************** 帧结构中部分已知的结构, 帧头 帧尾 各种单元头等 **************
- * 本规约中 LSDU=ASDU=APDU
- * 报文=LPDU=LPCI+LSDU
- * ADSU=DUID+N*Info_Obj+ADSU的公共地址(可选)
- *变长帧结构使用 FT1.2 格式:
-|                                    |     含义    |  长度 |  小节  |
-+-------+------------------------------------------+------+--------+----------+
-|       |                            |    0x68     |1 byte|        |          |
-| Frame |                            |    length   |1 byte|4 Bytes |          |
-| head  |                            |length(copy) |1 byte|        |          |
-|       |                            |    0x68     |1 byte|        | LPCI     |
-+-------+---------+------------------+-------------+------+--------+ 60870-5-2|
-|       | u_dat   |                  |  Ctrl Field |1 byte|        |          |
-|       |   head  |                  | Link addr lo|1 byte|3 Bytes |          |
-|       |         |                  | Link addr hi|1 byte|        |          |
-|       +---------+------+-----------+-------------+------+--------+-----+    |
-|       |         |      |           |  Type Id    |1 byte|        |     |    |
-|       |         |      | ASDU head |    VSQ      |1 byte|        |     |    |
-|       |         |      |  (DUID)   |    COT      |1 byte|6 Bytes |     |    |
-| User  |         |      |           | ASDU addr lo|1 byte|        |     |    |
-| Data  |         |      |           | ASDU addr hi|1 byte|        |     |    |
-|       | u_dat   |      |           |    RAD      |1 byte|        |     |LPCI|
-|       |     body| ASDU +-----------+-------------+------+--------+     |    |
-|       |         |(APDU)|           |             |      |        | LSDU|    |
-|       |         |      |           | Information |  ?   |        |     |    |
-|       |         |      |           | Object(Obj1)|      |        |60870|    |
-|       |         |      | ASDU body | (necessary) |      |Unknown |-5-3 |    |
-|       |         |      |           Z-------------Z      |        |     |    |
-|       |         |      |           |     ...     |      |        |     |    |
-|       |         |      |           Z-------------Z      |        |     |    |
-|       |         |      |           |    Obj N    |      |        |     |    |
-|       |         |      |           | (Optional)  |      |        |     |    |
-+-------+---------+------+-----------+-------------+------+--------+-----+    |
-| Frame |                            |     CS      |1 byte|2 Bytes |   LPCI   |
-| Tail  |                            |    0x16     |1 byte|        |          |
-+-------+----------------------------+-------------+------+--------+----------+
-*/
-// C1.1 可变帧长帧 - 帧头 Frame head
-struct Frame_head {
-	u8 start_byte1;
-	u8 len1;
-	u8 len2;
-	u8 start_byte2;
-};
-// IEC60870-5-2 3.2中的用户数据 头部分
-struct Udat_head {
-	union { //控制域
-		union Ctrl_down c_down;
-		union Ctrl_up c_up;
-	};
-	link_addr_t link_addr;
-};
-// 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
-struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
-	typ_t typ;
-	union  Vsq vsq;
-	union Cot cot;
-	/* 7.2.4 电能累计量数据终端设备的地址从1开始，
-	对于信息体每超过一次255个信息点的情况，
-	将终端设备地址依次加1。
-	终端设备的地址可以和链路地址不一致。*/
-	rtu_addr_t rtu_addr;
-	/* 7.2.5 记录地址(RAD) */
-	rad_t rad;
-};
-//Information Object 信息体,按照不通类型不通.
-// C1.1  变长/定长帧尾 Frame Tail
-struct Frame_tail {
-	u8 cs;
-	u8 end_byte;
-};
-
-/*C1.2 固定帧长帧 - 帧体
-+------------+-----------------+-------+
-| Frame head | 0x10(Start byte)|1 byte |
-+------------+-----------------+-------+
-|            | Ctrl Field      |1 byte |
-| LPDU       | Link addr lo    |1 byte |
-|            | Link addr hi    |1 byte |
-+------------+-----------------+-------+
-| Frame Tail |     CS          |1 byte |
-|            | 0x16(End byte)  |1 byte |
-+------------+-----------------+-------+
-*/
-struct Short_frame {
-	u8 start_byte; //开始字节
-	union { //控制域
-		union Ctrl_down c_down;
-		union Ctrl_up c_up;
-	};
-	link_addr_t link_addr;
-	struct Frame_tail farme_tail;
-};
-
 
 
 

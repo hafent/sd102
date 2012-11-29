@@ -105,7 +105,7 @@ do
 	local f_ASDU_addr=ProtoField.uint16("sd102.ASDU_addr","应用服务单元公共地址(ASDU address)",base.DEC)
 	local f_ASDU_addr_lo=ProtoField.uint8("sd102.ASDU_addr_lo","低字节(lo)",base.HEX)
 	local f_ASDU_addr_hi=ProtoField.uint8("sd102.ASDU_addr_hi","高字节(hi_",base.HEX)
-	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","记录地址(RAD)",base.HEX)
+	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","记录地址(RAD)",base.DEC)
 	--时间 ,其中有写位没解析 RSE
 	local f_Tb = ProtoField.bytes("sd102.Tb","时间(Tb)",base.HEX)
 	local f_Tb_ms=ProtoField.uint16("sd102.Tb_ms","毫秒(ms)",base.DEC,nil,0x03FF)
@@ -138,6 +138,13 @@ do
 	local f_Ta_mon = ProtoField.uint8("sd102.Ta_mon","月(month)",base.HEX,nil,0x0F)
 	local f_Ta_year = ProtoField.uint8("sd102.Ta_year","年(year)",base.HEX,nil,0x7F)
 	local f_onebyte = ProtoField.uint8("sd102.onebyte","单字节",base.HEX)
+	--单点信息
+	local f_sp = ProtoField.bytes("sd102.Sp","单点信息(SP)",base.HEX)
+	local f_sp_spa = ProtoField.uint8("sd102.Sp_spa","单点信息地址(SP)",base.DEC)
+	local f_sp_spi = ProtoField.uint8("sd102.Sp_spi","单点信息状态(SPI)",base.HEX,
+	{[0]="分开",[1]="闭合"},0x01)
+	local f_sp_spq = ProtoField.uint8("sd102.Sp_spq","单点信息质量(SPQ)",base.HEX,
+	nil,0xFE)
 	--添加到域
 	p_ShanDong102.fields = { f_onebyte,f_len,
 	f_start,f_funcode,f_funcode_rsp,f_ctrl,
@@ -147,7 +154,8 @@ do
 	f_Tb,f_Tb_ms,f_Tb_sec,f_Tb_min,f_Tb_tis,f_Tb_iv,f_Tb_hour,f_Tb_day,f_Tb_week, --Tb
 	f_Tb_mon,f_Tb_year,f_Tb_su,f_Tb_pti,f_Tb_eti,
 	f_msgaddr_start,f_msgaddr_end,
-	f_Ta, f_Ta_min,f_Ta_hour,f_Ta_day,f_Ta_week,f_Ta_mon,f_Ta_year} --Ta
+	f_Ta, f_Ta_min,f_Ta_hour,f_Ta_day,f_Ta_week,f_Ta_mon,f_Ta_year,
+	f_sp,f_sp_spa,f_sp_spi,f_sp_spq} --Ta
 
 	local data_dis = Dissector.get("data")
 	-- 主体函数
@@ -355,7 +363,7 @@ do
 			elseif buf(7,1):uint() == 128 then --电能累计量数据终端系统时间同步确认
 				local Tb = t:add(f_Tb,buf(13,7))			
 				Tb:add_le(f_Tb_ms,buf(13,2))
-				Tb:add(f_Tb_sec,buf(14,1))
+				Tb:add_le(f_Tb_sec,buf(13,2))
 				Tb:add(f_Tb_min,buf(15,1))
 				Tb:add(f_Tb_tis,buf(15,1))
 				Tb:add(f_Tb_iv,buf(15,1))
@@ -367,6 +375,26 @@ do
 				Tb:add(f_Tb_pti,buf(18,1))
 				Tb:add(f_Tb_eti,buf(18,1))
 				Tb:add(f_Tb_year,buf(19,1))
+			elseif buf(7,1):uint() == 1 then --单点信息
+				local n=buf(8,1):uint()
+				local sp = t:add(f_sp,buf(13,2))
+				sp:add(f_sp_spa,buf(13,1))
+				sp:add(f_sp_spi,buf(14,1))
+				sp:add(f_sp_spq,buf(14,1))
+				local Tb = t:add(f_Tb,buf(15,7))
+				Tb:add_le(f_Tb_ms,buf(15,2))
+				Tb:add_le(f_Tb_sec,buf(15,2))
+				Tb:add(f_Tb_min,buf(17,1))
+				Tb:add(f_Tb_tis,buf(17,1))
+				Tb:add(f_Tb_iv,buf(17,1))
+				Tb:add(f_Tb_hour,buf(18,1))
+				Tb:add(f_Tb_su,buf(18,1))
+				Tb:add(f_Tb_day,buf(19,1))
+				Tb:add(f_Tb_week,buf(19,1))
+				Tb:add(f_Tb_mon,buf(20,1))
+				Tb:add(f_Tb_pti,buf(20,1))
+				Tb:add(f_Tb_eti,buf(20,1))
+				Tb:add(f_Tb_year,buf(21,1))
 			end
 		end
 		-- 结束
