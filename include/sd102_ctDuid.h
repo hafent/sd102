@@ -136,13 +136,38 @@ const int COI_RETOME_RESET = 2;
 const int COI_PARAMETER_UNCHANGED = 0;
 const int COI_PARAMETER_CHANGED = 1;
 
-const int SPQ_RST = 1;  // 重新启动
-const int SPQ_PARAM_CHANGE = 15;  //参数改变
-const int SPQ_MANUAL_INPUT = 17;  // 人工输入
-const int SPQ_POWER_FAULT = 3;  //电源故障
-const int SPQ_WARN_MSG = 18;  //警告报文
-const int SPQ_ERR_SINGAL = 19;  // 差错信号
-const int SPQ_TIME_DRIFT = 7;  //时间偏移
-const int SPQ_NO_DIFF = 13;  //电能累计量的不允许差额
+
+const int SPA_INIT = 1;  // 重新启动
+const int SPA_SELF_TEST = 2;  //系统自测试
+const int SPA_POWER = 3;  //电源故障
+const int SPA_BOTTY =4;//电池失效
+const int SPA_DAT_OVER =5;//数据溢出
+const int SPA_DAT_LOSE =6;//数据丢失
+const int SPA_TIME_MSG =7;//时间报文
+const int SPA_MODUL =8;//模块故障
+const int SPA_CONTER_ERR =9;//在计数器脉冲输入的脉冲错误
+const int SPA_UART_ERR =10;//在串行输入的请求错误
+const int SPA_EXT_STATUS =11;//  状态报文，外部
+const int SPA_PLUSE_OVER = 12;  //  在计数器脉冲输出溢出
+const int SPA_CMP_CONTEROR = 13; //计数器比较
+const int SPA_REG_OVER = 14;// 寄存器溢出
+const int SPA_PARAM_CHANGE = 15;  //参数改变
+const int SPA_EXT_INPUT=16;//外部状态量输入
+const int SPA_MANUAL_INPUT = 17;  // 人工输入
+const int SPA_WARN_MSG = 18;  //警告报文
+const int SPA_ERR_SINGAL = 19;  // 差错信号
+
+const  int SPI_ON =1;//事件发生
+const int SPI_OFF =0 ;//事件恢复
+//SPQ
+const int SPQ_SYS_RESET =0;//系统重启
+const int SPQ_CPU_RESET =1;//热启动-重启
+const int SPQ_CPU_BOOT =2;//启动-冷启动
+const int SPQ_MEM_RESET =17;//启动-冷启动
+const int SPQ_MEM_BOOT =18;
+const int SPQ_PTR_RESET =33;//printer打印机
+const int SPQ_PTR_BOOT =34;
+const int SPQ_CU_RESET =49;//通讯单元
+const int SPQ_CU_BOOT =50;
 
 #endif // SD102_TYP_H

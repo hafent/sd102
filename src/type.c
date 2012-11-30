@@ -35,3 +35,4 @@
 struct stTyp typ_info_c[]={
 		[TYP_C_RD_NA_2]={"Read Manufact","读制造厂和产品规范"}
 };
+

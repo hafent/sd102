@@ -51,8 +51,6 @@ Csd102::Csd102()
 		//this->acd = ACD_NO_DAT;
 		//this->last_typ = TYP_M_UNUSED;
 	this->link_addr = 0;
-	this->has_class1_dat = false;
-	this->has_class2_dat = false;
 	this->status = 0;
 	while (!qclass1.empty()) {
 		qclass1.pop();
@@ -74,13 +72,9 @@ Csd102::~Csd102()
 }
 int Csd102::Init(struct stPortConfig *tmp_portcfg)
 {
-
 	//last_typ = TYP_M_UNUSED;
-	has_class1_dat = false;
-	has_class2_dat = false;
 	c_Link_Address_H = tmp_portcfg->m_ertuaddr>>8;
 	c_Link_Address_L = (unsigned char) tmp_portcfg->m_ertuaddr;
-
 	m_checktime_valifalg = tmp_portcfg->m_checktime_valiflag;
 	m_suppwd = tmp_portcfg->m_usrsuppwd;
 	m_pwd1 = tmp_portcfg->m_usrpwd1;
@@ -124,7 +118,7 @@ void Csd102::SendProc(void)
 		fsp->duid.vsq.sq = SQ_Similar;
 		fsp->duid.cot.cause = COT_SPONT;
 		GetSystemTime_RTC(&systime);
-		getsystime(systime, fsp->obj[0].tb);
+		getsystime( fsp->obj[0].tb,systime);
 		//printf("####");
 		showtime(fsp->obj[0].tb);
 		fsp->tail.end_byte = END_BYTE;
@@ -193,7 +187,7 @@ int Csd102::ReciProc(void)
 //			return 2101;
 //		}
 		//初始化结束,返回初始化结束帧,并且置初始化结束报文为1类数据
-		send_M_EI_NA_2(qclass1);
+		make_M_EI_NA_2(qclass1);
 		break;
 	case FCN_C_TRANS_DAT:
 		printf(PREFIX"S2: 3-数据传输\n");
@@ -220,7 +214,7 @@ int Csd102::ReciProc(void)
 			PRINT_HERE
 		}
 		printf(PREFIX"S3: 11-回复链路状态\n");
-		send_M_LKR_NA_2(send_frame);		//回复链路状态
+		make_M_LKR_NA_2(send_frame);		//回复链路状态
 		//PRINT_HERE
 		break;
 	case FCN_C_PL1:		//召唤1级数据
@@ -244,7 +238,7 @@ int Csd102::ReciProc(void)
 			nack(send_frame);
 		} else {
 			printf(PREFIX"S3: 8-发送1类数据,qsize=%d\n",
-					qclass1.size());
+			                qclass1.size());
 			//有数据,发送数据
 			send_frame = this->qclass1.front();  //出队列的也可能是之前的镜像帧
 			this->qclass1.pop();
@@ -254,13 +248,13 @@ int Csd102::ReciProc(void)
 		printf(PREFIX"S3: 11-请求2类数据\n");
 		if (!this->qclass2.empty()) {
 			printf(PREFIX"S3: 8-发送2类数据,qsize=%d\n",
-					qclass2.size());
+			                qclass2.size());
 			send_frame = this->qclass2.front();
 			this->qclass2.pop();
 		} else {
 			if (!this->qclass1.empty()) {
 				printf(PREFIX"S3: 9-没有2类数据,但有1类数据 \n");
-				send_M_NV_NA_2(send_frame);
+				make_M_NV_NA_2(send_frame);
 				//print_array(send_frame.dat, send_frame.len);
 			} else {
 				printf(PREFIX"NACK 没有2类数据,也没有1类数据 \n");
@@ -626,12 +620,13 @@ int Csd102::process_long_frame(const struct Frame fin,
         std::queue<struct Frame> &q2)
 {
 	int ret;
+	int offset = 0;
 	/*从输入帧中分解出一些数据单元
 	 :Lpdu_head + Asdu_head + (信息体未解析) + Farme_tail*/
 //	struct Udat_head *udat_head = (struct Udat_head *) (fin.dat
 //			+ sizeof(struct Frame_head));
-	struct Duid *uhead = (struct Duid *) (fin.dat
-	                +sizeof(struct Frame_head)+sizeof(struct Udat_head));
+	offset = sizeof(Frame_head)+sizeof(Udat_head);
+	struct Duid *uhead = (Duid *) (fin.dat+offset);
 //	struct Frame_tail *frame_tail = (struct Frame_tail *) (fin.dat + fin.len
 //			- sizeof(struct Frame_tail));
 #if 0
@@ -644,25 +639,25 @@ int Csd102::process_long_frame(const struct Frame fin,
 #endif
 	switch (uhead->typ) {
 	case TYP_C_RD_NA_2:		//读制造厂和产品规范
-		send_P_MP_NA_2(q1);
+		make_P_MP_NA_2(q1);
 		PRINT_HERE
 		break;
 	case TYP_C_SP_NA_2:		//读单点数据
-		ret = send_M_SP_TA_2(fin, q1);
+		ret = make_M_SP_TA_2(fin, q1);
 		printf("1类数据队列 size %d\n", q1.size());
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		break;
 	case TYP_C_SP_NB_2:		//读单点数据
-		ret = send_M_SP_TA_2(fin, q1);
+		ret = make_M_SP_TA_2(fin, q1);
 		printf("1类数据队列 size %d\n", q1.size());
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		break;
 	case TYP_C_TI_NA_2:     //读取时间
-		ret = send_M_TI_TA_2(q1);
+		ret = make_M_TI_TA_2(q1);
 		printf("1类数据队列 size %d\n", q1.size());
 		if (ret!=0) {
 			PRINT_HERE
@@ -670,46 +665,46 @@ int Csd102::process_long_frame(const struct Frame fin,
 		break;
 	case TYP_C_CI_NR_2:     //读取电量
 		// 读取数据至1类数据队列
-		ret = send_M_IT_TA_2(fin, q1);
+		ret = make_M_IT_TA_2(fin, q1);
 		printf("1类数据队列 size %d\n", q1.size());
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		break;
 	case TYP_C_CI_NS_2:		//读记账复位电量
-		send_M_IT_TD_2(fin, q1);
+		make_M_IT_TD_2(fin, q1);
 		PRINT_HERE
 		break;
 	case TYP_C_SYN_TA_2:		//设置时间
-		ret = send_M_SYN_TA_2(fin, q1);
+		ret = make_M_SYN_TA_2(fin, q1);
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		break;
 	case TYP_C_CI_NA_B_2:		//复费率记帐(计费)电能累计量
-		send_M_IT_TA_B_2(fin, q1);
+		make_M_IT_TA_B_2(fin, q1);
 		PRINT_HERE
 		break;
 	case TYP_C_YC_TA_2:		//遥测
-		ret = send_M_YC_TA_2(fin, q1);
+		ret = make_M_YC_TA_2(fin, q1);
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		//PRINT_HERE
 		break;
 	case TYP_C_CI_NA_C_2:		//月结算复费率电能累计量
-		send_M_IT_TA_C_2(fin, q1);
+		make_M_IT_TA_C_2(fin, q1);
 		PRINT_HERE
 		break;
 	case TYP_C_XL_NB_2:		//需量
-		ret = send_M_XL_TA_2(fin, q1);
+		ret = make_M_XL_TA_2(fin, q1);
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		//PRINT_HERE
 		break;
 	case TYP_C_CI_NA_D_2:		//谐波数据
-		send_M_IT_TA_D_2(fin, q1);
+		make_M_IT_TA_D_2(fin, q1);
 		PRINT_HERE
 		break;
 	default:
@@ -731,7 +726,7 @@ int Csd102::clear_fcb(struct Frame &fbak) const
 }
 /* 从 系统时间(systime)中将时间复制到Tb时间结构中.
  * */
-int Csd102::getsystime(const struct m_tSystime systime, struct Tb &t) const
+int Csd102::getsystime(struct Tb &t,const struct m_tSystime systime) const
         {
 	t.ms = systime.msec;
 	//pframe->tb.eti=0;//费率
@@ -763,7 +758,7 @@ int Csd102::setsystime(TMStruct &systime, const struct Tb t) const
 }
 /* 从 系统时间(systime)中将时间复制到Ta时间结构中.
  * */
-int Csd102::getsystime(const struct m_tSystime systime, struct Ta & t) const
+int Csd102::getsystime( struct Ta & t,const struct m_tSystime systime) const
         {
 	t.min = systime.min;
 	t.hour = systime.hour;
@@ -784,7 +779,7 @@ int Csd102::getsystime(const struct m_tSystime systime, struct Ta & t) const
  out:	q	输出队列
  return:	0	成功
  */
-int Csd102::send_M_SP_TA_2(const struct Frame fi,
+int Csd102::make_M_SP_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
 	struct Frame frame_out;
@@ -856,7 +851,7 @@ int Csd102::send_M_SP_TA_2(const struct Frame fi,
 		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取数据/事件?
 			int addr = 0;	//
 			obj[i].sp.spa = 1;
-			getsystime(systime, obj[i].tb);
+			getsystime( obj[i].tb,systime);
 		}
 		GetSystemTime_RTC(&systime);
 
@@ -877,13 +872,13 @@ int Csd102::send_M_SP_TA_2(const struct Frame fi,
  out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
  return:	0	成功
  */
-int Csd102::send_M_IT_TA_2(const struct Frame fi,
+int Csd102::make_M_IT_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q1) const
         {
-	struct Frame frame_out;
+	struct Frame fout;
 	// 数据过多时分帧发送
-	//每帧最多可以包含的信息体个数,用户数据最多255,再根据单个信息体的大小确定
-	//不同类型的帧,因为包含的信息体大小不同,可能使最多可包含数信息体数量不同
+	// 每帧最多可以包含的信息体个数,用户数据最多255,再根据单个信息体的大小确定
+	// 不同类型的帧,因为包含的信息体大小不同,可能使最多可包含数信息体数量不同
 	int maxperframe = 0;
 	struct m_tSystime systime;
 	struct stFrame_C_CI_NR_2 *fin = (stFrame_C_CI_NR_2 *) fi.dat;
@@ -901,42 +896,42 @@ int Csd102::send_M_IT_TA_2(const struct Frame fi,
 		q1.push(fi);
 	}
 	const int obj_num = (fin->obj.end_ioa-fin->obj.start_ioa+1);
-	maxperframe = (255-sizeof(Udat_head)-sizeof(Duid)-sizeof(Ta))
+	maxperframe = (MAX_UDAT_LEN-sizeof(Udat_head)-sizeof(Duid)-sizeof(Ta))
 	                /sizeof(Obj_M_IT_TX_2);
 	printf("总信息体数=%d 每帧最大信息体数=%d\n", obj_num, maxperframe);
 	int frame_num = obj_num/maxperframe;	//数据应该分解成多少帧[1..frame_num]
 	for (int fno = 0; fno<frame_num+1; fno++) {  // [0,frame_num]
 		int n;	//本帧包含的信息体数量
-		//bool islastframe = (fno==frame_num);	//是最后一帧吗
 		if (fno==frame_num) {  //是最后一帧,个数为剩下的
 			n = obj_num%maxperframe;
 		} else {  //不是最后一帧,数量为最大可以包含的数量
 			n = maxperframe;
 		}
 		printf("n=%d\n", n);
-		frame_out.len = sizeof(Frame_head)+sizeof(Udat_head)
+		fout.len = sizeof(Frame_head)+sizeof(Udat_head)
 		                +sizeof(Duid)+sizeof(Obj_M_IT_TX_2)*n
 		                +sizeof(Ta)+sizeof(Frame_tail);
 		//struct stFrame_M_IT_TA_2{//将u8数组依次分割成所有帧结构
-		Frame_head* f_head = (Frame_head*) ((u8*) frame_out.dat);
-		Udat_head* udat_head = (Udat_head*) ((u8*) f_head
-		                +sizeof(Frame_head));
-		Duid* duid = (Duid*) ((u8*) udat_head+sizeof(Udat_head));
-		Obj_M_IT_TX_2* obj = (Obj_M_IT_TX_2 *) ((u8*) duid
-		                +sizeof(Duid));
-		Ta* ta = (Ta *) (frame_out.dat+frame_out.len
-		                -sizeof(Frame_tail)-sizeof(Ta));
-		Frame_tail* f_tail = (Frame_tail*) (frame_out.dat
-		                +frame_out.len-sizeof(Frame_tail));
+		int offset = 0;
+		Frame_head* f_head = (Frame_head*) (fout.dat+offset);
+		offset += sizeof(Frame_head);
+		Udat_head* udat_head = (Udat_head*) (fout.dat+offset);
+		offset += sizeof(Udat_head);
+		Duid* duid = (Duid*) (fout.dat+offset);
+		offset += sizeof(Duid);
+		Obj_M_IT_TX_2* obj = (Obj_M_IT_TX_2 *) (fout.dat+offset);
+		offset += sizeof(Obj_M_IT_TX_2)*n;
+		Ta* ta = (Ta *) (fout.dat+offset);
+		offset += sizeof(Ta);
+		Frame_tail* f_tail = (Frame_tail*) (fout.dat+offset);
 		//};
 		f_head->start_byte1 = START_LONG_FRAME;
-		f_head->len1 = sizeof(Udat_head)+sizeof(Duid)
-		                +sizeof(Obj_M_IT_TX_2)*n+sizeof(Ta);
+		f_head->len1 = fout.len-sizeof(Frame_head)-sizeof(Frame_tail);
 		f_head->len2 = f_head->len1;
 		f_head->start_byte2 = START_LONG_FRAME;
 		udat_head->cf_m.fcn = FCN_M_SEND_DAT;
 		udat_head->cf_m.prm = PRM_UP;
-		udat_head->cf_m.acd = ACD_ACCESS;  //是最后一帧吗?
+		udat_head->cf_m.acd = ACD_ACCESS; //有数据
 		udat_head->cf_m.dfc = DFC_NOT_FULL;
 		udat_head->cf_m.res = CF_RES;
 		udat_head->link_addr = this->link_addr;
@@ -968,14 +963,14 @@ int Csd102::send_M_IT_TA_2(const struct Frame fi,
 			obj[i].cs = check_sum((u8*) &obj[i], sizeof(It));
 		}
 		GetSystemTime_RTC(&systime);
-		getsystime(systime, *ta);
-		f_tail->cs = this->check_sum(frame_out.dat+sizeof(Frame_head),
+		getsystime( *ta,systime);
+		f_tail->cs = this->check_sum(fout.dat+sizeof(Frame_head),
 		                f_head->len1);
 		f_tail->end_byte = END_BYTE;
 //		printf("duid->cf_m.funcode:%d", udat_head->cf_m.funcode);
 //		printf("f_tail->end_byte:%X", f_tail->end_byte);
-		//print_array(frame_out.dat, frame_out.len);
-		q1.push(frame_out);		//这一帧加入到队列
+		//print_array(fout.dat, fout.len);
+		q1.push(fout);		//这一帧加入到队列
 		printf("push to queue2,qsize=%d\n", q1.size());
 	}		//fno 一帧结束
 	//完成后还有一帧镜像帧,激活结束
@@ -985,21 +980,21 @@ int Csd102::send_M_IT_TA_2(const struct Frame fi,
 }
 /*	M_IT_TD_2 周期复位记账(计费)电能累计量,每个量为四个八位位组
  * */
-int Csd102::send_M_IT_TD_2(const struct Frame fi,
+int Csd102::make_M_IT_TD_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {     //M_IT_TD_2
 	return 0;
 }
 /*	M_IT_TA_B_2 复费率记帐(计费)电能累计量
  * */
-int Csd102::send_M_IT_TA_B_2(const struct Frame fi,
+int Csd102::make_M_IT_TA_B_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {     //M_IT_TA_B_2
 	return 0;
 }
 /*	M_YC_TA_2 遥测
  * */
-int Csd102::send_M_YC_TA_2(const struct Frame fi,
+int Csd102::make_M_YC_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
 	struct Frame frame_out;
@@ -1026,7 +1021,7 @@ int Csd102::send_M_YC_TA_2(const struct Frame fi,
 	}
 	const int obj_num = (fin->obj.end_ioa-fin->obj.start_ioa+1);
 	maxperframe = (255-sizeof(Udat_head)-sizeof(Duid)-sizeof(Ta))
-	                /sizeof(Obj_M_YC_TA_2_);
+	                /sizeof(Obj_M_YC_TA_2);
 	printf("总信息体个数(个)=%d 每帧最大信息体数(个)=%d\n", obj_num, maxperframe);
 	int frame_num = obj_num/maxperframe;	//数据应该分解成多少帧[1..frame_num]
 	for (int fno = 0; fno<frame_num+1; fno++) {  // [0,frame_num]
@@ -1039,24 +1034,24 @@ int Csd102::send_M_YC_TA_2(const struct Frame fi,
 		}
 
 		frame_out.len = sizeof(Frame_head)+sizeof(Udat_head)
-		                +sizeof(Duid)+sizeof(Obj_M_YC_TA_2_)*n
+		                +sizeof(Duid)+sizeof(Obj_M_YC_TA_2)*n
 		                +sizeof(Ta)+sizeof(Frame_tail);
 		printf("本帧信息体个数n=%d 长度 len=%d 最长<=261\n", n, frame_out.len);
-		//struct stFrame_M_IT_TA_2{
+		//struct stFrame_M_YC_TA_2{
 		Frame_head* fhead = (Frame_head*) ((u8*) frame_out.dat);
 		Udat_head* ufead = (Udat_head*) ((u8*) fhead
 		                +sizeof(Frame_head));
 		Duid* duid = (Duid*) ((u8*) ufead+sizeof(Udat_head));
-		Obj_M_YC_TA_2_* obj = (Obj_M_YC_TA_2_ *) ((u8*) duid
+		Obj_M_YC_TA_2* obj = (Obj_M_YC_TA_2 *) ((u8*) duid
 		                +sizeof(Duid));
 		Ta* ta = (Ta *) (frame_out.dat+frame_out.len
-		                -sizeof(Frame_tail)-sizeof(Ta));
+		                -sizeof(Frame_tail)-sizeof(Ta));  //从后面算方便
 		Frame_tail* f_tail = (Frame_tail*) (frame_out.dat
 		                +frame_out.len-sizeof(Frame_tail));
 		//};
 		fhead->start_byte1 = START_LONG_FRAME;
 		fhead->len1 = sizeof(Udat_head)+sizeof(Duid)
-		                +sizeof(Obj_M_YC_TA_2_)*n+sizeof(Ta);
+		                +sizeof(Obj_M_YC_TA_2)*n+sizeof(Ta);
 		fhead->len2 = fhead->len1;
 		fhead->start_byte2 = START_LONG_FRAME;
 		ufead->cf_m.fcn = FCN_M_SEND_DAT;
@@ -1095,7 +1090,7 @@ int Csd102::send_M_YC_TA_2(const struct Frame fi,
 			obj[i].rm.dst.iv = iv;
 		}
 		GetSystemTime_RTC(&systime);
-		getsystime(systime, *ta);
+		getsystime( *ta,systime);
 		//struct Frame_tail
 		f_tail->cs = this->check_sum(frame_out.dat+sizeof(Frame_head),
 		                fhead->len1);
@@ -1110,7 +1105,7 @@ int Csd102::send_M_YC_TA_2(const struct Frame fi,
 }
 /*	M_XL_TA_2 需量
  * */
-int Csd102::send_M_XL_TA_2(const struct Frame fi,
+int Csd102::make_M_XL_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
 	struct Frame frame_out;
@@ -1148,12 +1143,11 @@ int Csd102::send_M_XL_TA_2(const struct Frame fi,
 		} else {
 			n = maxperframe;
 		}
-
 		frame_out.len = sizeof(Frame_head)+sizeof(Udat_head)
 		                +sizeof(Duid)+sizeof(Obj_M_XL_TA_2)*n
 		                +sizeof(Ta)+sizeof(Frame_tail);
 		printf("本帧信息体个数n=%d 长度 len=%d 最长<=261\n", n, frame_out.len);
-		//struct stFrame_M_IT_TA_2{
+		// struct stFrame_M_XL_TA_2{
 		Frame_head* fhead = (Frame_head*) ((u8*) frame_out.dat);
 		Udat_head* ufead = (Udat_head*) ((u8*) fhead
 		                +sizeof(Frame_head));
@@ -1164,7 +1158,7 @@ int Csd102::send_M_XL_TA_2(const struct Frame fi,
 		                -sizeof(Frame_tail)-sizeof(Ta));
 		Frame_tail* f_tail = (Frame_tail*) (frame_out.dat
 		                +frame_out.len-sizeof(Frame_tail));
-		//};
+		// };
 		fhead->start_byte1 = START_LONG_FRAME;
 		fhead->len1 = sizeof(Udat_head)+sizeof(Duid)
 		                +sizeof(Obj_M_XL_TA_2)*n+sizeof(Ta);
@@ -1198,7 +1192,7 @@ int Csd102::send_M_XL_TA_2(const struct Frame fi,
 			/* 发生时间 */
 		}
 		GetSystemTime_RTC(&systime);
-		getsystime(systime, *ta);
+		getsystime( *ta,systime);
 		//struct Frame_tail
 		f_tail->cs = this->check_sum(frame_out.dat+sizeof(Frame_head),
 		                fhead->len1);
@@ -1213,14 +1207,14 @@ int Csd102::send_M_XL_TA_2(const struct Frame fi,
 }
 /*	M_IT_TA_C_2 月结算复费率电能累计量
  * */
-int Csd102::send_M_IT_TA_C_2(const struct Frame fi,
+int Csd102::make_M_IT_TA_C_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
 	return 0;
 }
 /*	M_IT_TA_D_2 表计谐波数据
  * */
-int Csd102::send_M_IT_TA_D_2(const struct Frame fi,
+int Csd102::make_M_IT_TA_D_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
 	return 0;
@@ -1228,7 +1222,7 @@ int Csd102::send_M_IT_TA_D_2(const struct Frame fi,
 // ************** 在监视方向的**系统信息** *************
 /*	M_EI_NA_2 初始化结束
  */
-int Csd102::send_M_EI_NA_2(std::queue<struct Frame> &q) const
+int Csd102::make_M_EI_NA_2(std::queue<struct Frame> &q) const
         {
 	struct Frame f;
 	struct stFrame_M_EI_NA_2 * frame = (struct stFrame_M_EI_NA_2 *) f.dat;
@@ -1261,16 +1255,15 @@ int Csd102::send_M_EI_NA_2(std::queue<struct Frame> &q) const
 	frame->obj.coi.coi = COI_RETOME_RESET;
 	frame->obj.coi.pc = COI_PARAMETER_UNCHANGED;
 	//tail
-
-	frame->farme_tail.end_byte = END_BYTE;
 	frame->farme_tail.cs = this->check_sum(*frame);
-	print_array(f.dat, f.len);
+	frame->farme_tail.end_byte = END_BYTE;
+	//print_array(f.dat, f.len);
 	q.push(f);
 	return 0;
 }
 /*	P_MP_NA_2 电能累计量数据终端设备的制造厂和产品规范
  */
-int Csd102::send_P_MP_NA_2(std::queue<struct Frame> &q) const
+int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
         {
 	struct Frame f;
 	struct stFrame_P_MP_NA_2 * frame = (struct stFrame_P_MP_NA_2 *) f.dat;
@@ -1317,7 +1310,7 @@ int Csd102::send_P_MP_NA_2(std::queue<struct Frame> &q) const
  out:	q	返回保存到1类数据队列中
  return:	0	成功
  */
-int Csd102::send_M_TI_TA_2(std::queue<struct Frame> &q1) const
+int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
         {
 	struct Frame f;
 	struct m_tSystime systime;
@@ -1345,7 +1338,7 @@ int Csd102::send_M_TI_TA_2(std::queue<struct Frame> &q1) const
 	//根据信息体的数量每增加255,值加1,从1开始.
 	fo->duid.rtu_addr = makeaddr(iObj_num);
 	fo->duid.rad = RAD_DEFAULT;
-	getsystime(systime, (fo->obj.t));
+	getsystime( (fo->obj.t),systime);
 
 	fo->farme_tail.end_byte = END_BYTE;
 	fo->farme_tail.cs = check_sum(*fo);
@@ -1406,7 +1399,7 @@ int Csd102::send_M_TI_TA_2(std::queue<struct Frame> &q1) const
  in:
  out:	f	通用帧结构
  */
-int Csd102::send_M_NV_NA_2(struct Frame &f) const
+int Csd102::make_M_NV_NA_2(struct Frame &f) const
         {
 	struct Short_frame * frame = (struct Short_frame *) f.dat;
 	f.len = sizeof(struct Short_frame);
@@ -1428,7 +1421,7 @@ int Csd102::send_M_NV_NA_2(struct Frame &f) const
  回复: M_LKR_NA_2 FN_M_RSP FC11 以链路状态回应
  out:	f
  */
-int Csd102::send_M_LKR_NA_2(struct Frame &f) const
+int Csd102::make_M_LKR_NA_2(struct Frame &f) const
         {
 	struct Short_frame * frame = (struct Short_frame *) f.dat;
 	f.len = sizeof(struct Short_frame);
@@ -1448,7 +1441,7 @@ int Csd102::send_M_LKR_NA_2(struct Frame &f) const
 
 /*	C10.2 M_SYN_TA_2 时间同步返回帧
  */
-int Csd102::send_M_SYN_TA_2(const struct Frame fi,
+int Csd102::make_M_SYN_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
 	struct Frame fo;
@@ -1456,7 +1449,7 @@ int Csd102::send_M_SYN_TA_2(const struct Frame fi,
 	struct m_tSystime systime;
 	TMStruct settime;
 	GetSystemTime_RTC(&systime);
-	getsystime(systime, pfo->tb);
+	getsystime( pfo->tb,systime);
 	Write_RTC_Time(&settime);
 	//head
 	pfo->farme_head.start_byte1 = START_LONG_FRAME;
@@ -1668,16 +1661,17 @@ inline rtu_addr_t Csd102::makeaddr(int obj_num) const
 	}
 	return (obj_num/255)+1;
 }
-inline void Csd102::showtime(struct Ta t) const
+inline void Csd102::showtime(const struct Ta t) const
         {
-	printf("Ta %4d-%2d-%2d %2d:%2d ", 2000+t.year, t.month, t.day, t.hour,
-	                t.min);
+	printf("Ta %4d-%02d-%02d %02d:%02d ",
+			2000+t.year, t.month, t.day, t.hour,t.min);
 	fflush(stdout);
 	return;
 }
-inline void Csd102::showtime(struct Tb t) const
+inline void Csd102::showtime(const struct Tb t) const
         {
-	printf("Tb %4d-%2d-%2d %2d:%2d:%2d %dms ", 2000+t.year, t.month, t.day,
+	printf("Tb %4d-%02d-%02d %02d:%02d:%02d %4dms ",
+			2000+t.year, t.month, t.day,
 	                t.hour, t.min, t.second, t.ms);
 	fflush(stdout);
 	return;
@@ -1686,7 +1680,8 @@ inline void Csd102::showtime(struct Tb t) const
  * return	true	需要重发
  * 		false	不需要重发
  * */
-bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf) const
+bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
+const
         {
 	union Ctrl_c cbak;
 	union Ctrl_c c;

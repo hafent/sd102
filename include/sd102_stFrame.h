@@ -40,7 +40,7 @@
  * 报文=LPDU=LPCI+LSDU
  * ADSU=DUID+N*Info_Obj+ADSU的公共地址(可选)
  *变长帧结构使用 FT1.2 格式:
-|                                    |     含义    |  长度 |  小节  |
+|                                    |     含义    |  长度 |  小节  |          |
 +-------+------------------------------------------+------+--------+----------+
 |       |                            |    0x68     |1 byte|        |          |
 | Frame |                            |    length   |1 byte|4 Bytes |          |
@@ -50,7 +50,7 @@
 |       | u_dat   |                  |  Ctrl Field |1 byte|        |          |
 |       |   head  |                  | Link addr lo|1 byte|3 Bytes |          |
 |       |         |                  | Link addr hi|1 byte|        |          |
-|       +---------+------+-----------+-------------+------+--------+-----+    |
+|       +---------+------+-----------+-------------+------+--------+-----\    |
 |       |         |      |           |  Type Id    |1 byte|        |     |    |
 |       |         |      | ASDU head |    VSQ      |1 byte|        |     |    |
 |       |         |      |  (DUID)   |    COT      |1 byte|6 Bytes |     |    |
@@ -67,7 +67,7 @@
 |       |         |      |           Z-------------Z      |        |     |    |
 |       |         |      |           |    Obj N    |      |        |     |    |
 |       |         |      |           | (Optional)  |      |        |     |    |
-+-------+---------+------+-----------+-------------+------+--------+-----+    |
++-------+---------+------+-----------+-------------+------+--------+-----/    |
 | Frame |                            |     CS      |1 byte|2 Bytes |   LPCI   |
 | Tail  |                            |    0x16     |1 byte|        |          |
 +-------+----------------------------+-------------+------+--------+----------+
@@ -81,7 +81,7 @@ struct Frame_head {
 };
 // IEC60870-5-2 3.2中的用户数据 头部分
 struct Udat_head {
-	union { //控制域
+	union { //控制域 Crtl field
 		union Ctrl_c cf_c;
 		union Ctrl_m cf_m;
 	};
@@ -187,7 +187,7 @@ struct stFrame_M_IT_TA_B_2{
 };
 #endif
 // 7.3.1.4 遥测历史量 History of remote measurement -information object
-struct Obj_M_YC_TA_2_ {
+struct Obj_M_YC_TA_2 {
 	ioa_t ioa;//
 	struct Remote_measure rm;
 };
@@ -196,7 +196,7 @@ struct stFrame_M_YC_TA_2{
 	struct Frame_head farme_head;
 	struct Udat_head udat_head;
 	struct Duid duid;
-	struct Obj_M_YC_TA_2_  obj[INFO_OBJ_NUM];
+	struct Obj_M_YC_TA_2  obj[INFO_OBJ_NUM];
 	struct Ta ta;//应用服务数据单元公共时标
 	struct Frame_tail farme_tail;
 };
