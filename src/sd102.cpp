@@ -118,7 +118,7 @@ void Csd102::SendProc(void)
 		fsp->duid.vsq.sq = SQ_Similar;
 		fsp->duid.cot.cause = COT_SPONT;
 		GetSystemTime_RTC(&systime);
-		getsystime( fsp->obj[0].tb,systime);
+		getsystime(fsp->obj[0].tb, systime);
 		//printf("####");
 		showtime(fsp->obj[0].tb);
 		fsp->tail.end_byte = END_BYTE;
@@ -156,8 +156,8 @@ int Csd102::ReciProc(void)
 	printf(PREFIX"RECE:");
 	print_array(reci_frame.dat, reci_frame.len);
 #endif
-	//测试时不验证重发.
-	if (false/*for 测试*/&&need_resend(reci_frame_bak, reci_frame)) {  //链路重发
+	//测试时不验证重发. "false" is for debug
+	if (false && need_resend(reci_frame_bak, reci_frame)) {  //链路重发
 	//重发本文的发送帧,重发
 		printf(PREFIX"重发Resend Farme\n");
 		//前后FCB应该不一样
@@ -201,7 +201,7 @@ int Csd102::ReciProc(void)
 			return 2200;
 		}
 		ret =
-		                process_long_frame(reci_frame, this->qclass1, this->qclass2);
+		                process_request(reci_frame, this->qclass1, this->qclass2);
 		if (ret!=0) {
 			PRINT_HERE
 		}
@@ -360,7 +360,7 @@ u8 Csd102::get_ctrl_field(const struct Frame f) const
  In/Out:	m_recvBuf 输入缓冲区/修改 [注意:被隐含的使用]
  out:		f	通用帧结构
  return:	0-成功
- 	 	 非0-失败
+ 非0-失败
  */
 int Csd102::separate_msg(struct Frame &f)
 {
@@ -609,15 +609,15 @@ int Csd102::process_short_frame(const struct Frame fin,
 //	       ,send_farme.start_byte,T frame[0],t_len);
 	return 0;
 }
-/*解析 FT1.2 变帧长帧
+/*解析 FT1.2 变帧长帧 /处理请求,分类构造数据报文(可能是一系列).
  接收变长帧,按 type(TYP)分类处理下行报文(主站发出的)
  in	fin	输入的帧
  out	q1	输出到1类数据
  q2	输出到2类数据
  */
-int Csd102::process_long_frame(const struct Frame fin,
+int Csd102::process_request(const struct Frame fin,
         std::queue<struct Frame> &q1,
-        std::queue<struct Frame> &q2)
+        std::queue<struct Frame> &q2 __attribute__ ((unused)))
 {
 	int ret;
 	int offset = 0;
@@ -726,7 +726,7 @@ int Csd102::clear_fcb(struct Frame &fbak) const
 }
 /* 从 系统时间(systime)中将时间复制到Tb时间结构中.
  * */
-int Csd102::getsystime(struct Tb &t,const struct m_tSystime systime) const
+int Csd102::getsystime(struct Tb &t, const struct m_tSystime systime) const
         {
 	t.ms = systime.msec;
 	//pframe->tb.eti=0;//费率
@@ -758,7 +758,7 @@ int Csd102::setsystime(TMStruct &systime, const struct Tb t) const
 }
 /* 从 系统时间(systime)中将时间复制到Ta时间结构中.
  * */
-int Csd102::getsystime( struct Ta & t,const struct m_tSystime systime) const
+int Csd102::getsystime(struct Ta & t, const struct m_tSystime systime) const
         {
 	t.min = systime.min;
 	t.hour = systime.hour;
@@ -851,7 +851,7 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取数据/事件?
 			int addr = 0;	//
 			obj[i].sp.spa = 1;
-			getsystime( obj[i].tb,systime);
+			getsystime(obj[i].tb, systime);
 		}
 		GetSystemTime_RTC(&systime);
 
@@ -931,7 +931,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		f_head->start_byte2 = START_LONG_FRAME;
 		udat_head->cf_m.fcn = FCN_M_SEND_DAT;
 		udat_head->cf_m.prm = PRM_UP;
-		udat_head->cf_m.acd = ACD_ACCESS; //有数据
+		udat_head->cf_m.acd = ACD_ACCESS;  //有数据
 		udat_head->cf_m.dfc = DFC_NOT_FULL;
 		udat_head->cf_m.res = CF_RES;
 		udat_head->link_addr = this->link_addr;
@@ -963,7 +963,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			obj[i].cs = check_sum((u8*) &obj[i], sizeof(It));
 		}
 		GetSystemTime_RTC(&systime);
-		getsystime( *ta,systime);
+		getsystime(*ta, systime);
 		f_tail->cs = this->check_sum(fout.dat+sizeof(Frame_head),
 		                f_head->len1);
 		f_tail->end_byte = END_BYTE;
@@ -1090,7 +1090,7 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 			obj[i].rm.dst.iv = iv;
 		}
 		GetSystemTime_RTC(&systime);
-		getsystime( *ta,systime);
+		getsystime(*ta, systime);
 		//struct Frame_tail
 		f_tail->cs = this->check_sum(frame_out.dat+sizeof(Frame_head),
 		                fhead->len1);
@@ -1192,7 +1192,7 @@ int Csd102::make_M_XL_TA_2(const struct Frame fi,
 			/* 发生时间 */
 		}
 		GetSystemTime_RTC(&systime);
-		getsystime( *ta,systime);
+		getsystime(*ta, systime);
 		//struct Frame_tail
 		f_tail->cs = this->check_sum(frame_out.dat+sizeof(Frame_head),
 		                fhead->len1);
@@ -1338,7 +1338,7 @@ int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
 	//根据信息体的数量每增加255,值加1,从1开始.
 	fo->duid.rtu_addr = makeaddr(iObj_num);
 	fo->duid.rad = RAD_DEFAULT;
-	getsystime( (fo->obj.t),systime);
+	getsystime((fo->obj.t), systime);
 
 	fo->farme_tail.end_byte = END_BYTE;
 	fo->farme_tail.cs = check_sum(*fo);
@@ -1449,7 +1449,7 @@ int Csd102::make_M_SYN_TA_2(const struct Frame fi,
 	struct m_tSystime systime;
 	TMStruct settime;
 	GetSystemTime_RTC(&systime);
-	getsystime( pfo->tb,systime);
+	getsystime(pfo->tb, systime);
 	Write_RTC_Time(&settime);
 	//head
 	pfo->farme_head.start_byte1 = START_LONG_FRAME;
@@ -1664,32 +1664,34 @@ inline rtu_addr_t Csd102::makeaddr(int obj_num) const
 inline void Csd102::showtime(const struct Ta t) const
         {
 	printf("Ta %4d-%02d-%02d %02d:%02d ",
-			2000+t.year, t.month, t.day, t.hour,t.min);
+	                2000+t.year, t.month, t.day, t.hour, t.min);
 	fflush(stdout);
 	return;
 }
 inline void Csd102::showtime(const struct Tb t) const
         {
 	printf("Tb %4d-%02d-%02d %02d:%02d:%02d %4dms ",
-			2000+t.year, t.month, t.day,
+	                2000+t.year, t.month, t.day,
 	                t.hour, t.min, t.second, t.ms);
 	fflush(stdout);
 	return;
 }
 /* 通过比较 上次接收的帧和本次接收的帧 确定是否需要重新发送上次的发送帧
+ * in	:	rf_bak	receive frame backup 备份的上次接收帧
+ * 		rf	receive frame 本次的接收帧
  * return	true	需要重发
  * 		false	不需要重发
  * */
 bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
-const
+        const
         {
 	union Ctrl_c cbak;
 	union Ctrl_c c;
-	//重发否?
 	cbak.val = this->get_ctrl_field(rf_bak);
 	c.val = this->get_ctrl_field(rf);
 	printf("c.fcb=%d c_bak.fcb=%d || c.fcv=%d c_bak.fcv=%d\n", c.fcb,
 	                cbak.fcb, c.fcv, cbak.fcv);
-	return (c.fcv==1)&&(c.fcb==cbak.fcb);
+	//前后两次的fcv都必须有效
+	return (cbak.fcv==1) && (c.fcv==1) && (c.fcb==cbak.fcb);
 }
 

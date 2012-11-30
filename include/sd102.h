@@ -49,7 +49,7 @@ private:
 	int transfer(const struct Frame f);
 	int process_short_frame(const struct Frame fin,
 	        struct Frame* f_out) const;
-	int process_long_frame(const struct Frame fin,
+	int process_request(const struct Frame fin,
 	        std::queue<struct Frame> &q1,
 	        std::queue<struct Frame> &q2);
 	int getsystime(struct Tb &t,const struct m_tSystime systime) const;
