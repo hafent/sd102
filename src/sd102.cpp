@@ -360,7 +360,7 @@ u8 Csd102::get_ctrl_field(const struct Frame f) const
  In/Out:	m_recvBuf 输入缓冲区/修改 [注意:被隐含的使用]
  out:		f	通用帧结构
  return:	0-成功
- 非0-失败
+ 	 	 非0-失败
  */
 int Csd102::separate_msg(struct Frame &f)
 {
@@ -818,7 +818,7 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 		frame_out.len = sizeof(Frame_head)+sizeof(Udat_head)
 		                +sizeof(Duid)+sizeof(Obj_M_SP_TA_2)*n
 		                +sizeof(Frame_tail);
-		//struct stFrame_M_IT_TA_2{
+		//struct stFrame_M_SP_TA_2{
 		Frame_head* f_head = (Frame_head*) ((u8*) frame_out.dat);
 		Udat_head* udat_head = (Udat_head*) ((u8*) f_head
 		                +sizeof(Frame_head));
@@ -847,7 +847,7 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 		duid->cot.t = COT_T_NOT_TEST;
 		duid->rad = RAD_DEFAULT;
 		duid->rtu_addr = makeaddr(obj_num);
-		//M_SP_TA_2_iObj []
+		// obj_M_SP_TA_2[] :
 		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取数据/事件?
 			int addr = 0;	//
 			obj[i].sp.spa = 1;

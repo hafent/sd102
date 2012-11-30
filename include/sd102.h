@@ -11,8 +11,8 @@
 #include "sd102_ctUdat.h"
 #include "sd102_ctStart.h"
 #include <queue>
-#define PREFIX "[sd102]" //答应用的前缀,方便区分
-#define PREERR "[sd102 ERR]"//不在意料之中的,用这个头打印
+#define PREFIX "[sd102]" //打印用的前缀,方便区分
+#define PREERR "[sd102 ERR]"//
 //标准发布日期,山东电力集团公司 发布 2011年3月24日
 #define  STANDARD_YEAR (11)
 #define  STANDARD_MONTH (3)
@@ -32,7 +32,6 @@ extern "C" CProtocol *CreateCProto_sd102();
 
 //class Csd102 :public CProtocol
 class Csd102: public CBASE102 {
-
 public:
 	Csd102();
 	~Csd102();
