@@ -54,7 +54,7 @@ struct touFilehead{
 struct Ti{
 	int val;
 	union{
-		u8 inval;
+		u8 Iv;
 		struct{
 			u8 res:7;//保留 取0
 			u8 iv:1;//有效标志,1-有效
@@ -151,6 +151,7 @@ private:
 	//TODO　读写数据库（文件）相关的本应该有DB来完成
 	void print_tou_head(const struct touFilehead  filehead)const;
 	void print_tou_dat(const struct Tou  tou) const;
+	u32 get_min(Ta ta)const;
 private:
 	//typ_t last_typ;
 	//u8 acd;

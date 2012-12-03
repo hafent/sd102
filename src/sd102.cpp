@@ -932,16 +932,26 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		q1.push(fi);
 	}
 
+	unsigned long T1,T2,T3,T4,e_val;
+	GetSystemTime_RTC(&systime);
+	struct Ta Tnow;
+	getsystime(Tnow, systime);
+	T1=get_min(fin->obj.Tstart);
+	T2=get_min(fin->obj.Tend);
+	T3=get_min(Tnow);
 	int addr = fin->obj.end_ioa-fin->obj.start_ioa+1;
+	int smtr = (fin->obj.start_ioa-1)/4;
+	int endmtr = (fin->obj.end_ioa-1)/4;
 
-	int mtrno = addr/4;	//表号 base 0
-	int sampleno=100;//采样点数
-	Obj_M_IT_TX_2 obj[mtrno][sampleno];
-	for (int i = 0; i<mtrno; i++) {	//遍历表号
+	int sampleno = 1000;	//采样点数
+	//Obj_M_IT_TX_2 obj[mtrno][sampleno];
+	//遍历所有信息体
+	for (int i = fin->obj.start_ioa; i<=fin->obj.end_ioa; i++) {	//遍历表号
+		int mtrno = (i-1)/4;	//从信息体计算成表号
 		//FIXME　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
 		std::string filename;
-		GetFileName_Day(&filename, fin->obj.Tstart.month
-		                , fin->obj.Tstart.day, i /*mtrno*/, TASK_TOU);
+		GetFileName_Day(&filename, fin->obj.Tstart.month+0
+		                , fin->obj.Tstart.day+0, mtrno, TASK_TOU);
 		std::cout<<"***** "<<filename<<std::endl;
 		unsigned char backTime[5],
 		                Save_Num, Save_XL[20], tempData[32];
@@ -953,20 +963,50 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		if (fp==NULL) {
 			perror("open file");
 		}
-
+		int datclass = (i-1)%4;//信息体对应在每个表不同数据分类
+		//时间=采样点*采样周期
+		int timeoffset = 0;	//按时间的偏移量,时间步距=采样周期
+		int sn = 0;//采样点偏移量
 		ret = fread(&filehead, sizeof(filehead), 1, fp);
 		if (ret!=1) {
 			printf("ret=%d", ret);
 			PRINT_HERE
 		}
+		//在文件内按时间偏移
+		sn=(fin->obj.Tstart.hour*60+fin->obj.Tstart.min)
+				/filehead.save_cycle_lo;
 		//filehead.day=9;
-		print_tou_head(filehead);
+		//print_tou_head(filehead);
+		fseek(fp,sn*sizeof(Tou),SEEK_CUR);
+		//循环读取
 		ret = fread(&toudat, sizeof(toudat), 1, fp);
 		if (ret!=1) {
 			printf("ret=%d", ret);
 			PRINT_HERE
 		}
+		printf("表号:%d ", mtrno);
+		printf("周期=%d(分钟),采样数=第%d个)\n",
+				                filehead.save_cycle_lo, sn);
+		switch(datclass+1){
+		case 1:
+			printf("打印 正向有功\n");
+			break;
+		case 2:
+			printf("打印 反向有功\n");
+			break;
+		case 3:
+			printf("打印 正向无功\n");
+			break;
+		case 4:
+			printf("打印 反向无功\n");
+			break;
+		default:
+			printf("分类错误!?\n");
+			PRINT_HERE
+			break;
+		}
 		print_tou_dat(toudat);
+		sn++;
 		fclose(fp);
 	}
 //	ret = Search_CircleDBS(filename, 12,
@@ -1773,4 +1813,75 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
 	//前后两次的fcv都必须有效
 	return (cbak.fcv==1)&&(c.fcv==1)&&(c.fcb==cbak.fcb);
 }
-
+/*由Ta计算 到目前位置的分钟数
+ * return	0 错误
+ * 		到目前为止的分钟数
+ */
+u32 Csd102::get_min(Ta ta)const
+{
+	unsigned int    mins,hours,days;
+	unsigned char   months,years;
+	unsigned char   circle=0,leap_flag=0;
+	mins    = ta.min;
+	hours   = ta.hour;
+	days    = ta.day-1;
+	months  = ta.month;
+	u8 YEARL   = ta.year+30;
+	years   = YEARL%100;
+	if(mins>59)return 0;
+	if(hours>23)return 0;
+	if (days>30) return 0;
+	if (months>12) return 0;
+	if(years>80) return 0;     //year must be >=2000 && <=2050
+	circle  = years/4;
+	days=circle*(366+365*3)+days;
+	if ((years % 4)==1) days=365+days;
+	else if((years % 4)==2) {
+		days=days+365*2;
+		leap_flag=1;
+	} else if ((years % 4)==3) days=days+366+365*2;
+	switch(months) {
+	case 1:
+		//days=days;
+		break;
+	case 2:
+		days=days+31;
+		break;
+	case 3:
+		days=days+(31+28);
+		break;
+	case 4:
+		days=days+(31*2+28);
+		break;
+	case 5:
+		days=days+(31*2+28+30);
+		break;
+	case 6:
+		days=days+(31*3+28+30);
+		break;
+	case 7:
+		days=days+(31*3+28+30*2);
+		break;
+	case 8:
+		days=days+(31*4+28+30*2);
+		break;
+	case 9:
+		days=days+(31*5+28+30*2);
+		break;
+	case 10:
+		days=days+(31*5+28+30*3);
+		break;
+	case 11:
+		days=days+(31*6+28+30*3);
+		break;
+	case 12:
+		days=days+(31*6+28+30*4);
+		break;
+	default:
+		break;
+	}
+	if ((months>2) && (leap_flag==1)) days=days+1;
+	hours=24*days +hours;
+	mins =60*hours+mins ;
+	return(mins);
+}
