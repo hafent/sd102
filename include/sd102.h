@@ -4,13 +4,21 @@
 #ifndef SD102_H
 #define SD102_H
 #include "CBASE102s.h"
-//结构定义
-#include "sd102_stFrame.h"
-//常量定义
-#include "sd102_ctDuid.h"
+#include "sd102_stFrame.h"//结构定义
+#include "sd102_ctDuid.h"//常量定义
 #include "sd102_ctUdat.h"
 #include "sd102_ctStart.h"
 #include <queue>
+#define VER
+#ifndef MAJOR
+#define MAJOR 0
+#endif
+#ifndef MINOR
+#define MINOR 0
+#endif
+#ifndef PATCHLEVEL
+#define PATCHLEVEL 0
+#endif
 #define PREFIX "[sd102]" //打印用的前缀,方便区分
 #define PREERR "[sd102 ERR]"//
 //标准发布日期,山东电力集团公司 发布 2011年3月24日
@@ -29,6 +37,45 @@ struct Frame {
 	u8 dat[MAX_FRAME_LEN];
 	int len;
 };
+//tou 电量　文件头 //TODO　这是存储方面的头文件，以后应该修改定义到存储方面
+struct touFilehead{
+	u8 year;
+	u8 month;
+	u8 day;
+	u8 save_cycle_lo;//存储周期[分钟]
+	u8 save_cycle_hi;//存储周期[分钟]
+	u8 save_number;
+	u8 save_flag1;
+	u8 save_flag2;
+	u8 save_flag3;
+	u8 save_flag4;
+};
+//某单独电量结构,如 总电量 或者 谷电量
+struct Ti{
+	int val;
+	union{
+		u8 inval;
+		struct{
+			u8 res:7;//保留 取0
+			u8 iv:1;//有效标志,1-有效
+		};
+	};
+};
+//tou 总尖峰平谷
+struct Ti_Category{
+	struct Ti total;
+	struct Ti tip;
+	struct Ti peak;
+	struct Ti flat;
+	struct Ti valley;
+};
+struct Tou{
+	struct Ti_Category FA;//正有
+	struct Ti_Category RA;//反有
+	struct Ti_Category FR;//正无
+	struct Ti_Category RR;//反无
+};
+
 extern "C" CProtocol *CreateCProto_sd102();
 
 //class Csd102 :public CProtocol
@@ -101,6 +148,9 @@ private:
 	int clear_fcb(struct Frame &fbak) const;
 	void print_array(const u8 *transbuf, const int len) const;
 	int copyframe(struct Frame &df, const struct Frame sf) const;
+	//TODO　读写数据库（文件）相关的本应该有DB来完成
+	void print_tou_head(const struct touFilehead  filehead)const;
+	void print_tou_dat(const struct Tou  tou) const;
 private:
 	//typ_t last_typ;
 	//u8 acd;

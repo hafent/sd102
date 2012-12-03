@@ -1,3 +1,8 @@
+major	= 0
+minor	= 0
+patch	= 1
+build = 1
+ver = $(major).$(minor).$(patch).$(build)
 INCS    = -I../include -I../../../../include -I../../base102/include
 #普通版本头文件包含 (非256块表的)
 #INCS    += -I/home/lee/test/hl3104/trunk/hl3104jd/软件/hl3104/include
@@ -12,8 +17,8 @@ LIBS    = -L$(LIB) -lsys_utl -lbase102
 CXX	= arm-linux-g++
 hostcxx	= g++
 NAME    = sd102
-DebugName = sd102-debug
 SOURCE  =       ../src/sd102.cpp
+MARCO = -DMAJOR=$(major) -DMINOR=$(minor) -DPATCHLEVEL=$(patch)
 wflag = -Wall -Wextra -Wfloat-equal -Wshadow -Wno-conversion    \
 	-Wmissing-declarations -Wundef -Wuninitialized -Wcast-align \
 	-Wsign-compare -Wcast-qual -Wwrite-strings -Waggregate-return \
@@ -23,15 +28,20 @@ wflag = -Wall -Wextra -Wfloat-equal -Wshadow -Wno-conversion    \
 CXXFLAGS = #-std=gnu99
 
 fdebug = -g -O
-all:$(NAME)
-$(NAME):$(SOURCE) 
+
+all : debug
+
+release:$(SOURCE) 
 #	arm-linux-gcc ../src/type.c -c -o type.o $(INCS)
 	$(CXX) $(LDFALGS) $(CXXFLAGS) -shared $(MARCO) \
-	$(INCS) $^ -o $(LIB)/lib$@.so $(LIBS) \
+	$(INCS) $(SOURCE) -o $(LIB)/lib$(NAME).so $(LIBS) \
+	$(fdebug) $(wflag) -pipe
+	
+
+debug:$(SOURCE)
+	$(CXX) $(LDFALGS) $(CXXFLAGS) -shared $(MARCO) \
+	$(INCS) $(SOURCE) -o $(LIB)/lib$(NAME)-dbg.so $(LIBS) \
 	$(fdebug) $(wflag) -pipe
 
-debug:a
-a:$(SOURCE)
-	$(hostcxx) $(LDFALGS) $(CXXFLAGS) -shared $(MARCO) \
-	$(INCS) $^ -o $(LIB)/lib$@.so $(LIBS) \
-	$(fdebug) $(wflag)
+clean:
+	rm $(LIB)/lib$(NAME)-dbg.so.$(ver) $(LIB)/lib$(NAME).so.$(ver) -rf

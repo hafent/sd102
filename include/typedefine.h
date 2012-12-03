@@ -9,6 +9,11 @@
 	printf("[File:%s Line:%d] Fun:%s\n",	\
 	__FILE__, __LINE__, __FUNCTION__);		\
 	}
+//打印编译构建的日期和时间，类似：Dec  3 2012 09:59:57
+#define BUILD_INFO {					\
+	printf("Build:[%s %s] \n",	\
+	__DATE__, __TIME__);		\
+	}
 typedef unsigned char u8;
 typedef unsigned short int u16;
 typedef unsigned int u32;

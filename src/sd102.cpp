@@ -17,18 +17,20 @@
 #include "Hisfile.h"
 #include "sd102.h"
 #include <stdarg.h>
+#include <iostream>
 #pragma pack(1)
 #define SHOW_MSG 1 //显示接收和发送的报文
 //
-int err_no=0;
-enum err_no_e{
-	ERR_WORRY_START_BYTE,//起始码错误,不是0x10 和0x68
+int err_no = 0;
+enum err_no_e {
+	ERR_WORRY_START_BYTE,  //起始码错误,不是0x10 和0x68
 	ERR_
 };
 extern "C" CProtocol *
 CreateCProto_sd102()
 {
-	//PRINT_HERE
+	printf(PREFIX"%d.%d.%d\n", MAJOR, MINOR, PATCHLEVEL);
+	BUILD_INFO
 	printf(PREFIX"create so lib\n");
 	return new Csd102;
 }
@@ -36,6 +38,7 @@ CreateCProto_sd102()
 Csd102::Csd102()
 {
 	printf(PREFIX"struct Csd102\n");
+	BUILD_INFO
 	syn_char_num = 6;
 //Syn_Head_Rece_Flag=0;
 	m_ACD = ACD_NO_ACCESS;
@@ -65,7 +68,6 @@ Csd102::Csd102()
 		qclass2.pop();
 	}
 	spon = 60;
-
 
 //开始时备份帧应该被清空
 //memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
@@ -102,7 +104,7 @@ void Csd102::SendProc(void)
 	struct m_tSystime systime;
 	//模拟终端自发数据,保存数据到2类数据队列,主站轮询时发现有数据,就应该招过去.
 	//用于发送终端事件?
-	if (spon>600 && qclass2.size()<CLASS2MAX ) {
+	if (spon>600&&qclass2.size()<CLASS2MAX) {
 		spon = 0;
 		struct Frame f;
 		struct stFrame_M_SP_TA_2* fsp =
@@ -164,7 +166,7 @@ int Csd102::ReciProc(void)
 	print_array(reci_frame.dat, reci_frame.len);
 #endif
 	//测试时不验证重发. "false" is for debug
-	if (false && need_resend(reci_frame_bak, reci_frame)) {  //链路重发
+	if (false&&need_resend(reci_frame_bak, reci_frame)) {  //链路重发
 	//重发本文的发送帧,重发
 		printf(PREFIX"重发Resend Farme\n");
 		//前后FCB应该不一样
@@ -438,7 +440,7 @@ int Csd102::sync_head(const u8 *buffer, int &farme_len) const
 			farme_len = sizeof(struct Short_frame);
 			return 0;
 		} else {
-			farme_len=0;
+			farme_len = 0;
 			return -1;
 		}
 	}
@@ -447,9 +449,9 @@ int Csd102::sync_head(const u8 *buffer, int &farme_len) const
 	                &&buffer[1]==buffer[2]) {
 		u8 len = buffer[1];
 		//最末尾的元素的index
-		int end_index =sizeof( Frame_head)     //帧头
-		                +len			//链路数据单元(LPDU)长度
-		                +sizeof( Frame_tail)     //帧尾
+		int end_index = sizeof(Frame_head)     //帧头
+		+len			//链路数据单元(LPDU)长度
+		                +sizeof(Frame_tail)     //帧尾
 		-1;
 		//printf("end_index=%d\n",end_index);
 		if (buffer[end_index]==END_BYTE) {
@@ -458,11 +460,11 @@ int Csd102::sync_head(const u8 *buffer, int &farme_len) const
 			                +sizeof(struct Frame_tail);
 			return 0;
 		} else {
-			farme_len=0;
+			farme_len = 0;
 			return -1;
 		}
 	}
-	farme_len=0;
+	farme_len = 0;
 	return -1;
 }
 /* 进一步检验帧. 和校验,地址检测.不会写类的成员变量(const[this])
@@ -875,7 +877,32 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 	}		//fno 一帧结束
 	return 0;
 }
-
+void Csd102::print_tou_dat(const struct Tou tou) const
+        {
+	printf("%d[%d] ", tou.FA.total.val, tou.FA.total.iv);
+	printf("%d[%d] ", tou.RA.total.val, tou.FA.total.iv);
+	printf("%d[%d] ", tou.FR.total.val, tou.FA.total.iv);
+	printf("%d[%d] ", tou.RR.total.val, tou.FA.total.iv);
+	printf("\n");
+	return;
+}
+void Csd102::print_tou_head(const struct touFilehead filehead) const
+        {
+	printf("tou file head:%d-%d-%d([%02X][%02X][%02X])\n"
+			"             sc= hi: %d[%02X] lo: %d[%02X]\n"
+			"             savenumber=%d[%02X]\n"
+			"             save flag="
+			"[%02X] [%02X] [%02X] [%02X]\n",
+	                filehead.year, filehead.month, filehead.day,
+	                filehead.year, filehead.month, filehead.day,
+	                filehead.save_cycle_hi, filehead.save_cycle_hi,
+	                filehead.save_cycle_lo, filehead.save_cycle_lo,
+	                filehead.save_number, filehead.save_number,
+	                filehead.save_flag1, filehead.save_flag2,
+	                filehead.save_flag3, filehead.save_flag4
+	                );
+	return;
+}
 /*	M_IT_TA_2 发送带时标(T)的电量(IT)
  in:	fi	输入帧结构
  out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
@@ -904,7 +931,50 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		make_mirror_1(fin, true);
 		q1.push(fi);
 	}
-	const int obj_num = (fin->obj.end_ioa-fin->obj.start_ioa+1);
+
+	int addr = fin->obj.end_ioa-fin->obj.start_ioa+1;
+
+	int mtrno = addr/4;	//表号 base 0
+	int sampleno=100;//采样点数
+	Obj_M_IT_TX_2 obj[mtrno][sampleno];
+	for (int i = 0; i<mtrno; i++) {	//遍历表号
+		//FIXME　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
+		std::string filename;
+		GetFileName_Day(&filename, fin->obj.Tstart.month
+		                , fin->obj.Tstart.day, i /*mtrno*/, TASK_TOU);
+		std::cout<<"***** "<<filename<<std::endl;
+		unsigned char backTime[5],
+		                Save_Num, Save_XL[20], tempData[32];
+		int ret = 0;
+		FILE *fp;
+		touFilehead filehead;
+		Tou toudat;
+		fp = fopen(filename.c_str(), "rb");
+		if (fp==NULL) {
+			perror("open file");
+		}
+
+		ret = fread(&filehead, sizeof(filehead), 1, fp);
+		if (ret!=1) {
+			printf("ret=%d", ret);
+			PRINT_HERE
+		}
+		//filehead.day=9;
+		print_tou_head(filehead);
+		ret = fread(&toudat, sizeof(toudat), 1, fp);
+		if (ret!=1) {
+			printf("ret=%d", ret);
+			PRINT_HERE
+		}
+		print_tou_dat(toudat);
+		fclose(fp);
+	}
+//	ret = Search_CircleDBS(filename, 12,
+//	                12, 1,
+//	                &Save_Num, &Save_XL[0], TASK_TOU);
+	//printf("ret=%d\n", ret);
+
+	const int obj_num = (fin->obj.end_ioa-fin->obj.start_ioa+1);// 还要乘以采集时间/采集周期
 	maxperframe = (MAX_UDAT_LEN-sizeof(Udat_head)-sizeof(Duid)-sizeof(Ta))
 	                /sizeof(Obj_M_IT_TX_2);
 	printf("总信息体数=%d 每帧最大信息体数=%d\n", obj_num, maxperframe);
@@ -959,11 +1029,12 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			 *正向无功 addr = (电表号)*4+3	;ti=2
 			 *反向无功 addr = (电表号)*4+4	;ti=3
 			 */
-			int addr = fin->obj.start_ioa+fno*maxperframe+i;
-			int mtrno = addr/4;		//表号 base 0
+//			int addr = fin->obj.start_ioa-1+fno*maxperframe+i;
+//			int mtrno = addr/4;		//表号 base 0
 			int ti = (addr-1)%4;		//电量类型
 			//数据无效标志,
 			bool iv;
+
 			obj[i].ioa = addr;
 			obj[i].it_power.dat = ti;
 			//TODO 其他事件待定
@@ -1700,6 +1771,6 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
 	printf("c.fcb=%d c_bak.fcb=%d || c.fcv=%d c_bak.fcv=%d\n", c.fcb,
 	                cbak.fcb, c.fcv, cbak.fcv);
 	//前后两次的fcv都必须有效
-	return (cbak.fcv==1) && (c.fcv==1) && (c.fcb==cbak.fcb);
+	return (cbak.fcv==1)&&(c.fcv==1)&&(c.fcb==cbak.fcb);
 }
 
