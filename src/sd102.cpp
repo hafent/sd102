@@ -1,4 +1,6 @@
-/*  filename:	sd102.h
+/**
+ * @file:sd102.h
+ *
  山东102规约 实现文件 引用 DL/T719-2000（IEC60870-5-102：1996）
  引用 GB/T 18657.2-2002 等效与 IEC60870-5-2:1990 链路传输规则*/
 #include <sys/msg.h>
@@ -18,7 +20,11 @@
 #pragma pack(1)
 #define SHOW_MSG 1 //显示接收和发送的报文
 //
-
+int err_no=0;
+enum err_no_e{
+	ERR_WORRY_START_BYTE,//起始码错误,不是0x10 和0x68
+	ERR_
+};
 extern "C" CProtocol *
 CreateCProto_sd102()
 {
@@ -60,6 +66,7 @@ Csd102::Csd102()
 	}
 	spon = 60;
 
+
 //开始时备份帧应该被清空
 //memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
 //this->reci_farme_bak_len=0;
@@ -95,7 +102,7 @@ void Csd102::SendProc(void)
 	struct m_tSystime systime;
 	//模拟终端自发数据,保存数据到2类数据队列,主站轮询时发现有数据,就应该招过去.
 	//用于发送终端事件?
-	if (spon>600) {
+	if (spon>600 && qclass2.size()<CLASS2MAX ) {
 		spon = 0;
 		struct Frame f;
 		struct stFrame_M_SP_TA_2* fsp =
@@ -331,7 +338,6 @@ int Csd102::transfer(const struct Frame f)
  */
 u8 Csd102::get_ctrl_field(const struct Frame f) const
         {
-
 	union Ctrl_c c;
 	if (f.len<(int) sizeof(struct Short_frame)) {
 		//PRINT_HERE;
@@ -416,7 +422,7 @@ int Csd102::separate_msg(struct Frame &f)
 	}
 	return 0;
 }
-/*分离报文子操作,按照格式分离,
+/*分离报文子操作,按照格式分离,可以有效处理粘包,分离有误判的可能性,但很小
  通过简单的比较帧头,起始字节,结束字节,帧长 这几样
  // in:	buffer 输入数字
  out:	farme_len 分离成功则输出帧长,失败则输出0
@@ -432,17 +438,18 @@ int Csd102::sync_head(const u8 *buffer, int &farme_len) const
 			farme_len = sizeof(struct Short_frame);
 			return 0;
 		} else {
+			farme_len=0;
 			return -1;
 		}
 	}
 //变长帧
 	if ((buffer[0]==START_LONG_FRAME)&&(buffer[3]==START_LONG_FRAME)
 	                &&buffer[1]==buffer[2]) {
-		int len = buffer[1];
+		u8 len = buffer[1];
 		//最末尾的元素的index
-		int end_index = 0+sizeof(struct Frame_head)     //帧头
-		                +len				//链路数据单元(LPDU)长度
-		                +sizeof(struct Frame_tail)     //帧尾
+		int end_index =sizeof( Frame_head)     //帧头
+		                +len			//链路数据单元(LPDU)长度
+		                +sizeof( Frame_tail)     //帧尾
 		-1;
 		//printf("end_index=%d\n",end_index);
 		if (buffer[end_index]==END_BYTE) {
@@ -451,9 +458,11 @@ int Csd102::sync_head(const u8 *buffer, int &farme_len) const
 			                +sizeof(struct Frame_tail);
 			return 0;
 		} else {
+			farme_len=0;
 			return -1;
 		}
 	}
+	farme_len=0;
 	return -1;
 }
 /* 进一步检验帧. 和校验,地址检测.不会写类的成员变量(const[this])
@@ -1275,14 +1284,14 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 	                -sizeof(struct Frame_tail);
 	frame->farme_head.len2 = frame->farme_head.len1;
 	frame->farme_head.start_byte2 = START_LONG_FRAME;
-	//lpdu
+	//udat_head
 	frame->udat_head.cf_m.fcn = FCN_M_SEND_DAT;	//
 	frame->udat_head.cf_m.acd = ACD_ACCESS;
 	frame->udat_head.cf_m.dfc = DFC_NOT_FULL;  //1 bit
 	frame->udat_head.cf_m.prm = PRM_UP;  //1bit
 	frame->udat_head.cf_m.res = CF_RES;  //1bit
 	frame->udat_head.link_addr = this->link_addr;
-	//asdu
+	//duid
 	frame->duid.typ = TYP_P_MP_NA_2;
 	frame->duid.vsq.sq = SQ_Similar;
 	frame->duid.vsq.n = num_iobj;
@@ -1297,9 +1306,7 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 	frame->obj.dos.year = STANDARD_YEAR;  //标准
 	frame->obj.dos.month = STANDARD_MONTH;
 	//tail
-	frame->farme_tail.cs = this->check_sum(
-	                (u8*) frame+sizeof(struct Frame_head),
-	                frame->farme_head.len1);
+	frame->farme_tail.cs = this->check_sum(*frame);
 	frame->farme_tail.end_byte = END_BYTE;
 	print_array(f.dat, f.len);
 	q.push(f);
@@ -1518,7 +1525,7 @@ u8 Csd102::check_sum(u8 const *a, int const len) const
 	}
 	return sum;
 }
-/*求各种已知长度的特定用途帧的校验值
+/*求各种已知长度的特定用途帧的校验值(固定长度的长帧)
  * in	f	例如 stFrame_C_SP_NB_2 ,stFrame_C_TI_NA_2,stFrame_M_EI_NA_2等
  * 		这样的[确定长度的],[特定用途]的帧结构体,参见file:frame.h
  * 		必须要有帧头 farme_head 结构
@@ -1652,7 +1659,8 @@ int Csd102::print_err_msg(int msg) const
 	return 0;
 }
 /*7.2.4 电能累计量数据终端设备地址,计算有待确定,
- 由于信息体地址是1个字节,应该不可能出现"信息体每超过一次255个信息点的情况".
+ * NOTE : 逻辑疑问
+ * 由于信息体地址是1个字节,应该不可能出现"信息体每超过一次255个信息点的情况".
  */
 inline rtu_addr_t Csd102::makeaddr(int obj_num) const
         {

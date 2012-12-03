@@ -28,7 +28,7 @@ $(NAME):$(SOURCE)
 #	arm-linux-gcc ../src/type.c -c -o type.o $(INCS)
 	$(CXX) $(LDFALGS) $(CXXFLAGS) -shared $(MARCO) \
 	$(INCS) $^ -o $(LIB)/lib$@.so $(LIBS) \
-	$(fdebug) $(wflag)
+	$(fdebug) $(wflag) -pipe
 
 debug:a
 a:$(SOURCE)

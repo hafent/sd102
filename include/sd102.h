@@ -19,6 +19,7 @@
 //厂商编号,产品编号
 #define FACT_ID (123)
 #define PRODUCT_ID (456)
+#define CLASS2MAX (256) //最大数据存储量:256帧单点数据
 //最大用户数据区长度,由len=1字节限制
 #define MAX_UDAT_LEN (255)
 //最大帧长

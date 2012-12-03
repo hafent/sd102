@@ -16,22 +16,23 @@
 #include "typedefine.h"
 #include "sd102_ctDuid.h"
 #include "sd102_ctUdat.h"
- struct stFcn_info fcn_info_c[]={
+struct stFcn_info fcn_info_c[]={
 		[FCN_C_RCU]={"Reset Communication Unit","复位通讯单元"},
 		[FCN_C_RLK]={"Call Link Status","链路状态请求"},
 		[FCN_C_PL1]={"Call class 1 date","召唤1级数据"},
 		[FCN_C_PL2]={"Call class 2 date","召唤2级数据"},
 		[FCN_C_RES1]={"Reseave","保留1"},
 		[FCN_C_RES2]={"Reseave","保留2"},
-
 };
- struct stFcn_info fcn_info_m[]={
+
+struct stFcn_info fcn_info_m[]={
 		[FCN_M_CON]={"Confirm","确认"},
 		[FCN_M_LINK_BUSY]={"Link busy","链路繁忙"},
 		[FCN_M_SEND_DAT]={"Send data","以数据回复"},
 		[FCN_M_NO_DAT]={"No data","没有所召唤的数据"},
 		[FCN_M_RSP]={"Response","返回链路状态"},
 };
+
 struct stTyp typ_info_c[]={
 		[TYP_C_RD_NA_2]={"Read Manufact","读制造厂和产品规范"}
 };
