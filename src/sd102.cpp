@@ -903,6 +903,7 @@ void Csd102::print_tou_head(const struct touFilehead filehead) const
 	                );
 	return;
 }
+
 /*	M_IT_TA_2 发送带时标(T)的电量(IT)
  in:	fi	输入帧结构
  out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
@@ -932,26 +933,28 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		q1.push(fi);
 	}
 
-	unsigned long T1,T2,T3,T4,e_val;
+	unsigned long T1, T2, T3, T4, e_val;
 	GetSystemTime_RTC(&systime);
 	struct Ta Tnow;
 	getsystime(Tnow, systime);
-	T1=get_min(fin->obj.Tstart);
-	T2=get_min(fin->obj.Tend);
-	T3=get_min(Tnow);
+	T1 = get_min(fin->obj.Tstart);
+	T2 = get_min(fin->obj.Tend);
+	T3 = get_min(Tnow);
 	int addr = fin->obj.end_ioa-fin->obj.start_ioa+1;
 	int smtr = (fin->obj.start_ioa-1)/4;
 	int endmtr = (fin->obj.end_ioa-1)/4;
 
 	int sampleno = 1000;	//采样点数
 	//Obj_M_IT_TX_2 obj[mtrno][sampleno];
-	//遍历所有信息体
-	for (int i = fin->obj.start_ioa; i<=fin->obj.end_ioa; i++) {	//遍历表号
+	//最外层循环.按表号(文件)来循环 一般日期跨度小,
+	for (int i = fin->obj.start_ioa; i<=fin->obj.end_ioa; i++) {	//信息体号
+		//mtrno=(i-1)/4;
 		int mtrno = (i-1)/4;	//从信息体计算成表号
 		//FIXME　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
 		std::string filename;
+		int dayoffset = 0;
 		GetFileName_Day(&filename, fin->obj.Tstart.month+0
-		                , fin->obj.Tstart.day+0, mtrno, TASK_TOU);
+		                , fin->obj.Tstart.day,mtrno , TASK_TOU);
 		std::cout<<"***** "<<filename<<std::endl;
 		unsigned char backTime[5],
 		                Save_Num, Save_XL[20], tempData[32];
@@ -963,48 +966,52 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		if (fp==NULL) {
 			perror("open file");
 		}
-		int datclass = (i-1)%4;//信息体对应在每个表不同数据分类
-		//时间=采样点*采样周期
-		int timeoffset = 0;	//按时间的偏移量,时间步距=采样周期
-		int sn = 0;//采样点偏移量
 		ret = fread(&filehead, sizeof(filehead), 1, fp);
 		if (ret!=1) {
-			printf("ret=%d", ret);
+			printf("读取电量文件头错误:ret=%d", ret);
 			PRINT_HERE
 		}
-		//在文件内按时间偏移
-		sn=(fin->obj.Tstart.hour*60+fin->obj.Tstart.min)
-				/filehead.save_cycle_lo;
+		//采样周期,分钟.
+		int timestep = filehead.save_cycle_hi*256
+		                +filehead.save_cycle_lo;
+		int datclass = (i-1)%4;		//信息体对应在每个表不同数据分类
+		//时间=采样点*采样周期
+		int timeoffset = 0;	//按时间的偏移量,时间步距=采样周期
+		int sn = 0;	//采样点偏移量
+		//距离这一天凌晨的偏移量(分钟)
+		int Soffset = (fin->obj.Tstart.hour*60+fin->obj.Tstart.min)
+		                /timestep;
+
 		//filehead.day=9;
 		//print_tou_head(filehead);
-		fseek(fp,sn*sizeof(Tou),SEEK_CUR);
-		//循环读取
+		fseek(fp, Soffset*sizeof(Tou), SEEK_CUR);
+		//读取这个时间点的数据
 		ret = fread(&toudat, sizeof(toudat), 1, fp);
 		if (ret!=1) {
-			printf("ret=%d", ret);
+			printf("读取电量信息错误:ret=%d", ret);
 			PRINT_HERE
 		}
 		printf("表号:%d ", mtrno);
-		printf("周期=%d(分钟),采样数=第%d个)\n",
-				                filehead.save_cycle_lo, sn);
-		switch(datclass+1){
+		switch (datclass) {
+		case 0:
+			printf("类别0 正向有功\t");
+			break;
 		case 1:
-			printf("打印 正向有功\n");
+			printf("类别1 反向有功\t");
 			break;
 		case 2:
-			printf("打印 反向有功\n");
+			printf("类别2 正向无功\t");
 			break;
 		case 3:
-			printf("打印 正向无功\n");
-			break;
-		case 4:
-			printf("打印 反向无功\n");
+			printf("类别3 反向无功\t");
 			break;
 		default:
-			printf("分类错误!?\n");
+			printf("类别X %d \t",datclass);
 			PRINT_HERE
 			break;
 		}
+		printf("周期=%d(分钟),偏移量:%d(个)tou\n",
+			                filehead.save_cycle_lo, Soffset);
 		print_tou_dat(toudat);
 		sn++;
 		fclose(fp);
@@ -1223,6 +1230,7 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 	}			//fno 一帧结束
 	return 0;
 }
+
 /*	M_XL_TA_2 需量
  * */
 int Csd102::make_M_XL_TA_2(const struct Frame fi,
@@ -1389,20 +1397,19 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 	struct stFrame_P_MP_NA_2 * frame = (struct stFrame_P_MP_NA_2 *) f.dat;
 	const int num_iobj = 1;		//信息体个数:1个
 	f.len = sizeof(struct stFrame_P_MP_NA_2);
-	//head
 	frame->farme_head.start_byte1 = START_LONG_FRAME;
 	frame->farme_head.len1 = f.len-sizeof(struct Frame_head)
 	                -sizeof(struct Frame_tail);
 	frame->farme_head.len2 = frame->farme_head.len1;
 	frame->farme_head.start_byte2 = START_LONG_FRAME;
-	//udat_head
+	//
 	frame->udat_head.cf_m.fcn = FCN_M_SEND_DAT;	//
 	frame->udat_head.cf_m.acd = ACD_ACCESS;
 	frame->udat_head.cf_m.dfc = DFC_NOT_FULL;  //1 bit
 	frame->udat_head.cf_m.prm = PRM_UP;  //1bit
 	frame->udat_head.cf_m.res = CF_RES;  //1bit
 	frame->udat_head.link_addr = this->link_addr;
-	//duid
+	//
 	frame->duid.typ = TYP_P_MP_NA_2;
 	frame->duid.vsq.sq = SQ_Similar;
 	frame->duid.vsq.n = num_iobj;
@@ -1411,12 +1418,12 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 	frame->duid.cot.t = COT_T_NOT_TEST;
 	frame->duid.rtu_addr = makeaddr(num_iobj);
 	frame->duid.rad = RAD_DEFAULT;
-	//information object
+	//
 	frame->obj.fcode = FACT_ID;  //
 	frame->obj.pcode = PRODUCT_ID;  //
 	frame->obj.dos.year = STANDARD_YEAR;  //标准
 	frame->obj.dos.month = STANDARD_MONTH;
-	//tail
+	//
 	frame->farme_tail.cs = this->check_sum(*frame);
 	frame->farme_tail.end_byte = END_BYTE;
 	print_array(f.dat, f.len);
@@ -1424,6 +1431,8 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 	return 0;
 
 }
+/* 电能累计量数据终端设备目前的系统时间 报文的制作.
+ * */
 /*	M_TI_TA_2 返回终端时间帧
  out:	q	返回保存到1类数据队列中
  return:	0	成功
@@ -1442,26 +1451,28 @@ int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
 	                -sizeof(Frame_head)-sizeof(Frame_tail);
 	fo->farme_head.len2 = fo->farme_head.len1;
 	fo->farme_head.start_byte2 = START_LONG_FRAME;
-	fo->lpdu_head.cf_m.fcn = FCN_M_SEND_DAT;
-	fo->lpdu_head.cf_m.prm = PRM_UP;
-	fo->lpdu_head.cf_m.acd = ACD_ACCESS;
-	fo->lpdu_head.cf_m.dfc = DFC_NOT_FULL;
-	fo->lpdu_head.link_addr = this->link_addr;
+	//
+	fo->udat_head.cf_m.fcn = FCN_M_SEND_DAT;
+	fo->udat_head.cf_m.prm = PRM_UP;
+	fo->udat_head.cf_m.acd = ACD_ACCESS;
+	fo->udat_head.cf_m.dfc = DFC_NOT_FULL;
+	fo->udat_head.link_addr = this->link_addr;
+	//
 	fo->duid.typ = TYP_M_TI_TA_2;
 	fo->duid.vsq.sq = SQ_Similar;
 	fo->duid.vsq.n = iObj_num;     //一个信息体
 	fo->duid.cot.cause = COT_REQUEST;     //cot传输原因
 	fo->duid.cot.pn = COT_PN_ACK;     //
-	fo->duid.cot.t = COT_T_NOT_TEST;     //不是测试(真正进行操作)
-	//根据信息体的数量每增加255,值加1,从1开始.
+	fo->duid.cot.t = COT_T_NOT_TEST;
 	fo->duid.rtu_addr = makeaddr(iObj_num);
 	fo->duid.rad = RAD_DEFAULT;
+	//
 	getsystime((fo->obj.t), systime);
-
+	//
 	fo->farme_tail.end_byte = END_BYTE;
 	fo->farme_tail.cs = check_sum(*fo);
 //
-	printf("返回时间:");
+	printf("TI_TA 返回时间:");
 	showtime(fo->obj.t);
 	printf("\n");
 	q1.push(f);
@@ -1511,6 +1522,7 @@ int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
 #endif
 }
 
+
 /*	召唤2级数据,没有2级数据,但是有1级数据
  回复M_NV_NA_2,fc:FN_M_NO_DAT 没有所召唤的数据(但是有1级数据ACD=1)
  Reset Communication Unit
@@ -1535,6 +1547,7 @@ int Csd102::make_M_NV_NA_2(struct Frame &f) const
 	return 0;
 
 }
+
 /*	回复链路状态请求(FN_C_RLK FC9)的帧
  回复: M_LKR_NA_2 FN_M_RSP FC11 以链路状态回应
  out:	f
@@ -1698,7 +1711,7 @@ int Csd102::time_range(const struct Ta starttime, const struct Ta endtime) const
 		printf("结束时间错误\n");
 		return 2;
 	}
-	if (stime>=etime) {
+	if (stime>etime) {
 		printf("开始晚于结束时间\n");
 		return 3;
 	}
@@ -1817,71 +1830,79 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
  * return	0 错误
  * 		到目前为止的分钟数
  */
-u32 Csd102::get_min(Ta ta)const
-{
-	unsigned int    mins,hours,days;
-	unsigned char   months,years;
-	unsigned char   circle=0,leap_flag=0;
-	mins    = ta.min;
-	hours   = ta.hour;
-	days    = ta.day-1;
-	months  = ta.month;
-	u8 YEARL   = ta.year+30;
-	years   = YEARL%100;
-	if(mins>59)return 0;
-	if(hours>23)return 0;
-	if (days>30) return 0;
-	if (months>12) return 0;
-	if(years>80) return 0;     //year must be >=2000 && <=2050
-	circle  = years/4;
-	days=circle*(366+365*3)+days;
-	if ((years % 4)==1) days=365+days;
-	else if((years % 4)==2) {
-		days=days+365*2;
-		leap_flag=1;
-	} else if ((years % 4)==3) days=days+366+365*2;
-	switch(months) {
+u32 Csd102::get_min(Ta ta) const
+        {
+	unsigned int mins, hours, days;
+	unsigned char months, years;
+	unsigned char circle = 0, leap_flag = 0;
+	mins = ta.min;
+	hours = ta.hour;
+	days = ta.day-1;
+	months = ta.month;
+	u8 YEARL = ta.year+30;
+	years = YEARL%100;
+	if (mins>59)
+		return 0;
+	if (hours>23)
+		return 0;
+	if (days>30)
+		return 0;
+	if (months>12)
+		return 0;
+	if (years>80)
+		return 0;     //year must be >=2000 && <=2050
+	circle = years/4;
+	days = circle*(366+365*3)+days;
+	if ((years%4)==1)
+		days = 365+days;
+	else if ((years%4)==2) {
+		days = days+365*2;
+		leap_flag = 1;
+	} else if ((years%4)==3)
+		days = days+366+365*2;
+	switch (months) {
 	case 1:
 		//days=days;
 		break;
 	case 2:
-		days=days+31;
+		days = days+31;
 		break;
 	case 3:
-		days=days+(31+28);
+		days = days+(31+28);
 		break;
 	case 4:
-		days=days+(31*2+28);
+		days = days+(31*2+28);
 		break;
 	case 5:
-		days=days+(31*2+28+30);
+		days = days+(31*2+28+30);
 		break;
 	case 6:
-		days=days+(31*3+28+30);
+		days = days+(31*3+28+30);
 		break;
 	case 7:
-		days=days+(31*3+28+30*2);
+		days = days+(31*3+28+30*2);
 		break;
 	case 8:
-		days=days+(31*4+28+30*2);
+		days = days+(31*4+28+30*2);
 		break;
 	case 9:
-		days=days+(31*5+28+30*2);
+		days = days+(31*5+28+30*2);
 		break;
 	case 10:
-		days=days+(31*5+28+30*3);
+		days = days+(31*5+28+30*3);
 		break;
 	case 11:
-		days=days+(31*6+28+30*3);
+		days = days+(31*6+28+30*3);
 		break;
 	case 12:
-		days=days+(31*6+28+30*4);
+		days = days+(31*6+28+30*4);
 		break;
 	default:
 		break;
 	}
-	if ((months>2) && (leap_flag==1)) days=days+1;
-	hours=24*days +hours;
-	mins =60*hours+mins ;
-	return(mins);
+	if ((months>2)&&(leap_flag==1))
+		days = days+1;
+	hours = 24*days+hours;
+	mins = 60*hours+mins;
+	return (mins);
 }

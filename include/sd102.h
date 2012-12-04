@@ -101,7 +101,7 @@ private:
 	        std::queue<struct Frame> &q1,
 	        std::queue<struct Frame> &q2);
 	int getsystime(struct Tb &t,const struct m_tSystime systime) const;
-	int getsystime(struct Ta &t , const struct m_tSystime systime) const;
+	int getsystime(struct Ta &t,const struct m_tSystime systime) const;
 	int setsystime(TMStruct &systime, const struct Tb t) const;
 	// 8.4.7 分类功能
 	//监视方向上的**过程信息** 处理函数

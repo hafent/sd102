@@ -269,7 +269,7 @@ struct Obj_M_TI_TA_2 {
 };
 struct stFrame_M_TI_TA_2{
 	struct Frame_head farme_head;
-	struct Udat_head lpdu_head;
+	struct Udat_head udat_head;
 	struct Duid duid;
 	struct Obj_M_TI_TA_2 obj;
 	struct Frame_tail farme_tail;
