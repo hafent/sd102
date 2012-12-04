@@ -1102,18 +1102,34 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 //	                &Save_Num, &Save_XL[0], TASK_TOU);
 	//printf("ret=%d\n", ret);
 
+
 	const int obj_num =qIT.size();//所有信息体的个数. (fin->obj.end_ioa-fin->obj.start_ioa+1);// 还要乘以采集时间/采集周期
+	//一条时刻记录中包含的信息体数量,当传了几帧(因为一帧传不完)后,总数等于这个,
+	//则要换帧,并且换Ta.
+	const int rs_len =fin->obj.end_ioa-fin->obj.start_ioa+1;
+	int cur_re_idx=0;//当前记录中的信息体个数(索引)指示这是本记录的第几个信息体,base on 0
+	// 但前总的信息体索引从0到max 共max+1个
+	int io_ind=0;
+	//一帧最多可以包含的信息体个数(含)
 	maxperframe = (MAX_UDAT_LEN-sizeof(Udat_head)-sizeof(Duid)-sizeof(Ta))
 	                /sizeof(Obj_M_IT_TX_2);
-	//printf("总信息体数=%d 每帧最大信息体数=%d\n", obj_num, maxperframe);
-	int frame_num = obj_num/maxperframe;	//数据应该分解成多少帧[1..frame_num]
-	for (int fno = 0; fno<frame_num+1; fno++) {  // [0,frame_num]
+	int meybe_err=0;
+	printf("每帧最大信息体数=%d 每条记录包含的信息体数量%d\n", maxperframe,rs_len);
+	while( !qIT.empty()
+			&& meybe_err++ <256 //循环太多次的话可能就是出错了,或者数据量不正常的多.
+			){			//直到数据传玩
+		printf("*");
 		int n;	//本帧包含的信息体数量
 		//本帧个数待确定
-		if (fno==frame_num) {  //是最后一帧,个数为剩下的
-			n = obj_num%maxperframe;
-		} else {  //不是最后一帧,数量为最大可以包含的数量
-			n = maxperframe;
+		if (rs_len<maxperframe) {  //是最后一帧,个数为剩下的
+			n = rs_len;
+		} else {
+			//记录级长-当前索引<=最大信息体数,则这帧可以讲剩余部分全部发完
+			if((rs_len-1-cur_re_idx)<=maxperframe){
+				n=rs_len-cur_re_idx;
+			}else{
+				n=maxperframe;
+			}
 		}
 		printf("n=%d\n", n);
 		fout.len = sizeof(Frame_head)+sizeof(Udat_head)
@@ -1150,11 +1166,15 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		duid->cot.pn = COT_PN_ACK;
 		duid->cot.t = COT_T_NOT_TEST;
 		duid->rad = RAD_DEFAULT;
-		duid->rtu_addr = makeaddr(obj_num);
+		duid->rtu_addr = makeaddr(io_ind+1);//根据信息体索引填写地址,
 		//从信息体队列弹出若干信息体(直到本时刻的信息体全发完,
 		//或者发不完,已经超过最大帧长.
+		int i=0;//本帧信息体现在数量,每帧都重置
 		//M_IT_TX_2_iObj []
-		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取历史数据
+		while(!qIT.empty() 			//1.数据传玩了.
+				&& i<maxperframe	//2.信息体数量过多,分帧
+				&& cur_re_idx<rs_len	//3.本记录所有信息体读完,换一帧
+				){
 			/*正向有功 addr = (电表号)*4+1	;ti=0
 			 *反向有功 addr = (电表号)*4+2	;ti=1
 			 *正向无功 addr = (电表号)*4+3	;ti=2
@@ -1162,21 +1182,28 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			 */
 //			int addr = fin->obj.start_ioa-1+fno*maxperframe+i;
 //			int mtrno = addr/4;		//表号 base 0
-			int ti = (addr-1)%4;		//电量类型
-			//数据无效标志,
-			bool iv;
-
-			obj[i].ioa = addr;
-			obj[i].it_power.dat = ti;
-			//TODO 其他事件待定
-			obj[i].it_power.d_status.val = 0xFF;
-			//TODO 校验的源待定.
-			obj[i].cs = check_sum((u8*) &obj[i], sizeof(It));
+//			int ti = (addr-1)%4;		//电量类型
+//			//数据无效标志,
+//			bool iv;
+//			obj[i].ioa = addr;
+//			obj[i].it_power.dat = ti;
+//			//TODO 其他事件待定
+//			obj[i].it_power.d_status.val = 0xFF;
+//			//TODO 校验的源待定.
+//			obj[i].cs = check_sum((u8*) &obj[i], sizeof(It));
+			printf("#");
+			obj[i]=qIT.front();
+			qIT.pop();
+			i++;//最小的循环累加:一帧中信息体排列下标 0~maxperframe-1
+			cur_re_idx++;//次级累加: 一条记录中信息体排列下标 0~rs_len-1
+			io_ind++;//最大: 本次请求的数据的信息体排列下标 0~?
 		}
-		//从公共时间单元队列得到一个时间,若是所有这个记录的信息体都发完,
-		//则换下一个时间,否则不换.
-		GetSystemTime_RTC(&systime);
-		getsystime(*ta, systime);
+		*ta=qTa.front();
+		//一条时刻的记录已经发送完,换下一个时刻.
+		if(cur_re_idx>=rs_len){
+			cur_re_idx=0;
+			qTa.pop();
+		}
 		f_tail->cs = this->check_sum(fout.dat+sizeof(Frame_head),
 		                f_head->len1);
 		f_tail->end_byte = END_BYTE;
@@ -1184,8 +1211,11 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 //		printf("f_tail->end_byte:%X", f_tail->end_byte);
 		//print_array(fout.dat, fout.len);
 		q1.push(fout);		//这一帧加入到队列
-		printf("push to queue2,qsize=%d\n", q1.size());
+		printf("push to 1类数据队列 ,qsize=%d\n", q1.size());
+		printf("结束:记录队列(时间条目):\t\t\tqTa.size=%d\n",qTa.size());
+		printf("     数据队列(信息体个数*时间条目):\tqIT.size=%d\n",qIT.size());
 	}		//fno 一帧结束
+
 	//完成后还有一帧镜像帧,激活结束
 	make_mirror_2(fin);
 	q1.push(fi);
@@ -1867,14 +1897,13 @@ int Csd102::print_err_msg(int msg) const
 	msg++;
 	return 0;
 }
-/*7.2.4 电能累计量数据终端设备地址,计算有待确定,
- * NOTE : 逻辑疑问
- * 由于信息体地址是1个字节,应该不可能出现"信息体每超过一次255个信息点的情况".
+/*7.2.4 电能累计量数据终端设备地址,
+ * "信息体每超过一次255个信息点的情况".
  */
 inline rtu_addr_t Csd102::makeaddr(int obj_num) const
         {
-	if (((obj_num/255)+1)!=1) {  //不出意外应该为1,
-		PRINT_HERE
+	if (((obj_num/255)+1)!=1) {  //多于255个信息体
+		//PRINT_HERE
 	}
 	return (obj_num/255)+1;
 }
