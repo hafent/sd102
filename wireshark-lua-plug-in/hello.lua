@@ -79,7 +79,7 @@ do
 	[170]="C_CI_NA_B_2:读一个选定的时间范围和一个选定的地址范围的复费率记帐(计费)电能累计量",
 	[172]="C_YC_TA_2:读一个选定的时间范围和一个选定的地址范围的遥测量",
 	[174]="读一个选定的时间范围和一个选定的地址范围的最大需量"})
-	local f_vsq=ProtoField.uint8("sd102.vsq","可变结构限定词(VSQ)",base.HEX)
+	local f_vsq=ProtoField.uint8("sd102.vsq","可变结构限定词(VSQ)",base.DEC)
 	local f_sq=ProtoField.uint8("sd102.sq","息体寻址方法(SQ)",base.HEX,
 	{[0]="每一个单个元素或综合元素由信息体地址寻址",
 	[1]="一个顺序的类似的信息元素(见IEC60870-5-3 5.1.5)"},0x80)
