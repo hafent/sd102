@@ -18,6 +18,8 @@
 #include "sd102.h"
 #include <stdarg.h>
 #include <iostream>
+#include <time.h>
+#include <errno.h>
 #pragma pack(1)
 #define SHOW_MSG 1 //显示接收和发送的报文
 //
@@ -754,19 +756,6 @@ int Csd102::getsystime(struct Tb &t, const struct m_tSystime systime) const
 	t.res2 = TB_RESERVE2;
 	return 0;
 }
-// 从Tb结构体设置.复制时间到(TMStruct)systime结构体,备用
-int Csd102::setsystime(TMStruct &systime, const struct Tb t) const
-        {
-	systime.m_sec = t.ms;
-	systime.second = t.second;
-	systime.minute = t.min;
-	systime.hour = t.hour;
-	systime.dayofmonth = t.day;
-	systime.month = t.month;
-	systime.year = t.year;
-	systime.dayofweek = t.week;
-	return 0;
-}
 /* 从 系统时间(systime)中将时间复制到Ta时间结构中.
  * */
 int Csd102::getsystime(struct Ta & t, const struct m_tSystime systime) const
@@ -783,6 +772,36 @@ int Csd102::getsystime(struct Ta & t, const struct m_tSystime systime) const
 	t.res2 = TB_RESERVE2;
 	return 0;
 }
+/* 将tm结构时间转化位 Ta结构时间
+ * */
+int Csd102::tm2ta(struct Ta & t, const struct tm time) const
+        {
+	t.min = time.tm_min;
+	t.hour = time.tm_hour;
+	t.day = time.tm_mday;
+	t.month = time.tm_mon+1;
+	t.year = time.tm_year+1900-2000;
+	t.week = time.tm_wday;
+	t.su = time.tm_isdst;     //非夏令时间(标准时间)
+	t.iv = TB_VALID;     //有效
+	t.res1 = TB_RESERVE1;     //备用置零
+	t.res2 = TB_RESERVE2;
+	return 0;
+}
+// 从Tb结构体设置.复制时间到(TMStruct)systime结构体,备用
+int Csd102::setsystime(TMStruct &systime, const struct Tb t) const
+        {
+	systime.m_sec = t.ms;
+	systime.second = t.second;
+	systime.minute = t.min;
+	systime.hour = t.hour;
+	systime.dayofmonth = t.day;
+	systime.month = t.month;
+	systime.year = t.year;
+	systime.dayofweek = t.week;
+	return 0;
+}
+
 #pragma  GCC diagnostic ignored  "-Wunused-parameter"
 // ************** 在监视方向的**过程信息** *************
 /*	M_SP_TA_2	上传单点信息
@@ -940,94 +959,157 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	T1 = get_min(fin->obj.Tstart);
 	T2 = get_min(fin->obj.Tend);
 	T3 = get_min(Tnow);
+	Ta taa;
+	time_t tsec=T1*60L;
+	struct tm t_ch;
+	memset(&t_ch,0x00,sizeof(t_ch));
+//	printf("1秒数=%d\n",tsec);
+//	gmtime_r(&tsec,&t_ch);
+//	printf("2秒数=%d\n",tsec);
+//	printf("秒转日期 %d-%d-%d %d:%d:%d \n",
+//		t_ch.tm_year,t_ch.tm_mon,t_ch.tm_mday
+//		,t_ch.tm_hour,t_ch.tm_min,t_ch.tm_sec);
+	printf("Time to min(start)=%ld\n", T1);
+	printf("Time to min(end)=%ld\n", T2);
 	int addr = fin->obj.end_ioa-fin->obj.start_ioa+1;
-	int smtr = (fin->obj.start_ioa-1)/4;
-	int endmtr = (fin->obj.end_ioa-1)/4;
+	u8 month = 0;
+	u8 day = 0;
 
-	int sampleno = 1000;	//采样点数
-	//Obj_M_IT_TX_2 obj[mtrno][sampleno];
-	//最外层循环.按表号(文件)来循环 一般日期跨度小,
-	for (int i = fin->obj.start_ioa; i<=fin->obj.end_ioa; i++) {	//信息体号
-		//mtrno=(i-1)/4;
-		int mtrno = (i-1)/4;	//从信息体计算成表号
-		//FIXME　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
-		std::string filename;
-		int dayoffset = 0;
-		GetFileName_Day(&filename, fin->obj.Tstart.month+0
-		                , fin->obj.Tstart.day,mtrno , TASK_TOU);
-		std::cout<<"***** "<<filename<<std::endl;
-		unsigned char backTime[5],
-		                Save_Num, Save_XL[20], tempData[32];
-		int ret = 0;
-		FILE *fp;
-		touFilehead filehead;
-		Tou toudat;
-		fp = fopen(filename.c_str(), "rb");
-		if (fp==NULL) {
-			perror("open file");
-		}
-		ret = fread(&filehead, sizeof(filehead), 1, fp);
-		if (ret!=1) {
-			printf("读取电量文件头错误:ret=%d", ret);
-			PRINT_HERE
-		}
-		//采样周期,分钟.
-		int timestep = filehead.save_cycle_hi*256
-		                +filehead.save_cycle_lo;
-		int datclass = (i-1)%4;		//信息体对应在每个表不同数据分类
-		//时间=采样点*采样周期
-		int timeoffset = 0;	//按时间的偏移量,时间步距=采样周期
-		int sn = 0;	//采样点偏移量
-		//距离这一天凌晨的偏移量(分钟)
-		int Soffset = (fin->obj.Tstart.hour*60+fin->obj.Tstart.min)
-		                /timestep;
 
-		//filehead.day=9;
-		//print_tou_head(filehead);
-		fseek(fp, Soffset*sizeof(Tou), SEEK_CUR);
-		//读取这个时间点的数据
-		ret = fread(&toudat, sizeof(toudat), 1, fp);
-		if (ret!=1) {
-			printf("读取电量信息错误:ret=%d", ret);
-			PRINT_HERE
+	int timestep_last = 0;//上次采集的周期,时间递增的步距
+
+	int timestep=0;//最小采集周期,步距
+	int snumber = 0;	//采样点个数
+	struct Obj_M_IT_TX_2 objit;
+	//向后移动一个周期(周期可能变化!)
+	//查询表示方法是 查 00分钟 到 15分钟 表示 [00,15] 两端闭区间
+	// 而采集表示方法是 第一点,00采样周期15分钟,那个[00,15) 区间都是由第一个采样点表示
+	// [15,30) 由第二个采样点表示. 前闭后开.
+	for (u32 t = T1; t<=T2; t += timestep) {
+		snumber++;
+		tsec=t*60;
+		gmtime_r(&tsec,&t_ch);
+		month=t_ch.tm_mon+1;
+		day=t_ch.tm_mday;
+		printf("[本条记录时间]:");
+		showtime(t_ch);
+		//Obj_M_IT_TX_2 obj[mtrno][sampleno];
+		//最外层循环.按表号(文件)来循环 一般日期跨度小,
+		for (int i = fin->obj.start_ioa; i<=fin->obj.end_ioa; i++) {//信息体号
+			//mtrno=(i-1)/4;
+			int mtrno = (i-1)/4;	//从信息体计算成表号
+			int datclass = (i-1)%4;		//信息体对应在每个表不同数据分类
+			//FIXME　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
+			std::string filename;
+			GetFileName_Day(&filename, month, day, mtrno, TASK_TOU);
+			std::cout<<"\t打开文件:"<<filename<<std::endl;
+			int ret = 0;
+			FILE *fp;
+			touFilehead filehead;
+			Tou toudat;
+			memset(&toudat, 0x00, sizeof(toudat));
+			fp = fopen(filename.c_str(), "rb");
+			if (fp==NULL) {//应该是没有这块表,跳过继续寻找下一块表的数据
+				perror("open file");
+				//如果是没有文件的错误,则继续
+				continue;
+				//如果是其他错误,那应该注意了.
+			}
+			ret = fread(&filehead, sizeof(filehead), 1, fp);
+			if (ret!=1) {
+				printf("读取电量文件头错误:ret=%d", ret);
+				PRINT_HERE
+			}
+
+			//TODO 比较头,是否是本年本月的数据,因为月是对保存时间(几个月)去摸的.
+			//采样周期,分钟.
+			//! 注意! 这里修改了外层循环的步距
+			timestep_last=timestep;
+			timestep = filehead.save_cycle_hi*256
+			                +filehead.save_cycle_lo;
+			/*对于不同的表采集周期不一样的情况:
+			 * 产生这种现象的原因可能是修改了表计个数,同是采样周期也修改了,
+			 * 造成之前存储的值的某些表与现在的不一样,过了一个最大存储周期后
+			 * 他们会变的相同的.
+			 * 保证按最小的采集周期计算
+			*/
+
+			if(timestep>timestep_last
+					&& timestep_last!=0
+					&& timestep!=0){
+				timestep=timestep_last;
+			}
+
+			 //如果:(T1-t)%timestep==0
+			//时间=采样点*采样周期
+			int timeoffset = 0;	//按时间的偏移量,时间步距=采样周期
+			int sn = 0;	//采样点偏移量
+			//距离这一天凌晨00:00的偏移量(分钟)/采样周期=文件中偏移的字节
+			int Soffset = (t%(60*24))/timestep;
+			//filehead.day=9;
+			//print_tou_head(filehead);
+			fseek(fp, Soffset*sizeof(Tou), SEEK_CUR);//这个不会返回错误
+			//读取这个时间点的数据
+			ret = fread(&toudat, sizeof(toudat), 1, fp);
+			if (ret!=1) {
+				//如果到等于0,可能就是读到结尾了.
+				printf("读取电量信息错误:ret=%d", ret);
+				PRINT_HERE
+			}
+			objit.ioa=i;
+			memcpy(&objit.it_power,&toudat.FA.total,sizeof(objit.it_power));
+			objit.cs=0xFF;//校验暂时不进行.
+			qIT.push(objit);
+			printf("\t表号:%d ", mtrno);
+			switch (datclass) {
+			case 0:
+				printf("类别0 正向有功\t");
+				break;
+			case 1:
+				printf("类别1 反向有功\t");
+				break;
+			case 2:
+				printf("类别2 正向无功\t");
+				break;
+			case 3:
+				printf("类别3 反向无功\t");
+				break;
+			default:
+				printf("类别X %d \t", datclass);
+				PRINT_HERE
+				break;
+			}
+			printf("周期=%d(分钟),偏移量:%d(个)tou 采样个数:%d个\n\t\t",
+			                filehead.save_cycle_lo, Soffset, snumber);
+			print_tou_dat(toudat);
+			sn++;
+			fclose(fp);
 		}
-		printf("表号:%d ", mtrno);
-		switch (datclass) {
-		case 0:
-			printf("类别0 正向有功\t");
-			break;
-		case 1:
-			printf("类别1 反向有功\t");
-			break;
-		case 2:
-			printf("类别2 正向无功\t");
-			break;
-		case 3:
-			printf("类别3 反向无功\t");
-			break;
-		default:
-			printf("类别X %d \t",datclass);
-			PRINT_HERE
+		//所有请求的信息体历史文件都不存在.
+		if(timestep==0){
+			printf("没有请求的数据!\n");
 			break;
 		}
-		printf("周期=%d(分钟),偏移量:%d(个)tou\n",
-			                filehead.save_cycle_lo, Soffset);
-		print_tou_dat(toudat);
-		sn++;
-		fclose(fp);
+		//一次时间完成:(对应帧中的信息体公共时间单元)
+		tm2ta(taa,t_ch);
+		qTa.push(taa);
 	}
+	//这里开始检查写两个队列的数据是否正确:
+	printf("记录队列(时间条目):\t\t\tqTa.size=%d\n",qTa.size());
+	printf("数据队列(信息体个数*时间条目):\tqIT.size=%d\n",qIT.size());
 //	ret = Search_CircleDBS(filename, 12,
 //	                12, 1,
 //	                &Save_Num, &Save_XL[0], TASK_TOU);
 	//printf("ret=%d\n", ret);
 
-	const int obj_num = (fin->obj.end_ioa-fin->obj.start_ioa+1);// 还要乘以采集时间/采集周期
+	const int obj_num =qIT.size();//所有信息体的个数. (fin->obj.end_ioa-fin->obj.start_ioa+1);// 还要乘以采集时间/采集周期
 	maxperframe = (MAX_UDAT_LEN-sizeof(Udat_head)-sizeof(Duid)-sizeof(Ta))
 	                /sizeof(Obj_M_IT_TX_2);
-	printf("总信息体数=%d 每帧最大信息体数=%d\n", obj_num, maxperframe);
+	//printf("总信息体数=%d 每帧最大信息体数=%d\n", obj_num, maxperframe);
 	int frame_num = obj_num/maxperframe;	//数据应该分解成多少帧[1..frame_num]
 	for (int fno = 0; fno<frame_num+1; fno++) {  // [0,frame_num]
 		int n;	//本帧包含的信息体数量
+		//本帧个数待确定
 		if (fno==frame_num) {  //是最后一帧,个数为剩下的
 			n = obj_num%maxperframe;
 		} else {  //不是最后一帧,数量为最大可以包含的数量
@@ -1069,6 +1151,8 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		duid->cot.t = COT_T_NOT_TEST;
 		duid->rad = RAD_DEFAULT;
 		duid->rtu_addr = makeaddr(obj_num);
+		//从信息体队列弹出若干信息体(直到本时刻的信息体全发完,
+		//或者发不完,已经超过最大帧长.
 		//M_IT_TX_2_iObj []
 		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取历史数据
 			/*正向有功 addr = (电表号)*4+1	;ti=0
@@ -1089,6 +1173,8 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			//TODO 校验的源待定.
 			obj[i].cs = check_sum((u8*) &obj[i], sizeof(It));
 		}
+		//从公共时间单元队列得到一个时间,若是所有这个记录的信息体都发完,
+		//则换下一个时间,否则不换.
 		GetSystemTime_RTC(&systime);
 		getsystime(*ta, systime);
 		f_tail->cs = this->check_sum(fout.dat+sizeof(Frame_head),
@@ -1522,7 +1608,6 @@ int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
 #endif
 }
 
-
 /*	召唤2级数据,没有2级数据,但是有1级数据
  回复M_NV_NA_2,fc:FN_M_NO_DAT 没有所召唤的数据(但是有1级数据ACD=1)
  Reset Communication Unit
@@ -1793,9 +1878,17 @@ inline rtu_addr_t Csd102::makeaddr(int obj_num) const
 	}
 	return (obj_num/255)+1;
 }
+inline void Csd102::showtime(const struct tm t) const
+        {
+	printf("tm %4d-%02d-%02d %02d:%02d:%02d timezone:%s\n",
+			1900+t.tm_year, t.tm_mon+1, t.tm_mday,
+	                t.tm_hour, t.tm_min,t.tm_sec,t.tm_zone);
+	fflush(stdout);
+	return;
+}
 inline void Csd102::showtime(const struct Ta t) const
         {
-	printf("Ta %4d-%02d-%02d %02d:%02d ",
+	printf("Ta %4d-%02d-%02d %02d:%02d \n",
 	                2000+t.year, t.month, t.day, t.hour, t.min);
 	fflush(stdout);
 	return;
@@ -1826,7 +1919,8 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
 	//前后两次的fcv都必须有效
 	return (cbak.fcv==1)&&(c.fcv==1)&&(c.fcb==cbak.fcb);
 }
-/*由Ta计算 到目前位置的分钟数
+
+/* 将Ta时间格式换算成 从1900年1月1日0时0分到目前为止的(分钟/秒)数.
  * return	0 错误
  * 		到目前为止的分钟数
  */
@@ -1839,7 +1933,7 @@ u32 Csd102::get_min(Ta ta) const
 	hours = ta.hour;
 	days = ta.day-1;
 	months = ta.month;
-	u8 YEARL = ta.year+30;
+	u8 YEARL = ta.year+30;//base 2000-> base1970
 	years = YEARL%100;
 	if (mins>59)
 		return 0;
@@ -1849,7 +1943,7 @@ u32 Csd102::get_min(Ta ta) const
 		return 0;
 	if (months>12)
 		return 0;
-	if (years>80)
+	if (years>99)
 		return 0;     //year must be >=2000 && <=2050
 	circle = years/4;
 	days = circle*(366+365*3)+days;

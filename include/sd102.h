@@ -51,6 +51,8 @@ struct touFilehead{
 	u8 save_flag4;
 };
 //某单独电量结构,如 总电量 或者 谷电量
+//这个结构文件存储中的结构和规约定义的结构有差别,
+//规约进一步定义了保留的 低7位每一位的意义.但是主程序中没有设置这些位.(终端功能欠缺)
 struct Ti{
 	int val;
 	union{
@@ -61,7 +63,8 @@ struct Ti{
 		};
 	};
 };
-//tou 总尖峰平谷
+
+//tou 总尖峰平谷,
 struct Ti_Category{
 	struct Ti total;
 	struct Ti tip;
@@ -103,6 +106,7 @@ private:
 	int getsystime(struct Tb &t,const struct m_tSystime systime) const;
 	int getsystime(struct Ta &t,const struct m_tSystime systime) const;
 	int setsystime(TMStruct &systime, const struct Tb t) const;
+	int tm2ta(struct Ta & t, const struct tm time) const;
 	// 8.4.7 分类功能
 	//监视方向上的**过程信息** 处理函数
 	int make_M_SP_TA_2(const struct Frame fi,
@@ -139,6 +143,7 @@ private:
 	rtu_addr_t makeaddr(int obj_num) const;
 	void showtime(const struct Ta t) const;
 	void showtime(const struct Tb t) const;
+	void showtime(const struct tm t) const;
 	bool need_resend(const struct Frame rf_bak,const struct Frame rf) const;
 	int time_range(const struct Ta starttime, const struct Ta endtime) const;
 	int print_err_msg(int msg) const;
@@ -148,10 +153,12 @@ private:
 	int clear_fcb(struct Frame &fbak) const;
 	void print_array(const u8 *transbuf, const int len) const;
 	int copyframe(struct Frame &df, const struct Frame sf) const;
+	int protime_to_tm(const Ta ta,struct tm t)const;
 	//TODO　读写数据库（文件）相关的本应该有DB来完成
 	void print_tou_head(const struct touFilehead  filehead)const;
 	void print_tou_dat(const struct Tou  tou) const;
 	u32 get_min(Ta ta)const;
+	u32 get_min_2(Ta ta)const;
 private:
 	//typ_t last_typ;
 	//u8 acd;
@@ -169,5 +176,11 @@ private:
 	struct Frame mirror_farme;
 	std::queue<struct Frame> qclass1;
 	std::queue<struct Frame> qclass2;
+
 };
+//在采集历史电量中使用:
+std::queue<struct Ta> qTa;//Ta,没个元素表示一次记录,
+//表示一个[开始信息体-结束信息体],之后再重复入队列,直到<记录次数>次.
+std::queue<struct Obj_M_IT_TX_2> qIT;
+
 #endif // SD102_H
