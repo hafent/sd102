@@ -143,8 +143,12 @@ do
 	local f_sp_spa = ProtoField.uint8("sd102.Sp_spa","单点信息地址(SP)",base.DEC)
 	local f_sp_spi = ProtoField.uint8("sd102.Sp_spi","单点信息状态(SPI)",base.HEX,
 	{[0]="分开",[1]="闭合"},0x01)
-	local f_sp_spq = ProtoField.uint8("sd102.Sp_spq","单点信息质量(SPQ)",base.HEX,
-	nil,0xFE)
+	local f_sp_spq = ProtoField.uint8("sd102.Sp_spq","单点信息质量(SPQ)",base.HEX)
+	--电量信息
+	local f_ti =ProtoField.bytes("sd102.TI","电量信息体(TI)",base.HEX)
+	local f_ti_val = ProtoField.uint32("sd102.TIval","电量值",base.DEC) --注意小端模式
+	local f_ti_cs = ProtoField.uint8("sd102.TIcs","电量值",base.HEX)
+
 	--添加到域
 	p_ShanDong102.fields = { f_onebyte,f_len,
 	f_start,f_funcode,f_funcode_rsp,f_ctrl,
@@ -153,9 +157,11 @@ do
 	f_cot,f_cot_t,f_cot_pn,f_cot_cot,f_ASDU_addr,f_ASDU_addr_lo,f_ASDU_addr_hi,f_recordAddr,
 	f_Tb,f_Tb_ms,f_Tb_sec,f_Tb_min,f_Tb_tis,f_Tb_iv,f_Tb_hour,f_Tb_day,f_Tb_week, --Tb
 	f_Tb_mon,f_Tb_year,f_Tb_su,f_Tb_pti,f_Tb_eti,
-	f_msgaddr_start,f_msgaddr_end,
-	f_Ta, f_Ta_min,f_Ta_hour,f_Ta_day,f_Ta_week,f_Ta_mon,f_Ta_year,
-	f_sp,f_sp_spa,f_sp_spi,f_sp_spq} --Ta
+	f_msgaddr_start,f_msgaddr_end, --开始可结束信息体地址
+	f_Ta, f_Ta_min,f_Ta_hour,f_Ta_day,f_Ta_week,f_Ta_mon,f_Ta_year,--Ta
+	f_sp,f_sp_spa,f_sp_spi,f_sp_spq, 	--单点信息
+	f_ti,f_ti_val,f_ti_cs --电量信息
+	} 
 
 	local data_dis = Dissector.get("data")
 	-- 主体函数
@@ -395,6 +401,21 @@ do
 				Tb:add(f_Tb_pti,buf(20,1))
 				Tb:add(f_Tb_eti,buf(20,1))
 				Tb:add(f_Tb_year,buf(21,1))
+			elseif buf(7,1):uint() == 2 then --电能累积量
+				local n=buf(8,1):uint() --
+				--开始循环
+				local sp = t:add(f_ti,buf(13+0,7))
+				--信息体地址 没写
+				sp:add_el(f_ti_val ,buf(13+1,4)) --电量整形
+				sp:add(f_ti_cs,buf(13+1+4,1))--电量校验
+				local Ta_end = t:add(f_Ta,buf(19,5))
+				Ta_end:add(f_Ta_year,buf(23,1))
+				Ta_end:add(f_Ta_mon,buf(22,1))
+				Ta_end:add(f_Ta_day,buf(21,1))
+				Ta_end:add(f_Ta_hour,buf(20,1))
+				Ta_end:add(f_Ta_min,buf(19,1))
+				Ta_end:add(f_Ta_week,buf(21,1))
+
 			end
 		end
 		-- 结束
