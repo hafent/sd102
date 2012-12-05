@@ -11,7 +11,7 @@
 	}
 //打印编译构建的日期和时间，类似：Dec  3 2012 09:59:57
 #define BUILD_INFO {					\
-	printf("Build:[%s %s] \n",	\
+	printf("Build:%s %s\n",	\
 	__DATE__, __TIME__);		\
 	}
 typedef unsigned char u8;

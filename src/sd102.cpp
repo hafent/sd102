@@ -31,7 +31,7 @@ enum err_no_e {
 extern "C" CProtocol *
 CreateCProto_sd102()
 {
-	printf(PREFIX"%d.%d.%d\n", MAJOR, MINOR, PATCHLEVEL);
+	printf(PREFIX"Version: %d.%d.%d,", MAJOR, MINOR, PATCHLEVEL);
 	BUILD_INFO
 	printf(PREFIX"create so lib\n");
 	return new Csd102;
@@ -40,7 +40,7 @@ CreateCProto_sd102()
 Csd102::Csd102()
 {
 	printf(PREFIX"struct Csd102\n");
-	BUILD_INFO
+	//BUILD_INFO
 	syn_char_num = 6;
 //Syn_Head_Rece_Flag=0;
 	m_ACD = ACD_NO_ACCESS;
@@ -141,7 +141,8 @@ void Csd102::SendProc(void)
 	return;
 }
 
-//接收(从主站发来的)报文 主处理流程
+/**接收(从主站发来的)报文 主处理流程
+ */
 int Csd102::ReciProc(void)
 {
 #if 0 //just for receive base debug

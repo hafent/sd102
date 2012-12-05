@@ -1,7 +1,7 @@
 major	= 0
-minor	= 0
-patch	= 1
-build = 1
+minor	= 1
+patch	= 2
+build = git
 ver = $(major).$(minor).$(patch).$(build)
 INCS    = -I../include -I../../../../include -I../../base102/include
 #普通版本头文件包含 (非256块表的)
@@ -29,7 +29,7 @@ CXXFLAGS = #-std=gnu99
 
 fdebug = -g -O
 
-all : debug
+all :  debug 
 
 release:$(SOURCE) 
 #	arm-linux-gcc ../src/type.c -c -o type.o $(INCS)
@@ -42,6 +42,8 @@ debug:$(SOURCE)
 	$(CXX) $(LDFALGS) $(CXXFLAGS) -shared $(MARCO) \
 	$(INCS) $(SOURCE) -o $(LIB)/lib$(NAME)-dbg.so $(LIBS) \
 	$(fdebug) $(wflag) -pipe
-
+info:
+	patch = 
+	echo $(patch)
 clean:
 	rm $(LIB)/lib$(NAME)-dbg.so.$(ver) $(LIB)/lib$(NAME).so.$(ver) -rf
