@@ -142,6 +142,7 @@ void Csd102::SendProc(void)
 }
 
 /**接收(从主站发来的)报文 主处理流程
+ * @return 没有
  */
 int Csd102::ReciProc(void)
 {
@@ -1108,7 +1109,7 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 	}
 	return 0;
 }
-/*	M_IT_TA_2 发送带时标(T)的电量(IT)
+/**	M_IT_TA_2 发送带时标(T)的电量(IT)
  in:	fi	输入帧结构
  out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
  return:	0	成功
@@ -1262,7 +1263,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	q1.push(fi);
 	return 0;
 }
-/*	M_IT_TD_2 周期复位记账(计费)电能累计量,每个量为四个八位位组
+/**	M_IT_TD_2 周期复位记账(计费)电能累计量,每个量为四个八位位组
  * */
 int Csd102::make_M_IT_TD_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
@@ -1276,7 +1277,7 @@ int Csd102::make_M_IT_TA_B_2(const struct Frame fi,
         {     //M_IT_TA_B_2
 	return 0;
 }
-/*	M_YC_TA_2 遥测
+/**	M_YC_TA_2 遥测
  * */
 int Csd102::make_M_YC_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
@@ -1388,7 +1389,7 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 	return 0;
 }
 
-/*	M_XL_TA_2 需量
+/**	M_XL_TA_2 需量
  * */
 int Csd102::make_M_XL_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
@@ -1490,7 +1491,7 @@ int Csd102::make_M_XL_TA_2(const struct Frame fi,
 	}			//fno 一帧结束
 	return 0;
 }
-/*	M_IT_TA_C_2 月结算复费率电能累计量
+/**	M_IT_TA_C_2 月结算复费率电能累计量
  * */
 int Csd102::make_M_IT_TA_C_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
@@ -1919,7 +1920,7 @@ int Csd102::ioa_range(const struct Obj_C_CI_XX_2 obj) const
 	}
 	return 0;
 }
-/*输入帧 逻辑上是否正确*/
+/**输入帧 逻辑上是否正确*/
 int Csd102::format_ok(struct stFrame_C_CI_NR_2 fin) const
         {
 	if (this->time_range(fin.obj)!=0) {
@@ -1938,7 +1939,7 @@ int Csd102::print_err_msg(int msg) const
 	msg++;
 	return 0;
 }
-/*7.2.4 电能累计量数据终端设备地址,
+/** 7.2.4 电能累计量数据终端设备地址,
  * "信息体每超过一次255个信息点的情况".
  */
 inline rtu_addr_t Csd102::makeaddr(int obj_num) const
@@ -1971,7 +1972,7 @@ inline void Csd102::showtime(const struct Tb t) const
 	fflush(stdout);
 	return;
 }
-/* 通过比较 上次接收的帧和本次接收的帧 确定是否需要重新发送上次的发送帧
+/** 通过比较 上次接收的帧和本次接收的帧 确定是否需要重新发送上次的发送帧
  * in	:	rf_bak	receive frame backup 备份的上次接收帧
  * 		rf	receive frame 本次的接收帧
  * return	true	需要重发
@@ -1990,7 +1991,7 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
 	return (cbak.fcv==1)&&(c.fcv==1)&&(c.fcb==cbak.fcb);
 }
 
-/* 将Ta时间格式换算成 从1900年1月1日0时0分到目前为止的(分钟/秒)数.
+/** 将Ta时间格式换算成 从1900年1月1日0时0分到目前为止的(分钟/秒)数.
  * return	0 错误
  * 		到目前为止的分钟数
  */

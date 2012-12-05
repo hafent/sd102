@@ -1,4 +1,34 @@
-#山东102 规约实现
+sd102
+山东102 规约实现
+参考base102. 主要是数据结构的构造
+doc目录下是文档
+.
+|-- Flow_chart.dia
+|-- include
+|   |-- sd102_cot.h
+|   |-- sd102_ctrl_field.h
+|   |-- sd102_frame.h
+|   |-- sd102.h
+|   |-- sd102_start_char.h
+|   |-- sd102_struct.h
+|   |-- sd102_typ.h
+|   `-- typedefine.h
+|-- linux
+|   `-- Makefile
+|-- Makefile
+|-- README
+|-- README.markdown
+|-- sd102.config
+|-- sd102.creator
+|-- sd102.creator.user
+|-- sd102.files
+|-- sd102.includes
+|-- src
+|   |-- CBASE102s.cpp
+|   `-- sd102.cpp
+`-- wireshark-lua-plug-in
+    |-- 1.png
+    |-- hello.lua
+    |-- README.markdown
+    `-- sd102.pcap
 
-1. 参考base102. 主要是数据结构的构造
-2. 业务流程 参加相关标准
