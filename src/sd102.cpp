@@ -1027,25 +1027,63 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			timestep_last=timestep;
 			timestep = filehead.save_cycle_hi*256
 			                +filehead.save_cycle_lo;
+			int tmpstep=timestep;
+//			if((t%(60*24))%timestep!=0){//如果不是某一小时的整数周期分钟,向后元整
+//				//开始时间从1分钟变到5分钟,如果周期位5.
+//				t=t+(timestep-t_ch.tm_min%timestep);
+//				tsec=t*60;
+//				gmtime_r(&tsec,&t_ch);
+//				printf("向后元整");
+//			}
 			/*对于不同的表采集周期不一样的情况:
 			 * 产生这种现象的原因可能是修改了表计个数,同是采样周期也修改了,
 			 * 造成之前存储的值的某些表与现在的不一样,过了一个最大存储周期后
 			 * 他们会变的相同的.
 			 * 保证按最小的采集周期计算
 			*/
-
+			int bchangectl=false;
 			if(timestep>timestep_last
 					&& timestep_last!=0
 					&& timestep!=0){
-				timestep=timestep_last;
-			}
+				//printf("改变周期 %d -> %d",timestep_last,timestep);
 
+				timestep=timestep_last;
+
+				bchangectl=true;
+			}else{
+				bchangectl=false;
+			}
 			 //如果:(T1-t)%timestep==0
 			//时间=采样点*采样周期
 			int timeoffset = 0;	//按时间的偏移量,时间步距=采样周期
 			int sn = 0;	//采样点偏移量
+
 			//距离这一天凌晨00:00的偏移量(分钟)/采样周期=文件中偏移的字节
 			int Soffset = (t%(60*24))/timestep;
+			int offset_mmin =(t%(60*24))%timestep;//一天中偏移了过少分钟
+			if(offset_mmin!=0){//不正好是周期的整数倍
+				t+=(timestep-offset_mmin);//时间加上几分钟,使到达分钟的整数倍.
+				//重新计算现在的日期和时间.
+				tsec=t*60;
+				gmtime_r(&tsec,&t_ch);
+				printf("时刻非整周期");
+			}
+			/*对于一下这种情况:
+			 * 时刻 | 表1 | 表2 |
+			 * 00:00| 有  | 有 |
+			 * 00:05| 无  | 有 |
+			 * 00:10| 无  | 有 |
+			 * 00:15| 有  | 有 |
+			 * 由于某些情况表1和表2的周期不一样.则采集时按照最小的周期采集,
+			 * 没有保存数据的表1保留上次的数据,即5分钟的数据和10分钟的
+			 * 数据都是0分钟的数据.且有效.
+			 * */
+			if(bchangectl){//周期改变了
+				//printf("这条数据无效");
+				Soffset=(t%(60*24))/tmpstep;
+				//只是不偏移,但是数据还是生成的,只是和之前的数据是一样的
+			}
+
 			//filehead.day=9;
 			//print_tou_head(filehead);
 			fseek(fp, Soffset*sizeof(Tou), SEEK_CUR);//这个不会返回错误
@@ -1079,7 +1117,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 				PRINT_HERE
 				break;
 			}
-			printf("周期=%d(分钟),偏移量:%d(个)tou 采样个数:%d个\n\t\t",
+			printf("周期=%d(分钟),偏移量:%d(个)tou 采样次数:%d个\n\t\t",
 			                filehead.save_cycle_lo, Soffset, snumber);
 			print_tou_dat(toudat);
 			sn++;
