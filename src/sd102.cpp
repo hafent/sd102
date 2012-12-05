@@ -1,5 +1,5 @@
 /**
- * @file:sd102.h
+ * @file: sd102.cpp
  *
  山东102规约 实现文件 引用 DL/T719-2000（IEC60870-5-102：1996）
  引用 GB/T 18657.2-2002 等效与 IEC60870-5-2:1990 链路传输规则*/
@@ -21,7 +21,7 @@
 #include <time.h>
 #include <errno.h>
 #pragma pack(1)
-#define SHOW_MSG 1 //显示接收和发送的报文
+#define SHOW_MSG 1 ///显示接收和发送的报文
 //
 int err_no = 0;
 enum err_no_e {
@@ -29,6 +29,9 @@ enum err_no_e {
 	ERR_
 };
 extern "C" CProtocol *
+/***
+ * 主函数调用动态连接库接口
+ */
 CreateCProto_sd102()
 {
 	printf(PREFIX"Version: %d.%d.%d,", MAJOR, MINOR, PATCHLEVEL);
@@ -36,7 +39,8 @@ CreateCProto_sd102()
 	printf(PREFIX"create so lib\n");
 	return new Csd102;
 }
-
+/**构造函数
+ * */
 Csd102::Csd102()
 {
 	printf(PREFIX"struct Csd102\n");
@@ -71,16 +75,21 @@ Csd102::Csd102()
 	}
 	spon = 60;
 
-//开始时备份帧应该被清空
-//memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
-//this->reci_farme_bak_len=0;
+/**开始时备份帧应该被清空
+ memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
+ this->reci_farme_bak_len=0;
+ */
 }
+/**
+ * */
 Csd102::~Csd102()
 {
 	PRINT_HERE
 //memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
 //this->reci_farme_bak_len=0;
 }
+/**初始化
+ * */
 int Csd102::Init(struct stPortConfig *tmp_portcfg)
 {
 	//last_typ = TYP_M_UNUSED;
@@ -99,7 +108,8 @@ int Csd102::Init(struct stPortConfig *tmp_portcfg)
 	return 0;
 }
 
-//终端(从站)主动发送.在山东102,可以用於非平衡传输(协议规定)不需要
+/**终端(从站)主动发送.在山东102,可以用於非平衡传输(协议规定)不需要
+ * */
 void Csd102::SendProc(void)
 {
 #if 1 //实现事件的上送,自发/突发 的实现,逻辑上不是很妥当
@@ -142,6 +152,7 @@ void Csd102::SendProc(void)
 }
 
 /**接收(从主站发来的)报文 主处理流程
+ * @param void
  * @return 没有
  */
 int Csd102::ReciProc(void)
@@ -297,7 +308,8 @@ int Csd102::ReciProc(void)
 	}
 	return 0;
 }
-/*复制帧, 从sf复制到df
+/**复制帧, 从sf复制到df
+ * @return 0 成功执行 非0 出错
  */
 int Csd102::copyframe(struct Frame &df, const struct Frame sf) const
         {
@@ -337,10 +349,9 @@ int Csd102::transfer(const struct Frame f)
 	return 0;
 }
 
-/* 从帧中获取控制域,一个字节
- in:	f	帧/字节流
- out:
- return:	控制字节(union Ctrl_down)
+/** 从帧中获取控制域,一个字节
+ @param	f(in)	帧/字节流
+ @return	控制字节(union Ctrl_down)
  */
 u8 Csd102::get_ctrl_field(const struct Frame f) const
         {
