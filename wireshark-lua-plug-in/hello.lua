@@ -1,7 +1,7 @@
 -- lua wireshark 山东102协议插件. file encode :utf-8
 --简单参考中文 http://yoursunny.com/study/IS409/ScoreBoard.htm
 --位操作 参考 http://blog.chinaunix.net/uid-24931444-id-3372735.html
---api定义参考 http://www.wireshark.org/docs/wsug_html_chunked/lua_module_Proto.html 
+--api定义参考 http://www.wireshark.org/docs/wsug_html_chunked/lua_module_Proto.html  
 do
 	-------------- 函数前向声明 ---------------
 	local FT_farme --解析单字节帧
@@ -87,7 +87,7 @@ do
 	[170]="C_CI_NA_B_2:读一个选定的时间范围和一个选定的地址范围的复费率记帐(计费)电能累计量",
 	[172]="C_YC_TA_2:读一个选定的时间范围和一个选定的地址范围的遥测量",
 	[174]="读一个选定的时间范围和一个选定的地址范围的最大需量"})
-	local f_vsq=ProtoField.uint8("sd102.vsq","可变结构限定词(VSQ)",base.DEC)
+	local f_vsq=ProtoField.uint8("sd102.vsq","可变结构限定词(VSQ)",base.HEX)
 	local f_sq=ProtoField.uint8("sd102.sq","息体寻址方法(SQ)",base.HEX,
 	{[0]="每一个单个元素或综合元素由信息体地址寻址",
 	[1]="一个顺序的类似的信息元素(见IEC60870-5-3 5.1.5)"},0x80)
@@ -121,27 +121,29 @@ do
 	local f_Tb_min=ProtoField.uint8("sd102.Tb_min","分钟(min)",base.DEC,nil,0x3F)
 	local f_Tb_tis=ProtoField.uint8("sd102.Tb_tis","费率陈述(tis)",base.HEX,
 	{[0]="断开OFF",[1]="合上ON"},0x40)
-	local f_Tb_iv=ProtoField.uint8("sd102.Tb_iv","时间陈述无效标志(iv)",base.HEX,
-	{[0]="有效",[1]="无效"},0x80)
+	local f_Tb_iv=ProtoField.uint8("sd102.Tb_iv","时间陈述无效标志(iv)",base.HEX,{[0]="有效",[1]="无效"},0x80)
 	local f_Tb_hour=ProtoField.uint8("sd102.Tb_hour","小时(hour)",base.DEC,nil,0x1F)
+	local f_Tb_res1=ProtoField.uint8("sd102.Tb_res1","备用1",base.HEX,nil,0x60)
+	local f_Tb_su=ProtoField.uint8("sd102.Tb_su","标准时间(SU)",base.HEX,{[0]="标准时间",[1]="夏时制"},0x80)
 	local f_Tb_day=ProtoField.uint8("sd102.Tb_day","日(day)",base.DEC,nil,0x1F)
 	local f_Tb_week=ProtoField.uint8("sd102.Tb_week","周次(week)",base.DEC,nil,0xE0)
 	local f_Tb_mon=ProtoField.uint8("sd102.Tb_mon","月(month)",base.DEC,nil,0x0F)
+	local f_Tb_eti=ProtoField.uint8("sd102.Tb_eti","能量费率(eti)",	base.HEX,{[0]="能量费率"},0x30)
+	local f_Tb_pti=ProtoField.uint8("sd102.Tb_pti","功率费率(pti)",base.HEX,{[0]="功率费率"},0xC0)
 	local f_Tb_year=ProtoField.uint8("sd102.Tb_year","年(year)",base.DEC,nil,0x7F)
-	local f_Tb_su=ProtoField.uint8("sd102.Tb_su","标准时间(SU)",
-	base.HEX,{[0]="标准时间",[1]="夏时制"},0x80)
-	local f_Tb_pti=ProtoField.uint8("sd102.Tb_pti","功率费率(pti)",
-	base.HEX,{[0]="功率费率"},0xC0)
-	local f_Tb_eti=ProtoField.uint8("sd102.Tb_eti","能量费率(eti)",
-	base.HEX,{[0]="能量费率"},0x30)
+	local f_Tb_res2=ProtoField.uint8("sd102.Tb_res2","备用2",base.HEX,nil,0x80)
+	--读电量
 	local f_msgaddr_start = ProtoField.uint8("sd102.msgaddr","起始消息体地址(IOA)",base.DEC)
 	local f_msgaddr_end = ProtoField.uint8("sd102.msgaddr","终止消息体地址(IOA)",base.DEC)
 	local f_ioa = ProtoField.uint8("sd102.ioa","信息体地址(IOA)",base.DEC)
-	local f_msg = ProtoField.string("sd102.msg","消息")
 	--Ta
 	local f_Ta = ProtoField.bytes("sd102.Ta","时间(Ta)",base.HEX)
 	local f_Ta_min = ProtoField.uint8("sd102.Ta_min","分钟(min)",base.DEC,nil,0x3F)
+	local f_Ta_tis = ProtoField.uint8("sd102.Ta_tis","费率信息开关",base.DEC,{[0]="费率陈述OFF",[1]="费率陈述ON"},0x40)
+	local f_Ta_iv=ProtoField.uint8("sd102.Ta_iv","时间陈述无效标志(iv)",base.HEX,{[0]="有效",[1]="无效"},0x80)
 	local f_Ta_hour = ProtoField.uint8("sd102.Ta_hour","小时(hour)",base.DEC,nil,0x1F)
+	local f_Ta_res1=ProtoField.uint8("sd102.Ta_res1","备用1",base.HEX,nil,0x60)
+	local f_Ta_su=ProtoField.uint8("sd102.Ta_su","标准时间(SU)",base.HEX,{[0]="标准时间",[1]="夏时制"},0x80)
 	local f_Ta_day = ProtoField.uint8("sd102.Ta_day","日(day)",base.DEC,nil,0x3F)
 	local f_Ta_week = ProtoField.uint8("sd102.Ta_week","周几(week)",base.DEC,nil,0xE0)
 	local f_Ta_mon = ProtoField.uint8("sd102.Ta_mon","月(month)",base.DEC,nil,0x0F)
@@ -160,18 +162,19 @@ do
 	local f_ti_cs = ProtoField.uint8("sd102.TIcs","电量校验",base.HEX) --1字节
 	-- 通用字节留
 	local f_bs =ProtoField.bytes("sd102.com_cs","集合",base.HEX)
+	local f_frame_tail =ProtoField.bytes("sd102.frame_tail","帧尾",base.HEX)
 
 	------添加到域
-	p_ShanDong102.fields = { f_onebyte,f_len,f_start,  --开始的字节
+	p_ShanDong102.fields = { f_onebyte,f_len,f_start, f_frame_tail, --开始的字节
 	f_funcode,f_funcode_rsp,f_ctrl,
 	f_fcv,f_dfc,f_fcb,f_acd,f_prm,f_dir,f_linkaddr,f_addr1,f_addr2,f_p,f_end,
 	f_farmehead,f_len1,f_len2,f_ASDU,f_typeID_up,f_typeID_down,f_vsq,f_sq,f_vsq_num,
 	f_cot,f_cot_t,f_cot_pn,f_cot_cot,f_ASDU_addr,f_ASDU_addr_lo,f_ASDU_addr_hi,f_recordAddr,
-	f_Tb,f_Tb_ms,f_Tb_sec,f_Tb_min,f_Tb_tis,f_Tb_iv,f_Tb_hour,f_Tb_day,f_Tb_week, --Tb
-	f_Tb_mon,f_Tb_year,f_Tb_su,f_Tb_pti,f_Tb_eti,
+	f_Tb,f_Tb_ms,f_Tb_sec,f_Tb_min,f_Tb_tis,f_Tb_iv,f_Tb_hour,f_Tb_res1,f_Tb_day,f_Tb_week, --Tb
+	f_Tb_mon,f_Tb_year,f_Tb_res2,f_Tb_su,f_Tb_pti,f_Tb_eti,
 	f_ioa,--信息体地址
 	f_msgaddr_start,f_msgaddr_end, --开始可结束信息体地址
-	f_Ta, f_Ta_min,f_Ta_hour,f_Ta_day,f_Ta_week,f_Ta_mon,f_Ta_year,--Ta
+	f_Ta,f_Ta_tis,f_Ta_iv,f_Ta_min,f_Ta_hour,f_Ta_res1,f_Ta_su,f_Ta_day,f_Ta_week,f_Ta_mon,f_Ta_year,--Ta
 	f_sp,f_sp_spa,f_sp_spi,f_sp_spq, 	--单点信息
 	f_ti,f_ti_val,f_ti_iv,f_ti_cs ,f_bs}--电量信息 
 	local data_dis = Dissector.get("data")
@@ -210,7 +213,7 @@ do
 		local t = root:add(p_ShanDong102,buf,nil,"长度: ",f_len,buf:len(),"字节")
 		t:append_text(" 单字节帧(CS)")
 		pkt.cols.protocol = "sd102-单字符" --显示在第一栏的协议名称
-		t:add(f_start,buf(0,1)) 
+		--t:add(f_start,buf(0,1)) 
 		--t:add("单字节数据")
 		return true
 	end
@@ -234,7 +237,7 @@ do
 		--校验和
 		--全部判断完成:
 
-		t:add(f_start,buf(0,1)) 
+		--t:add(f_start,buf(0,1)) 
 		local ctrlbyte = t:add(f_ctrl,buf(1,1))
 		--	分上下行解析
 		if bit.rshift(bit.band(buf(1,1):uint(), 0x40), 6) == 1 then --控制站向采集端
@@ -284,7 +287,7 @@ do
 			return false
 		end
 		--全部判断完成:
-		t:add(f_start,buf(0,1)) 
+		--t:add(f_start,buf(0,1)) 
 		local farmehead = t:add(f_farmehead,buf(0,4))
 		farmehead:add(f_start,buf(0,1))
 		farmehead:add(f_len1,buf(1,1))
@@ -313,6 +316,9 @@ do
 			t:add(f_typeID_up,buf(7,1))
 		end
 		local vsq = t:add(f_vsq,buf(8,1))
+		vsq:append_text(" 数量: ")
+		local vsq_n =bit.rshift(bit.band(buf(8,1):uint(), 0x7F), 0) 
+		vsq:append_text(vsq_n)
 		vsq:add(f_sq,buf(8,1))
 		vsq:add(f_vsq_num,buf(8,1))
 		local cot = t:add(f_cot,buf(9,1))
@@ -332,38 +338,13 @@ do
 			if buf(7,1):uint() == 103 then --读终端时间,
 				--设置终端时间
 			elseif buf(7,1):uint() == 128 then
-				local Tb = t:add(f_Tb,buf(13,7))			
-				Tb:add_le(f_Tb_ms,buf(13,2))
-				Tb:add_le(f_Tb_sec,buf(13,2))
-				Tb:add(f_Tb_min,buf(15,1))
-				Tb:add(f_Tb_tis,buf(15,1))
-				Tb:add(f_Tb_iv,buf(15,1))
-				Tb:add(f_Tb_hour,buf(16,1))
-				Tb:add(f_Tb_su,buf(16,1))
-				Tb:add(f_Tb_day,buf(17,1))
-				Tb:add(f_Tb_week,buf(17,1))
-				Tb:add(f_Tb_mon,buf(18,1))
-				Tb:add(f_Tb_pti,buf(18,1))
-				Tb:add(f_Tb_eti,buf(18,1))
-				Tb:add(f_Tb_year,buf(19,1))
+				addTb(t,13,buf)
 			--读一个选定的时间范围和一个选定的地址范围的记帐（计费）电能累计量
 			elseif buf(7,1):uint() == 120 then 
 				t:add(f_msgaddr_start,buf(13,1))
 				t:add(f_msgaddr_end,buf(14,1))
-				local Ta_start = t:add(f_Ta,buf(15,5))
-				Ta_start:add(f_Ta_year,buf(19,1))
-				Ta_start:add(f_Ta_mon,buf(18,1))
-				Ta_start:add(f_Ta_day,buf(17,1))
-				Ta_start:add(f_Ta_hour,buf(16,1))
-				Ta_start:add(f_Ta_min,buf(15,1))
-				Ta_start:add(f_Ta_week,buf(17,1))
-				local Ta_end = t:add(f_Ta,buf(20,5))
-				Ta_end:add(f_Ta_year,buf(24,1))
-				Ta_end:add(f_Ta_mon,buf(23,1))
-				Ta_end:add(f_Ta_day,buf(22,1))
-				Ta_end:add(f_Ta_hour,buf(21,1))
-				Ta_end:add(f_Ta_min,buf(20,1))
-				Ta_end:add(f_Ta_week,buf(22,1))
+				addTa(t,15,buf)
+				addTa(t,20,buf)
 			end
 		else -----------上行 -------
 			--按TYP分类
@@ -371,10 +352,10 @@ do
 				t:add("sp")
 				showsp(t,buf)
 			elseif buf(7,1):uint() == 2 then --读电量
-				t:add("ti")
+				--t:add("ti")
 				showti(t,buf)
 			elseif buf(7,1):uint() == 72 then --返回当前系统时间
-				t:add("time")
+				--t:add("time")
 				show_time(t,buf)
 			elseif buf(7,1):uint() == 128 then --时间同步确认
 				t:add("syn")
@@ -382,44 +363,53 @@ do
 			end
 		end
 		-- 结束
-		t:add(f_p,buf(len-2,1))
-		t:add(f_end,buf(len-1,1))
+		local sizeft=2--帧尾的大小
+		local frame_tail =t:add(f_frame_tail,buf(len-sizeft,sizeft),"帧尾")
+		frame_tail:add(f_p,buf(len-sizeft,1))
+		frame_tail:add(f_end,buf(len-sizeft+1,1))
 		return true
 	end
 	--------------------      其他被调用的函数      ----------------------
+	function addTa(t,base,buf)
+		local sizeTa=5
+		local Ta_end = t:add(f_Ta,buf(base,sizeTa))
+		Ta_end:add(f_Ta_min,buf(base+0,1))
+		Ta_end:add(f_Ta_tis,buf(base+0,1))
+		Ta_end:add(f_Ta_iv,buf(base+0,1))
+		Ta_end:add(f_Ta_hour,buf(base+1,1))
+		Ta_end:add(f_Ta_res1,buf(base+1,1))
+		Ta_end:add(f_Ta_su,buf(base+1,1))
+		Ta_end:add(f_Ta_day,buf(base+2,1))
+		Ta_end:add(f_Ta_week,buf(base+3,1))
+		Ta_end:add(f_Ta_mon,buf(base+3,1))
+		Ta_end:add(f_Ta_year,buf(base+4,1))
+	end
+	function addTb(t,base,buf)
+		local sizeTb=7
+		local Tb = t:add(f_Tb,buf(base,sizeTb))		
+		Tb:add_le(f_Tb_ms,buf(base+0,2))
+		Tb:add_le(f_Tb_sec,buf(base+0,2))
+		Tb:add(f_Tb_min,buf(base+2,1))
+		Tb:add(f_Tb_tis,buf(base+2,1))
+		Tb:add(f_Tb_iv,buf(base+2,1))
+		Tb:add(f_Tb_hour,buf(base+3,1))
+		Tb:add(f_Tb_res1,buf(base+3,1))
+		Tb:add(f_Tb_su,buf(base+3,1))
+		Tb:add(f_Tb_day,buf(base+4,1))
+		Tb:add(f_Tb_week,buf(base+4,1))
+		Tb:add(f_Tb_mon,buf(base+5,1))
+		Tb:add(f_Tb_eti,buf(base+5,1))
+		Tb:add(f_Tb_pti,buf(base+5,1))
+		Tb:add(f_Tb_year,buf(base+6,1))
+		Tb:add(f_Tb_res2,buf(base+6,1))
+	end
 	---------- 显示系统当前时间
 	function show_time(t,buf)
-		local Tb = t:add(f_Tb,buf(13,7))		
-		Tb:add_le(f_Tb_ms,buf(13,2))
-		Tb:add_le(f_Tb_sec,buf(13,2))
-		Tb:add(f_Tb_min,buf(15,1))
-		Tb:add(f_Tb_tis,buf(15,1))
-		Tb:add(f_Tb_iv,buf(15,1))
-		Tb:add(f_Tb_hour,buf(16,1))
-		Tb:add(f_Tb_su,buf(16,1))
-		Tb:add(f_Tb_day,buf(17,1))
-		Tb:add(f_Tb_week,buf(17,1))
-		Tb:add(f_Tb_mon,buf(18,1))
-		Tb:add(f_Tb_pti,buf(18,1))
-		Tb:add(f_Tb_eti,buf(18,1))
-		Tb:add(f_Tb_year,buf(19,1))
+		addTb(t,13,buf)
 	end
 	---------- 显示 终端系统同步世界确认帧
 	function show_syn(t,buf)
-		local Tb = t:add(f_Tb,buf(13,7))			
-		Tb:add_le(f_Tb_ms,buf(13,2))
-		Tb:add_le(f_Tb_sec,buf(13,2))
-		Tb:add(f_Tb_min,buf(15,1))
-		Tb:add(f_Tb_tis,buf(15,1))
-		Tb:add(f_Tb_iv,buf(15,1))
-		Tb:add(f_Tb_hour,buf(16,1))
-		Tb:add(f_Tb_su,buf(16,1))
-		Tb:add(f_Tb_day,buf(17,1))
-		Tb:add(f_Tb_week,buf(17,1))
-		Tb:add(f_Tb_mon,buf(18,1))
-		Tb:add(f_Tb_pti,buf(18,1))
-		Tb:add(f_Tb_eti,buf(18,1))
-		Tb:add(f_Tb_year,buf(19,1))
+		addTb(t,13,buf)
 	end
 	---------- 显示单点信息 信息体 函数
 	function showsp(t,buf)
@@ -460,13 +450,7 @@ do
 			base=base+(sizeIT)
 		end
 		--t:add("i=",i)
-		local Ta = t:add(f_Ta,buf(base,sizeTa))
-		Ta:add(f_Ta_year,buf(base+4,1))
-		Ta:add(f_Ta_mon,buf(base+3,1))
-		Ta:add(f_Ta_day,buf(base+2,1))
-		Ta:add(f_Ta_hour,buf(base+1,1))
-		Ta:add(f_Ta_min,buf(base+0,1))
-		Ta:add(f_Ta_week,buf(base+2,1))
+		addTa(t,base,buf)
 		--添加Ta公共信息单元
 	end
 	---------------- 全局函数?api? ----------------
