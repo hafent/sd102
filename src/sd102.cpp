@@ -75,10 +75,6 @@ Csd102::Csd102()
 	}
 	spon = 60;
 
-/**开始时备份帧应该被清空
- memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
- this->reci_farme_bak_len=0;
- */
 }
 /**
  * */
@@ -88,8 +84,11 @@ Csd102::~Csd102()
 //memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
 //this->reci_farme_bak_len=0;
 }
-/**初始化
- * */
+/**
+ * 初始化函数
+ * @param tmp_portcfg
+ * @return
+ */
 int Csd102::Init(struct stPortConfig *tmp_portcfg)
 {
 	//last_typ = TYP_M_UNUSED;
