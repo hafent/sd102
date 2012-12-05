@@ -3,11 +3,19 @@
 --位操作 参考 http://blog.chinaunix.net/uid-24931444-id-3372735.html
 --api定义参考 http://www.wireshark.org/docs/wsug_html_chunked/lua_module_Proto.html
 do
-	--函数前向声明
+	-------------- 函数前向声明 ---------------
 	local FT_farme --解析单字节帧
 	local FT_static_farme --解析固定长度帧
 	local FT_change_farme --解析变长度帧
+	-- 显示函数
+	-- 	上行报文解析函数
+	local show_time
+	local showti
+	local show_syn
+	local showsp
+	--	下行报文解析函数
 
+	-------------- 变量定义  ---------------
 	--协议名称为shandong102，在Packet Details（中间可以展开的那部分）
 	--    窗格显示为山东102主站通讯规约
 	local p_ShanDong102 = Proto("sd102","山东102",base.DEC)
@@ -18,6 +26,7 @@ do
 	local f_start = ProtoField.uint8("sd102.start","起始字节",base.HEX,
 	{[0x68]="长帧/变长帧",[0x10]="短帧/固定帧",[0xE5]="应答/单字节帧"})
 	local f_ctrl = ProtoField.uint8("sd102.ctrl","控制字节",base.HEX)
+	local f_onebyte = ProtoField.uint8("sd102.onebyte","单字节",base.HEX)
 	-- 控制端到采集终端	
 	local f_funcode = ProtoField.uint8("sd102.funcode","功能码(FC)",base.DEC,
 	{[0]="S2:复位通信单元",[3]="S2:传送数据",[9]="S3:召唤链路状态",
@@ -68,8 +77,7 @@ do
 	[162]="M_YC_TA_2:读遥测量返回帧",[163]="M_XL_TA_2:读需量返回帧",
 	[164]="M_IT_TA_C_2:月结算复费率电能累计量",[165]="M_IT_TA_D_2:读表计谐波数据返回帧"})
 	local f_typeID_down=ProtoField.uint8("sd102.typeID2_down","类型标识(TYP)",base.DEC,
-	{
-	[100]="C_RD_NA_2:读制造厂和产品规范",
+	{[100]="C_RD_NA_2:读制造厂和产品规范",
 	[101]="C_SP_NA_2:读带时标的单点信息的记录",
 	[102]="C_SP_NB_2:读一个所选定时间范围的带时标的单点信息的记录",
 	[103]="C_TI_NA_2:读电能累计量数据终端设备的当前系统时间",
@@ -105,7 +113,7 @@ do
 	local f_ASDU_addr=ProtoField.uint16("sd102.ASDU_addr","应用服务单元公共地址(ASDU address)",base.DEC)
 	local f_ASDU_addr_lo=ProtoField.uint8("sd102.ASDU_addr_lo","低字节(lo)",base.HEX)
 	local f_ASDU_addr_hi=ProtoField.uint8("sd102.ASDU_addr_hi","高字节(hi_",base.HEX)
-	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","记录地址(RAD)",base.DEC)
+	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","记录地址(RAD)",base.DEC,{[0]="默认"})
 	--时间 ,其中有写位没解析 RSE
 	local f_Tb = ProtoField.bytes("sd102.Tb","时间(Tb)",base.HEX)
 	local f_Tb_ms=ProtoField.uint16("sd102.Tb_ms","毫秒(ms)",base.DEC,nil,0x03FF)
@@ -128,43 +136,47 @@ do
 	base.HEX,{[0]="能量费率"},0x30)
 	local f_msgaddr_start = ProtoField.uint8("sd102.msgaddr","起始消息体地址(IOA)",base.DEC)
 	local f_msgaddr_end = ProtoField.uint8("sd102.msgaddr","终止消息体地址(IOA)",base.DEC)
+	local f_ioa = ProtoField.uint8("sd102.ioa","信息体地址(IOA)",base.DEC)
 	local f_msg = ProtoField.string("sd102.msg","消息")
 	--Ta
 	local f_Ta = ProtoField.bytes("sd102.Ta","时间(Ta)",base.HEX)
-	local f_Ta_min = ProtoField.uint8("sd102.Ta_min","分钟(min)",base.HEX,nil,0x3F)
-	local f_Ta_hour = ProtoField.uint8("sd102.Ta_hour","小时(hour)",base.HEX,nil,0x1F)
-	local f_Ta_day = ProtoField.uint8("sd102.Ta_day","日(day)",base.HEX,nil,0x3F)
-	local f_Ta_week = ProtoField.uint8("sd102.Ta_week","周几(week)",base.HEX,nil,0xE0)
-	local f_Ta_mon = ProtoField.uint8("sd102.Ta_mon","月(month)",base.HEX,nil,0x0F)
-	local f_Ta_year = ProtoField.uint8("sd102.Ta_year","年(year)",base.HEX,nil,0x7F)
-	local f_onebyte = ProtoField.uint8("sd102.onebyte","单字节",base.HEX)
+	local f_Ta_min = ProtoField.uint8("sd102.Ta_min","分钟(min)",base.DEC,nil,0x3F)
+	local f_Ta_hour = ProtoField.uint8("sd102.Ta_hour","小时(hour)",base.DEC,nil,0x1F)
+	local f_Ta_day = ProtoField.uint8("sd102.Ta_day","日(day)",base.DEC,nil,0x3F)
+	local f_Ta_week = ProtoField.uint8("sd102.Ta_week","周几(week)",base.DEC,nil,0xE0)
+	local f_Ta_mon = ProtoField.uint8("sd102.Ta_mon","月(month)",base.DEC,nil,0x0F)
+	local f_Ta_year = ProtoField.uint8("sd102.Ta_year","年(year)",base.DEC,nil,0x7F)
 	--单点信息
 	local f_sp = ProtoField.bytes("sd102.Sp","单点信息(SP)",base.HEX)
 	local f_sp_spa = ProtoField.uint8("sd102.Sp_spa","单点信息地址(SP)",base.DEC)
 	local f_sp_spi = ProtoField.uint8("sd102.Sp_spi","单点信息状态(SPI)",base.HEX,
 	{[0]="分开",[1]="闭合"},0x01)
 	local f_sp_spq = ProtoField.uint8("sd102.Sp_spq","单点信息质量(SPQ)",base.HEX)
-	--电量信息
+	--电量信息(共7字节)
 	local f_ti =ProtoField.bytes("sd102.TI","电量信息体(TI)",base.HEX)
-	local f_ti_val = ProtoField.uint32("sd102.TIval","电量值",base.DEC) --注意小端模式
-	local f_ti_cs = ProtoField.uint8("sd102.TIcs","电量值",base.HEX)
+	--信息体地址 1字节
+	local f_ti_val = ProtoField.uint32("sd102.TIval","电量值",base.DEC) --注意小端模式 4 字节
+	local f_ti_iv = ProtoField.uint8("sd102.TIiv","电量有效",base.HEX,{[0]="无效",[1]="有效"},0x80)--掩码位,最高位表示电量数值是否有效 1字节
+	local f_ti_cs = ProtoField.uint8("sd102.TIcs","电量校验",base.HEX) --1字节
+	-- 通用字节留
+	local f_bs =ProtoField.bytes("sd102.com_cs","集合",base.HEX)
 
-	--添加到域
-	p_ShanDong102.fields = { f_onebyte,f_len,
-	f_start,f_funcode,f_funcode_rsp,f_ctrl,
+	------添加到域
+	p_ShanDong102.fields = { f_onebyte,f_len,f_start,  --开始的字节
+	f_funcode,f_funcode_rsp,f_ctrl,
 	f_fcv,f_dfc,f_fcb,f_acd,f_prm,f_dir,f_linkaddr,f_addr1,f_addr2,f_p,f_end,
 	f_farmehead,f_len1,f_len2,f_ASDU,f_typeID_up,f_typeID_down,f_vsq,f_sq,f_vsq_num,
 	f_cot,f_cot_t,f_cot_pn,f_cot_cot,f_ASDU_addr,f_ASDU_addr_lo,f_ASDU_addr_hi,f_recordAddr,
 	f_Tb,f_Tb_ms,f_Tb_sec,f_Tb_min,f_Tb_tis,f_Tb_iv,f_Tb_hour,f_Tb_day,f_Tb_week, --Tb
 	f_Tb_mon,f_Tb_year,f_Tb_su,f_Tb_pti,f_Tb_eti,
+	f_ioa,--信息体地址
 	f_msgaddr_start,f_msgaddr_end, --开始可结束信息体地址
 	f_Ta, f_Ta_min,f_Ta_hour,f_Ta_day,f_Ta_week,f_Ta_mon,f_Ta_year,--Ta
 	f_sp,f_sp_spa,f_sp_spi,f_sp_spq, 	--单点信息
-	f_ti,f_ti_val,f_ti_cs --电量信息
-	} 
-
+	f_ti,f_ti_val,f_ti_iv,f_ti_cs ,f_bs}--电量信息 
 	local data_dis = Dissector.get("data")
-	-- 主体函数
+
+	-------------------- 主体函数 ----------------------------------
 	local function shandong102_dissector(buf,pkt,root)
 		local buf_len = buf:len();
 		if buf_len < 1 then  --长度 < 1 绝对错误
@@ -195,7 +207,8 @@ do
 		--local p_ShanDong102 = Proto("sd102","山东102")
 		--p_ShanDong102.fields = {f_onebyte}
 		--添加协议
-		local t = root:add(p_ShanDong102,buf,nil,"长度:",f_len,buf:len(),"字节") 
+		local t = root:add(p_ShanDong102,buf,nil,"长度: ",f_len,buf:len(),"字节")
+		t:append_text(" 单字节帧(CS)")
 		pkt.cols.protocol = "sd102-单字符" --显示在第一栏的协议名称
 		t:add(f_start,buf(0,1)) 
 		--t:add("单字节数据")
@@ -206,7 +219,8 @@ do
 	function FT_static_farme(buf,pkt,root)
 		local len = buf:len();
 		--添加协议
-		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度:",f_len,buf:len(),"字节") 
+		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度: ",f_len,buf:len(),"字节") 
+		t:append_text(" 固定帧长帧(短帧)")
 		pkt.cols.protocol = "sd102-定长帧" --显示在第一栏的协议名称
 		--开始判断:
 		if len ~= 6 then --短帧的长度固定,长度不对,错误
@@ -222,6 +236,7 @@ do
 
 		t:add(f_start,buf(0,1)) 
 		local ctrlbyte = t:add(f_ctrl,buf(1,1))
+		--	分上下行解析
 		if bit.rshift(bit.band(buf(1,1):uint(), 0x40), 6) == 1 then --控制站向采集端
 			ctrlbyte:add(f_funcode,buf(1,1))
 			ctrlbyte:add(f_fcv,buf(1,1))
@@ -241,15 +256,15 @@ do
 		linkaddr:add(f_addr2,buf(3,1))
 		t:add(f_p,buf(4,1)) 
 		t:add(f_end,buf(5,1)) 
-		--t:add("单字节数据") 
 		return true
 	end
 
-	----------------长帧/变长帧----------------
+	----------------长帧/变长帧---------------- 函数长度有限制
 	function FT_change_farme(buf,pkt,root)
 		local len = buf:len();
 		--添加协议
-		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度:",f_len,buf:len(),"字节") 
+		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度:",f_len,buf:len(),"字节")
+		t:append_text(" 变帧长帧(长帧)")
 		pkt.cols.protocol = "sd102-变长帧" --显示在第一栏的协议名称
 		--开始判断:
 		if len < 6 then --长度太小错误
@@ -308,13 +323,15 @@ do
 		asdu_addr:add(f_ASDU_addr_lo,buf(10,1))
 		asdu_addr:add(f_ASDU_addr_hi,buf(11,1))
 		t:add(f_recordAddr,buf(12,1))
-		--按上下行分类
-		if bit.rshift(bit.band(buf(4,1):uint(), 0x40), 6) == 1 then
-		 -----下行------
-			--按TYP分类
+		-- 是下行报文吗?
+		local isDownMsg =bit.rshift(bit.band(buf(4,1):uint(), 0x40), 6) 
+		------ 按上下行报文分类: 
+		if isDownMsg==1 then ------- 下行 ---------
+			--	按TYP分类(因为lua没有switch,所以只能用if-elseif语句
+			--什么都不做,信息体为空
 			if buf(7,1):uint() == 103 then --读终端时间,
-				--什么都不做,信息体为空
-			elseif buf(7,1):uint() == 128 then --设置终端时间
+				--设置终端时间
+			elseif buf(7,1):uint() == 128 then
 				local Tb = t:add(f_Tb,buf(13,7))			
 				Tb:add_le(f_Tb_ms,buf(13,2))
 				Tb:add_le(f_Tb_sec,buf(13,2))
@@ -329,7 +346,7 @@ do
 				Tb:add(f_Tb_pti,buf(18,1))
 				Tb:add(f_Tb_eti,buf(18,1))
 				Tb:add(f_Tb_year,buf(19,1))
-				--读一个选定的时间范围和一个选定的地址范围的记帐（计费）电能累计量
+			--读一个选定的时间范围和一个选定的地址范围的记帐（计费）电能累计量
 			elseif buf(7,1):uint() == 120 then 
 				t:add(f_msgaddr_start,buf(13,1))
 				t:add(f_msgaddr_end,buf(14,1))
@@ -350,72 +367,18 @@ do
 			end
 		else -----------上行 -------
 			--按TYP分类
-			if buf(7,1):uint() == 72 then --返回当前系统时间
-				local Tb = t:add(f_Tb,buf(13,7))		
-				Tb:add_le(f_Tb_ms,buf(13,2))
-				Tb:add_le(f_Tb_sec,buf(13,2))
-				Tb:add(f_Tb_min,buf(15,1))
-				Tb:add(f_Tb_tis,buf(15,1))
-				Tb:add(f_Tb_iv,buf(15,1))
-				Tb:add(f_Tb_hour,buf(16,1))
-				Tb:add(f_Tb_su,buf(16,1))
-				Tb:add(f_Tb_day,buf(17,1))
-				Tb:add(f_Tb_week,buf(17,1))
-				Tb:add(f_Tb_mon,buf(18,1))
-				Tb:add(f_Tb_pti,buf(18,1))
-				Tb:add(f_Tb_eti,buf(18,1))
-				Tb:add(f_Tb_year,buf(19,1))
-				--Tb:add("上行,72")
-			elseif buf(7,1):uint() == 128 then --电能累计量数据终端系统时间同步确认
-				local Tb = t:add(f_Tb,buf(13,7))			
-				Tb:add_le(f_Tb_ms,buf(13,2))
-				Tb:add_le(f_Tb_sec,buf(13,2))
-				Tb:add(f_Tb_min,buf(15,1))
-				Tb:add(f_Tb_tis,buf(15,1))
-				Tb:add(f_Tb_iv,buf(15,1))
-				Tb:add(f_Tb_hour,buf(16,1))
-				Tb:add(f_Tb_su,buf(16,1))
-				Tb:add(f_Tb_day,buf(17,1))
-				Tb:add(f_Tb_week,buf(17,1))
-				Tb:add(f_Tb_mon,buf(18,1))
-				Tb:add(f_Tb_pti,buf(18,1))
-				Tb:add(f_Tb_eti,buf(18,1))
-				Tb:add(f_Tb_year,buf(19,1))
-			elseif buf(7,1):uint() == 1 then --单点信息
-				local n=buf(8,1):uint()
-				local sp = t:add(f_sp,buf(13,2))
-				sp:add(f_sp_spa,buf(13,1))
-				sp:add(f_sp_spi,buf(14,1))
-				sp:add(f_sp_spq,buf(14,1))
-				local Tb = t:add(f_Tb,buf(15,7))
-				Tb:add_le(f_Tb_ms,buf(15,2))
-				Tb:add_le(f_Tb_sec,buf(15,2))
-				Tb:add(f_Tb_min,buf(17,1))
-				Tb:add(f_Tb_tis,buf(17,1))
-				Tb:add(f_Tb_iv,buf(17,1))
-				Tb:add(f_Tb_hour,buf(18,1))
-				Tb:add(f_Tb_su,buf(18,1))
-				Tb:add(f_Tb_day,buf(19,1))
-				Tb:add(f_Tb_week,buf(19,1))
-				Tb:add(f_Tb_mon,buf(20,1))
-				Tb:add(f_Tb_pti,buf(20,1))
-				Tb:add(f_Tb_eti,buf(20,1))
-				Tb:add(f_Tb_year,buf(21,1))
-			elseif buf(7,1):uint() == 2 then --电能累积量
-				local n=buf(8,1):uint() --
-				--开始循环
-				local sp = t:add(f_ti,buf(13+0,7))
-				--信息体地址 没写
-				sp:add_el(f_ti_val ,buf(13+1,4)) --电量整形
-				sp:add(f_ti_cs,buf(13+1+4,1))--电量校验
-				local Ta_end = t:add(f_Ta,buf(19,5))
-				Ta_end:add(f_Ta_year,buf(23,1))
-				Ta_end:add(f_Ta_mon,buf(22,1))
-				Ta_end:add(f_Ta_day,buf(21,1))
-				Ta_end:add(f_Ta_hour,buf(20,1))
-				Ta_end:add(f_Ta_min,buf(19,1))
-				Ta_end:add(f_Ta_week,buf(21,1))
-
+			if buf(7,1):uint() == 1 then --单点信息
+				t:add("sp")
+				showsp(t,buf)
+			elseif buf(7,1):uint() == 2 then --读电量
+				t:add("ti")
+				showti(t,buf)
+			elseif buf(7,1):uint() == 72 then --返回当前系统时间
+				t:add("time")
+				show_time(t,buf)
+			elseif buf(7,1):uint() == 128 then --时间同步确认
+				t:add("syn")
+				show_syn(t,buf)
 			end
 		end
 		-- 结束
@@ -423,7 +386,89 @@ do
 		t:add(f_end,buf(len-1,1))
 		return true
 	end
-
+	--------------------      其他被调用的函数      ----------------------
+	---------- 显示系统当前时间
+	function show_time(t,buf)
+		local Tb = t:add(f_Tb,buf(13,7))		
+		Tb:add_le(f_Tb_ms,buf(13,2))
+		Tb:add_le(f_Tb_sec,buf(13,2))
+		Tb:add(f_Tb_min,buf(15,1))
+		Tb:add(f_Tb_tis,buf(15,1))
+		Tb:add(f_Tb_iv,buf(15,1))
+		Tb:add(f_Tb_hour,buf(16,1))
+		Tb:add(f_Tb_su,buf(16,1))
+		Tb:add(f_Tb_day,buf(17,1))
+		Tb:add(f_Tb_week,buf(17,1))
+		Tb:add(f_Tb_mon,buf(18,1))
+		Tb:add(f_Tb_pti,buf(18,1))
+		Tb:add(f_Tb_eti,buf(18,1))
+		Tb:add(f_Tb_year,buf(19,1))
+	end
+	---------- 显示 终端系统同步世界确认帧
+	function show_syn(t,buf)
+		local Tb = t:add(f_Tb,buf(13,7))			
+		Tb:add_le(f_Tb_ms,buf(13,2))
+		Tb:add_le(f_Tb_sec,buf(13,2))
+		Tb:add(f_Tb_min,buf(15,1))
+		Tb:add(f_Tb_tis,buf(15,1))
+		Tb:add(f_Tb_iv,buf(15,1))
+		Tb:add(f_Tb_hour,buf(16,1))
+		Tb:add(f_Tb_su,buf(16,1))
+		Tb:add(f_Tb_day,buf(17,1))
+		Tb:add(f_Tb_week,buf(17,1))
+		Tb:add(f_Tb_mon,buf(18,1))
+		Tb:add(f_Tb_pti,buf(18,1))
+		Tb:add(f_Tb_eti,buf(18,1))
+		Tb:add(f_Tb_year,buf(19,1))
+	end
+	---------- 显示单点信息 信息体 函数
+	function showsp(t,buf)
+		--待完善
+		t:add("TODO: 显示单点信息返回信息体值")
+	end
+	---------- 添加显示 ti电量 n个信息体(TI_Obj)和 一个信息体单元(Ta)函数
+	function showti(t,buf)
+		local n=buf(8,1):uint()--信息体个数
+		--t:add(n)
+		local sizeIT=7
+		local sizeTa=5
+		local base=13
+		local i=0 --循环变量
+		-- 一组信息体集合
+		local tis=t:add(f_bs,buf(base,n*sizeIT),"","电量信息体集合: ")
+		tis:append_text(" 开始地址: ")
+		tis:append_text(buf(base+0,1):uint())
+		tis:append_text(" 结束地址: ")
+		tis:append_text(buf(base+(n-1)*sizeIT+0,1):uint())
+		tis:append_text(" 总数量: ")
+		tis:append_text(n)
+		--添加信息体
+		for i=0,(n-1) do --遍历所有信息体
+			--t:add("内部偏移base=",base,"帧内序号i=",i) --for debug
+			local ti = tis:add(f_ti,buf(base,sizeIT))
+			ti:add(f_ioa,buf(base,1))
+			ti:add_le(f_ti_val,buf(base+1,4))
+			ti:add(f_ti_iv,buf(base+1+4,1))
+			ti:add(f_ti_cs,buf(base+1+4+1,1))
+			--添加一些信息
+			ti:append_text(" 帧内序号: ")
+			ti:append_text(i)
+			ti:append_text(" 帧内偏移: ")
+			ti:append_text(base)
+			ti:append_text(" 字节")
+			--向后偏移 一个信息体长度
+			base=base+(sizeIT)
+		end
+		--t:add("i=",i)
+		local Ta = t:add(f_Ta,buf(base,sizeTa))
+		Ta:add(f_Ta_year,buf(base+4,1))
+		Ta:add(f_Ta_mon,buf(base+3,1))
+		Ta:add(f_Ta_day,buf(base+2,1))
+		Ta:add(f_Ta_hour,buf(base+1,1))
+		Ta:add(f_Ta_min,buf(base+0,1))
+		Ta:add(f_Ta_week,buf(base+2,1))
+		--添加Ta公共信息单元
+	end
 	---------------- 全局函数?api? ----------------
 	function p_ShanDong102.dissector(buf,pkt,root) 
 		if shandong102_dissector(buf,pkt,root) then
