@@ -924,6 +924,11 @@ void Csd102::print_tou_head(const struct touFilehead filehead) const
 }
 /* 根据时间范围和信息体地址范围 从 历史数据 his 文件中读取
  * 指定的信息体 和时间信息 分别到信息体队列 和 Ta 时间队列.备用
+ * in	时间范围 ts~ta
+ * 	信息体地址范围
+ * out	it信息体队列
+ * 	ta时间队列,1对多个it
+ * return	暂时不输出错误
  * */
 int Csd102::hisdat(const Ta ts,const Ta te,
 	ioa_t saddr,ioa_t endaddr,
@@ -953,7 +958,10 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 	/* 向后移动一个周期(周期可能变化!)
 	   查询表示方法是 查 00分钟 到 15分钟 表示 [00,15] 两端闭区间
 	   而采集表示方法是 第一点,00采样周期15分钟,那么[00,15) 区间都是由第一个采样点表示
-	   [15,30) 由第二个采样点表示. 前闭后开. */
+	   [15,30) 由第二个采样点表示. 前闭后开.
+	   数据类似[图表1]的形式,以行为一条数据(记录),时刻相同.一列为一块电表.
+	   外层 遍历时刻;内层 遍历电量.
+	   */
 	//变步距!注意!,在内层中根据周期修改步距
 	for (u32 t = min_start; t<=min_end; t += minCycle) {
 		snumber++;
@@ -986,9 +994,10 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 			ret = fread(&filehead, sizeof(filehead), 1, fp);
 			if (ret!=1) {
 				printf("读取电量文件头错误:ret=%d", ret);
+				//这个错误在意料中?!
 				PRINT_HERE
 			}
-			//TODO 比较头,是否是本年本月的数据,因为月是对保存时间(几个月)去摸的.
+			//TODO 比较头,是否是本年本月的数据,因为月是对保存时间(几个月)取摸的.
 			//进行比较
 			if(0/*如果没有数据(月份不对什么的*/){
 				//看看是退出 还是 发送<没有数据>帧
@@ -1032,7 +1041,7 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 				Soffset = (t%(60*24))/minCycle;
 			}
 			/*对于一下这种情况:[图表1]
-			 * 序号|时刻 | 表1 | 表2 |
+			 * 序号|时刻 | 表1 | 表2 | ....
 			 * 1   |00:00| 有  | 有 |
 			 * 2   |00:05|     | 有 |
 			 * 3   |00:10|     | 有 |
@@ -1040,18 +1049,17 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 			 * 5   |00:20|     | 有 |
 			 * 6   |00:25|     | 有 |
 			 * 7   |00:30| 有  | 有 |
+			 *           ....
 			 * 由于某些情况表1和表2的周期不一样.则采集时按照最小的周期采集,
 			 * 没有保存数据的表1保留上次的数据,即5分钟的数据和10分钟的
 			 * 数据都是0分钟的数据.且有效.
 			 * */
 			if(bchangectl){//周期改变了
-				//printf("这条数据无效");
+				//printf("没有偏移到下一个数据体");
 				Soffset=(t%(60*24))/curCycle;
 				//只是不偏移,但是数据还是生成的,只是和之前的数据是一样的
 			}
 
-			//filehead.day=9;
-			//print_tou_head(filehead);
 			fseek(fp, Soffset*sizeof(Tou), SEEK_CUR);//这个不会返回错误
 			//读取这个时间点的数据
 			ret = fread(&toudat, sizeof(toudat), 1, fp);
@@ -1086,7 +1094,6 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 			printf("周期=%d(分钟),偏移量:%d(个)tou 采样次数:%d个\n\t\t",
 			                filehead.save_cycle_lo, Soffset, snumber);
 			print_tou_dat(toudat);
-			//sn++;
 			fclose(fp);
 		}
 		//所有请求的信息体历史文件都不存在.
