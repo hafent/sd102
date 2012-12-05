@@ -24,7 +24,7 @@ do
 	local f_len = ProtoField.uint16("sd102.len","长度(字节)",base.DEC) 
 	--所有可能
 	local f_start = ProtoField.uint8("sd102.start","起始字节",base.HEX,
-	{[0x68]="长帧/变长帧",[0x10]="短帧/固定帧",[0xE5]="应答/单字节帧"})
+	{[0x68]="长帧/变长帧",[0x10]="短帧/固定帧",[0xE5]="应答/否认"})
 	local f_ctrl = ProtoField.uint8("sd102.ctrl","控制字节",base.HEX)
 	local f_onebyte = ProtoField.uint8("sd102.onebyte","单字节",base.HEX)
 	-- 控制端到采集终端	
@@ -210,10 +210,10 @@ do
 		--local p_ShanDong102 = Proto("sd102","山东102")
 		--p_ShanDong102.fields = {f_onebyte}
 		--添加协议
-		local t = root:add(p_ShanDong102,buf,nil,"长度: ",f_len,buf:len(),"字节")
+		local t = root:add(p_ShanDong102,buf,nil,"长度: ",f_len,buf:len(),"字节,")
 		t:append_text(" 单字节帧(CS)")
-		pkt.cols.protocol = "sd102-单字符" --显示在第一栏的协议名称
-		--t:add(f_start,buf(0,1)) 
+		pkt.cols.protocol = "sd102" --显示在第一栏的协议名称
+		t:add(f_start,buf(0,1)) 
 		--t:add("单字节数据")
 		return true
 	end
@@ -222,9 +222,9 @@ do
 	function FT_static_farme(buf,pkt,root)
 		local len = buf:len();
 		--添加协议
-		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度: ",f_len,buf:len(),"字节") 
+		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度: ",f_len,buf:len(),"字节,") 
 		t:append_text(" 固定帧长帧(短帧)")
-		pkt.cols.protocol = "sd102-定长帧" --显示在第一栏的协议名称
+		pkt.cols.protocol = "sd102" --显示在第一栏的协议名称
 		--开始判断:
 		if len ~= 6 then --短帧的长度固定,长度不对,错误
 			t:add("len != 6 ,len=",len)
@@ -241,8 +241,7 @@ do
 		local linkaddr = t:add_le(f_linkaddr,buf(2,2))
 		linkaddr:add(f_addr1,buf(2,1)) 
 		linkaddr:add(f_addr2,buf(3,1))
-		t:add(f_p,buf(4,1)) 
-		t:add(f_end,buf(5,1)) 
+		addtail(t,len-2,buf)
 		return true
 	end
 	-- 添加位域的显示
@@ -274,9 +273,9 @@ do
 	function FT_change_farme(buf,pkt,root)
 		local len = buf:len();
 		--添加协议
-		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度:",f_len,buf:len(),"字节")
+		local t = root:add(p_ShanDong102,buf(0,len),nil,"长度:",f_len,buf:len(),"字节,")
 		t:append_text(" 变帧长帧(长帧)")
-		pkt.cols.protocol = "sd102-变长帧" --显示在第一栏的协议名称
+		pkt.cols.protocol = "sd102" --显示在第一栏的协议名称
 		--开始判断:
 		if len < 6 then --长度太小错误
 			t:add("长度太小:",len)
@@ -358,12 +357,15 @@ do
 			end
 		end
 		-- 结束
-		local sizeft=2--帧尾的大小
-		local frame_tail =t:add(f_frame_tail,buf(len-sizeft,sizeft),"帧尾")
-		frame_tail:add(f_p,buf(len-sizeft,1))
-		frame_tail:add(f_end,buf(len-sizeft+1,1))
+		addtail(t,len-2,buf)
 		return true
 	end
+	function addtail(t,base,buf)
+		local sizeft=2--帧尾的大小
+		local frame_tail =t:add(f_frame_tail,buf(base,sizeft),"帧尾")
+		frame_tail:add(f_p,buf(base+0,1))
+		frame_tail:add(f_end,buf(base+1,1))
+	end 
 	--------------------      其他被调用的函数      ----------------------
 	function addTa(t,base,buf)
 		local sizeTa=5
@@ -472,11 +474,15 @@ do
 			ti:add(f_ti_iv,buf(base+1+4,1))
 			ti:add(f_ti_cs,buf(base+1+4+1,1))
 			--添加一些信息
-			ti:append_text(" 帧内序号: ")
+			ti:append_text(", 帧内序号: ")
 			ti:append_text(i)
-			ti:append_text(" 帧内偏移: ")
-			ti:append_text(base)
-			ti:append_text(" 字节")
+			--ti:append_text(",帧内偏移: ")
+			--ti:append_text(base)
+			--ti:append_text("字节")	
+			ti:append_text(", 电量: ")
+			local tival=buf(base+1,4):le_uint()
+			ti:append_text(tival)
+
 			--向后偏移 一个信息体长度
 			base=base+(sizeIT)
 		end
