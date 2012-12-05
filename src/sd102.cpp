@@ -879,7 +879,7 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 		duid->rtu_addr = makeaddr(obj_num);
 		// obj_M_SP_TA_2[] :
 		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取数据/事件?
-			int addr = 0;	//
+			//int addr = 0;	//
 			obj[i].sp.spa = 1;
 			getsystime(obj[i].tb, systime);
 		}
@@ -922,97 +922,65 @@ void Csd102::print_tou_head(const struct touFilehead filehead) const
 	                );
 	return;
 }
-
-/*	M_IT_TA_2 发送带时标(T)的电量(IT)
- in:	fi	输入帧结构
- out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
- return:	0	成功
- */
-int Csd102::make_M_IT_TA_2(const struct Frame fi,
-        std::queue<struct Frame> &q1) const
-        {
-	struct Frame fout;
-	// 数据过多时分帧发送
-	// 每帧最多可以包含的信息体个数,用户数据最多255,再根据单个信息体的大小确定
-	// 不同类型的帧,因为包含的信息体大小不同,可能使最多可包含数信息体数量不同
-	int maxperframe = 0;
+/* 根据时间范围和信息体地址范围 从 历史数据 his 文件中读取
+ * 指定的信息体 和时间信息 分别到信息体队列 和 Ta 时间队列.备用
+ * */
+int Csd102::hisdat(const Ta ts,const Ta te,
+	ioa_t saddr,ioa_t endaddr,
+	std::queue<struct Ta> &q_Ta,
+	std::queue<struct Obj_M_IT_TX_2> &q_IT)const
+{
+	unsigned long min_start, min_end, min_now;//三种时刻的分钟数
 	struct m_tSystime systime;
-	struct stFrame_C_CI_NR_2 *fin = (stFrame_C_CI_NR_2 *) fi.dat;
-	printf("fin->obj.start_ioa=%d\t", fin->obj.start_ioa);
-	printf("fin->obj.end_io=%d\n", fin->obj.end_ioa);
-	showtime(fin->obj.Tstart);
-	showtime(fin->obj.Tend);
-	if (this->format_ok(*fin)!=0/* 数据数据错误*/) {
-		make_mirror_1(fin, false);
-		printf(PREFIX"input instruction err 输入指令无效\n");
-		q1.push(fi);
-		return 1;
-	} else {	//有效 镜像帧
-		make_mirror_1(fin, true);
-		q1.push(fi);
-	}
-
-	unsigned long T1, T2, T3, T4, e_val;
 	GetSystemTime_RTC(&systime);
 	struct Ta Tnow;
 	getsystime(Tnow, systime);
-	T1 = get_min(fin->obj.Tstart);
-	T2 = get_min(fin->obj.Tend);
-	T3 = get_min(Tnow);
+	min_start = get_min(ts);
+	min_end = get_min(te);
+	min_now = get_min(Tnow);
 	Ta taa;
-	time_t tsec=T1*60L;
+	time_t tsec=min_start*60L;
 	struct tm t_ch;
 	memset(&t_ch,0x00,sizeof(t_ch));
-//	printf("1秒数=%d\n",tsec);
-//	gmtime_r(&tsec,&t_ch);
-//	printf("2秒数=%d\n",tsec);
-//	printf("秒转日期 %d-%d-%d %d:%d:%d \n",
-//		t_ch.tm_year,t_ch.tm_mon,t_ch.tm_mday
-//		,t_ch.tm_hour,t_ch.tm_min,t_ch.tm_sec);
-	printf("Time to min(start)=%ld\n", T1);
-	printf("Time to min(end)=%ld\n", T2);
-	int addr = fin->obj.end_ioa-fin->obj.start_ioa+1;
-	u8 month = 0;
+	printf("Time to min(start)=%ld\n", min_start);
+	printf("Time to min(end)=%ld\n", min_end);
+	u8 month = 0;//用于查找文件的日期
 	u8 day = 0;
-
-
-	int timestep_last = 0;//上次采集的周期,时间递增的步距
-
-	int timestep=0;//最小采集周期,步距
-	int snumber = 0;	//采样点个数
+	int lastCycle = 0;//上次采集的周期,
+	int minCycle=0;//最小采集周期(分钟),外层循环步距
+	int snumber = 0;//采样次数,可能出现多次才同一个点的情况
 	struct Obj_M_IT_TX_2 objit;
-	//向后移动一个周期(周期可能变化!)
-	//查询表示方法是 查 00分钟 到 15分钟 表示 [00,15] 两端闭区间
-	// 而采集表示方法是 第一点,00采样周期15分钟,那个[00,15) 区间都是由第一个采样点表示
-	// [15,30) 由第二个采样点表示. 前闭后开.
-	for (u32 t = T1; t<=T2; t += timestep) {
+	/* 向后移动一个周期(周期可能变化!)
+	   查询表示方法是 查 00分钟 到 15分钟 表示 [00,15] 两端闭区间
+	   而采集表示方法是 第一点,00采样周期15分钟,那么[00,15) 区间都是由第一个采样点表示
+	   [15,30) 由第二个采样点表示. 前闭后开. */
+	//变步距!注意!,在内层中根据周期修改步距
+	for (u32 t = min_start; t<=min_end; t += minCycle) {
 		snumber++;
 		tsec=t*60;
 		gmtime_r(&tsec,&t_ch);
-		month=t_ch.tm_mon+1;
+		month=t_ch.tm_mon+1;//两种时间表示法月份基数不一样
 		day=t_ch.tm_mday;
 		printf("[本条记录时间]:");
 		showtime(t_ch);
-		//Obj_M_IT_TX_2 obj[mtrno][sampleno];
 		//最外层循环.按表号(文件)来循环 一般日期跨度小,
-		for (int i = fin->obj.start_ioa; i<=fin->obj.end_ioa; i++) {//信息体号
-			//mtrno=(i-1)/4;
+		for (int i = saddr; i<=endaddr; i++) {//信息体号
 			int mtrno = (i-1)/4;	//从信息体计算成表号
-			int datclass = (i-1)%4;		//信息体对应在每个表不同数据分类
+			int datclass = (i-1)%4;//信息体对应在每个表不同数据分类
 			//FIXME　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
-			std::string filename;
-			GetFileName_Day(&filename, month, day, mtrno, TASK_TOU);
-			std::cout<<"\t打开文件:"<<filename<<std::endl;
+			std::string tou_file;
+			GetFileName_Day(&tou_file, month, day, mtrno, TASK_TOU);
+			std::cout<<"\t打开文件:"<<tou_file<<std::endl;
 			int ret = 0;
 			FILE *fp;
 			touFilehead filehead;
 			Tou toudat;
 			memset(&toudat, 0x00, sizeof(toudat));
-			fp = fopen(filename.c_str(), "rb");
+			fp = fopen(tou_file.c_str(), "rb");
 			if (fp==NULL) {//应该是没有这块表,跳过继续寻找下一块表的数据
 				perror("open file");
 				//如果是没有文件的错误,则继续
-				continue;
+				continue;//继续下一个信息体
 				//如果是其他错误,那应该注意了.
 			}
 			ret = fread(&filehead, sizeof(filehead), 1, fp);
@@ -1020,21 +988,16 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 				printf("读取电量文件头错误:ret=%d", ret);
 				PRINT_HERE
 			}
-
 			//TODO 比较头,是否是本年本月的数据,因为月是对保存时间(几个月)去摸的.
+			//进行比较
+			if(0/*如果没有数据(月份不对什么的*/){
+				//看看是退出 还是 发送<没有数据>帧
+			}
 			//采样周期,分钟.
 			//! 注意! 这里修改了外层循环的步距
-			timestep_last=timestep;
-			timestep = filehead.save_cycle_hi*256
-			                +filehead.save_cycle_lo;
-			int tmpstep=timestep;
-//			if((t%(60*24))%timestep!=0){//如果不是某一小时的整数周期分钟,向后元整
-//				//开始时间从1分钟变到5分钟,如果周期位5.
-//				t=t+(timestep-t_ch.tm_min%timestep);
-//				tsec=t*60;
-//				gmtime_r(&tsec,&t_ch);
-//				printf("向后元整");
-//			}
+			lastCycle=minCycle;
+			minCycle = filehead.save_cycle_hi*256+filehead.save_cycle_lo;
+			int curCycle=minCycle;//当前周期,用于求偏移量
 			/*对于不同的表采集周期不一样的情况:
 			 * 产生这种现象的原因可能是修改了表计个数,同是采样周期也修改了,
 			 * 造成之前存储的值的某些表与现在的不一样,过了一个最大存储周期后
@@ -1042,45 +1005,48 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			 * 保证按最小的采集周期计算
 			*/
 			int bchangectl=false;
-			if(timestep>timestep_last
-					&& timestep_last!=0
-					&& timestep!=0){
-				//printf("改变周期 %d -> %d",timestep_last,timestep);
-
-				timestep=timestep_last;
-
+			if( minCycle>lastCycle && lastCycle !=0 && minCycle!=0 ){
+				//printf("改变周期 %d -> %d",lastCycle,minCycle);
+				minCycle=lastCycle;
 				bchangectl=true;
 			}else{
 				bchangectl=false;
 			}
-			 //如果:(T1-t)%timestep==0
-			//时间=采样点*采样周期
-			int timeoffset = 0;	//按时间的偏移量,时间步距=采样周期
-			int sn = 0;	//采样点偏移量
-
 			//距离这一天凌晨00:00的偏移量(分钟)/采样周期=文件中偏移的字节
-			int Soffset = (t%(60*24))/timestep;
-			int offset_mmin =(t%(60*24))%timestep;//一天中偏移了过少分钟
-			if(offset_mmin!=0){//不正好是周期的整数倍
-				t+=(timestep-offset_mmin);//时间加上几分钟,使到达分钟的整数倍.
+			int Soffset = (t%(60*24))/minCycle; //预设的偏离量
+			int modmin =(t%(60*24))%minCycle;//不是周期整数被,余数
+			/*向上元整,对于[图表1]情况,如果开始时间正好是(00:00~00:15]之间,
+			 * 那么即使表2有数据,也会因为表1没有数据而向上元整跳过,
+			 * 直接从4号记录开始.能记录到之后的,如[图表1]所示的
+			 * 4,5,6...记录
+			 * 例如00:20的小周期的记录是能被记录的.
+			 * (功能性缺失,不是致命bug)
+			*/
+			if(modmin!=0){//不正好是周期的整数倍
+				t+=(minCycle-modmin);//时间加上几分钟,使到达分钟的整数倍.
 				//重新计算现在的日期和时间.
 				tsec=t*60;
 				gmtime_r(&tsec,&t_ch);
-				printf("时刻非整周期");
+				printf("时刻上元整");
+				//向上元整,偏移点也应该增加(修改)
+				Soffset = (t%(60*24))/minCycle;
 			}
-			/*对于一下这种情况:
-			 * 时刻 | 表1 | 表2 |
-			 * 00:00| 有  | 有 |
-			 * 00:05| 无  | 有 |
-			 * 00:10| 无  | 有 |
-			 * 00:15| 有  | 有 |
+			/*对于一下这种情况:[图表1]
+			 * 序号|时刻 | 表1 | 表2 |
+			 * 1   |00:00| 有  | 有 |
+			 * 2   |00:05|     | 有 |
+			 * 3   |00:10|     | 有 |
+			 * 4   |00:15| 有  | 有 |
+			 * 5   |00:20|     | 有 |
+			 * 6   |00:25|     | 有 |
+			 * 7   |00:30| 有  | 有 |
 			 * 由于某些情况表1和表2的周期不一样.则采集时按照最小的周期采集,
 			 * 没有保存数据的表1保留上次的数据,即5分钟的数据和10分钟的
 			 * 数据都是0分钟的数据.且有效.
 			 * */
 			if(bchangectl){//周期改变了
 				//printf("这条数据无效");
-				Soffset=(t%(60*24))/tmpstep;
+				Soffset=(t%(60*24))/curCycle;
 				//只是不偏移,但是数据还是生成的,只是和之前的数据是一样的
 			}
 
@@ -1097,7 +1063,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			objit.ioa=i;
 			memcpy(&objit.it_power,&toudat.FA.total,sizeof(objit.it_power));
 			objit.cs=0xFF;//校验暂时不进行.
-			qIT.push(objit);
+			q_IT.push(objit);
 			printf("\t表号:%d ", mtrno);
 			switch (datclass) {
 			case 0:
@@ -1120,18 +1086,50 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			printf("周期=%d(分钟),偏移量:%d(个)tou 采样次数:%d个\n\t\t",
 			                filehead.save_cycle_lo, Soffset, snumber);
 			print_tou_dat(toudat);
-			sn++;
+			//sn++;
 			fclose(fp);
 		}
 		//所有请求的信息体历史文件都不存在.
-		if(timestep==0){
+		if(minCycle==0){
 			printf("没有请求的数据!\n");
 			break;
 		}
 		//一次时间完成:(对应帧中的信息体公共时间单元)
 		tm2ta(taa,t_ch);
-		qTa.push(taa);
+		q_Ta.push(taa);
 	}
+	return 0;
+}
+/*	M_IT_TA_2 发送带时标(T)的电量(IT)
+ in:	fi	输入帧结构
+ out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
+ return:	0	成功
+ */
+int Csd102::make_M_IT_TA_2(const struct Frame fi,
+        std::queue<struct Frame> &q1) const
+        {
+	struct Frame fout;
+	// 数据过多时分帧发送
+	// 每帧最多可以包含的信息体个数,用户数据最多255,再根据单个信息体的大小确定
+	// 不同类型的帧,因为包含的信息体大小不同,可能使最多可包含数信息体数量不同
+	int maxperframe = 0;
+	struct stFrame_C_CI_NR_2 *fin = (stFrame_C_CI_NR_2 *) fi.dat;
+	printf("fin->obj.start_ioa=%d\t", fin->obj.start_ioa);
+	printf("fin->obj.end_io=%d\n", fin->obj.end_ioa);
+	showtime(fin->obj.Tstart);
+	showtime(fin->obj.Tend);
+	if (this->format_ok(*fin)!=0/* 数据数据错误*/) {
+		make_mirror_1(fin, false);
+		printf(PREFIX"input instruction err 输入指令无效\n");
+		q1.push(fi);
+		return 1;
+	} else {	//有效 镜像帧
+		make_mirror_1(fin, true);
+		q1.push(fi);
+	}
+	this->hisdat( fin->obj.Tstart, fin->obj.Tend,
+		fin->obj.start_ioa, fin->obj.end_ioa,
+		qTa,qIT);
 	//这里开始检查写两个队列的数据是否正确:
 	printf("记录队列(时间条目):\t\t\tqTa.size=%d\n",qTa.size());
 	printf("数据队列(信息体个数*时间条目):\tqIT.size=%d\n",qIT.size());
@@ -1139,9 +1137,6 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 //	                12, 1,
 //	                &Save_Num, &Save_XL[0], TASK_TOU);
 	//printf("ret=%d\n", ret);
-
-
-	const int obj_num =qIT.size();//所有信息体的个数. (fin->obj.end_ioa-fin->obj.start_ioa+1);// 还要乘以采集时间/采集周期
 	//一条时刻记录中包含的信息体数量,当传了几帧(因为一帧传不完)后,总数等于这个,
 	//则要换帧,并且换Ta.
 	const int rs_len =fin->obj.end_ioa-fin->obj.start_ioa+1;
@@ -1910,7 +1905,7 @@ int Csd102::ioa_range(const struct Obj_C_CI_XX_2 obj) const
 		printf("开始信息体地址小于1\n");
 		return 1;  //信息体地址从1开始编制的
 	}
-	if (obj.start_ioa>=obj.end_ioa) {
+	if (obj.start_ioa>obj.end_ioa) {
 		printf("开始信息体地址大于结束信息体地址\n");
 		return 2;
 	}

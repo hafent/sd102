@@ -159,6 +159,11 @@ private:
 	void print_tou_dat(const struct Tou  tou) const;
 	u32 get_min(Ta ta)const;
 	u32 get_min_2(Ta ta)const;
+	//从历史文件中按照时间范围和信息体返回读取数据到连个队列 qTa和qIT
+	int hisdat(const Ta ts,const Ta te,
+		ioa_t saddr,ioa_t endaddr,
+		std::queue<struct Ta> &q_Ta,
+		std::queue<struct Obj_M_IT_TX_2> &q_IT)const;
 private:
 	//typ_t last_typ;
 	//u8 acd;
