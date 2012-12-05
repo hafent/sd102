@@ -1,7 +1,7 @@
 -- lua wireshark 山东102协议插件. file encode :utf-8
 --简单参考中文 http://yoursunny.com/study/IS409/ScoreBoard.htm
 --位操作 参考 http://blog.chinaunix.net/uid-24931444-id-3372735.html
---api定义参考 http://www.wireshark.org/docs/wsug_html_chunked/lua_module_Proto.html
+--api定义参考 http://www.wireshark.org/docs/wsug_html_chunked/lua_module_Proto.html 
 do
 	-------------- 函数前向声明 ---------------
 	local FT_farme --解析单字节帧
