@@ -1,5 +1,4 @@
-
-/*
+/**
  * sd_102_frame.h
  * 	1.定义了FT1.23种帧格式中两种通用格式:固定长度帧,变帧长帧.
  * 	2.定义了 大量特定含义的 固定帧和变长帧
@@ -35,51 +34,54 @@
 #define VARIABLE_LENGTH_FRAME 1 //不固定长度的帧,通常时应为包含n个信息体,调试时置1,使用时置0
 #define INFO_OBJ_NUM 1 // 信息体数量,按照实际情况在定义帧时重新设置!
 #define __LINK_ADD_LEN 2 //链路地址域长度
-/* **************** 帧结构中部分已知的结构, 帧头 帧尾 各种单元头等 **************
- * 本规约中 LSDU=ASDU=APDU
- * 报文=LPDU=LPCI+LSDU
- * ADSU=DUID+N*Info_Obj+ADSU的公共地址(可选)
- *变长帧结构使用 FT1.2 格式:
-|                                    |     含义    |  长度 |  小节  |          |
-+-------+------------------------------------------+------+--------+----------+
-|       |                            |    0x68     |1 byte|        |          |
-| Frame |                            |    length   |1 byte|4 Bytes |          |
-| head  |                            |length(copy) |1 byte|        |          |
-|       |                            |    0x68     |1 byte|        | LPCI     |
-+-------+---------+------------------+-------------+------+--------+ 60870-5-2|
-|       | u_dat   |                  |  Ctrl Field |1 byte|        |          |
-|       |   head  |                  | Link addr lo|1 byte|3 Bytes |          |
-|       |         |                  | Link addr hi|1 byte|        |          |
-|       +---------+------+-----------+-------------+------+--------+-----\    |
-|       |         |      |           |  Type Id    |1 byte|        |     |    |
-|       |         |      | ASDU head |    VSQ      |1 byte|        |     |    |
-|       |         |      |  (DUID)   |    COT      |1 byte|6 Bytes |     |    |
-| User  |         |      |           | ASDU addr lo|1 byte|        |     |    |
-| Data  |         |      |           | ASDU addr hi|1 byte|        |     |    |
-|       | u_dat   |      |           |    RAD      |1 byte|        |     |LPCI|
-|       |     body| ASDU +-----------+-------------+------+--------+     |    |
-|       |         |(APDU)|           |             |      |        | LSDU|    |
-|       |         |      |           | Information |  ?   |        |     |    |
-|       |         |      |           | Object(Obj1)|      |        |60870|    |
-|       |         |      | ASDU body | (necessary) |      |Unknown |-5-3 |    |
-|       |         |      |           Z-------------Z      |        |     |    |
-|       |         |      |           |     ...     |      |        |     |    |
-|       |         |      |           Z-------------Z      |        |     |    |
-|       |         |      |           |    Obj N    |      |        |     |    |
-|       |         |      |           | (Optional)  |      |        |     |    |
-+-------+---------+------+-----------+-------------+------+--------+-----/    |
-| Frame |                            |     CS      |1 byte|2 Bytes |   LPCI   |
-| Tail  |                            |    0x16     |1 byte|        |          |
-+-------+----------------------------+-------------+------+--------+----------+
+/* **************** 帧结构中部分已知的结构, 帧头 帧尾 各种单元头等 ************** \n
+ * 本规约中 LSDU=ASDU=APDU \n
+ * 报文=LPDU=LPCI+LSDU \n
+ * ADSU=DUID+N*Info_Obj+ADSU的公共地址(可选) \n
+ *变长帧结构使用 FT1.2 格式: \n
+|                                    |     含义    |  长度 |  小节  |          |\n
++-------+------------------------------------------+------+--------+----------+\n
+|       |                            |    0x68     |1 byte|        |          |\n
+| Frame |                            |    length   |1 byte|4 Bytes |          |\n
+| head  |                            |length(copy) |1 byte|        |          |\n
+|       |                            |    0x68     |1 byte|        | LPCI     |\n
++-------+---------+------------------+-------------+------+--------+ 60870-5-2|\n
+|       | u_dat   |                  |  Ctrl Field |1 byte|        |          |\n
+|       |   head  |                  | Link addr lo|1 byte|3 Bytes |          |\n
+|       |         |                  | Link addr hi|1 byte|        |          |\n
+|       +---------+------+-----------+-------------+------+--------+-----\    |\n
+|       |         |      |           |  Type Id    |1 byte|        |     |    |\n
+|       |         |      | ASDU head |    VSQ      |1 byte|        |     |    |\n
+|       |         |      |  (DUID)   |    COT      |1 byte|6 Bytes |     |    |\n
+| User  |         |      |           | ASDU addr lo|1 byte|        |     |    |\n
+| Data  |         |      |           | ASDU addr hi|1 byte|        |     |    |\n
+|       | u_dat   |      |           |    RAD      |1 byte|        |     |LPCI|\n
+|       |     body| ASDU +-----------+-------------+------+--------+     |    |\n
+|       |         |(APDU)|           |             |      |        | LSDU|    |\n
+|       |         |      |           | Information |  ?   |        |     |    |\n
+|       |         |      |           | Object(Obj1)|      |        |60870|    |\n
+|       |         |      | ASDU body | (necessary) |      |Unknown |-5-3 |    |\n
+|       |         |      |           Z-------------Z      |        |     |    |\n
+|       |         |      |           |     ...     |      |        |     |    |\n
+|       |         |      |           Z-------------Z      |        |     |    |\n
+|       |         |      |           |    Obj N    |      |        |     |    |\n
+|       |         |      |           | (Optional)  |      |        |     |    |\n
++-------+---------+------+-----------+-------------+------+--------+-----/    |\n
+| Frame |                            |     CS      |1 byte|2 Bytes |   LPCI   |\n
+| Tail  |                            |    0x16     |1 byte|        |          |\n
++-------+----------------------------+-------------+------+--------+----------+\n
 */
-// C1.1 可变帧长帧 - 帧头 Frame head
+/// C1.1 可变帧长帧 - 帧头 Frame head
 struct Frame_head {
+	/// 开始字符
 	u8 start_byte1;
+	/// 长度
 	u8 len1;
 	u8 len2;
+	/// 开始字节(副本)
 	u8 start_byte2;
 };
-// IEC60870-5-2 3.2中的用户数据 头部分
+/// IEC60870-5-2 3.2中的用户数据 头部分
 struct Udat_head {
 	union { //控制域 Crtl field
 		union Ctrl_c cf_c;
@@ -94,7 +96,7 @@ struct Udat_head {
 #endif
 
 };
-// 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
+/// 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
 struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
 	u8 typ;
 	union  Vsq vsq;
@@ -108,13 +110,13 @@ struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
 	rad_t rad;
 };
 //Information Object 信息体,按照不通类型不通.
-// C1.1  变长/定长帧尾 Frame Tail
+/// C1.1  变长/定长帧尾 Frame Tail
 struct Frame_tail {
 	u8 cs;
 	u8 end_byte;
 };
 
-/*C1.2 固定帧长帧 - 帧体
+/**C1.2 固定帧长帧 - 帧体
 +------------+-----------------+-------+
 | Frame head | 0x10(Start byte)|1 byte |
 +------------+-----------------+-------+
@@ -140,7 +142,7 @@ struct Short_frame {
 //********************** 第二部分 特定类型的帧定义 **************************
 // ****服务数据单元的定义和表示 APDU(Application Service Data Unit)*******
 // 7.3.1 ************* 在监视方向上的**过程信息**的应用服务数据单元 *************
-// 7.3.1.1 M_SP_TA_2  带时标的单点信息(Single-Point)
+/// 7.3.1.1 M_SP_TA_2  带时标的单点信息(Single-Point)
 struct Obj_M_SP_TA_2 {
 	struct Spinfo sp;
 	struct Tb tb;
@@ -154,7 +156,7 @@ struct stFrame_M_SP_TA_2{
 	struct Frame_tail tail;
 };
 #endif
-// 7.3.1.2 M_IT_TA_2 ~ M_IT_TM_2 电能累计量 information object (X取 A~M)
+/// 7.3.1.2 M_IT_TA_2 ~ M_IT_TM_2 电能累计量 information object (X取 A~M)
 struct Obj_M_IT_TX_2 {
 	ioa_t ioa;//
 	struct It it_power;
@@ -170,7 +172,7 @@ struct stFrame_M_IT_TX_2{
 	struct Frame_tail farme_tail;
 };
 #endif
-// 7.3.1.3 复费率记帐(计费)电能累计量 information object
+/// 7.3.1.3 复费率记帐(计费)电能累计量 information object
 struct Obj_M_IT_TA_B_2 {
 	ioa_t ioa;//
 	struct Multi_it mit;
@@ -186,7 +188,7 @@ struct stFrame_M_IT_TA_B_2{
 	struct Frame_tail farme_tail;
 };
 #endif
-// 7.3.1.4 遥测历史量 History of remote measurement -information object
+/// 7.3.1.4 遥测历史量 History of remote measurement -information object
 struct Obj_M_YC_TA_2 {
 	ioa_t ioa;//
 	struct Remote_measure rm;
@@ -201,7 +203,7 @@ struct stFrame_M_YC_TA_2{
 	struct Frame_tail farme_tail;
 };
 #endif
-//7.3.1.5 月最大需量及发生时间 顺序信息体(SQ=0) Information Object
+///7.3.1.5 月最大需量及发生时间 顺序信息体(SQ=0) Information Object
 struct Obj_M_XL_TA_2 {
 	ioa_t ioa;//
 	struct Month_maxdemand mmd;
@@ -216,7 +218,7 @@ struct stFrame_M_XL_TA_2{
 	struct Frame_tail farme_tail;
 };
 #endif
-//7.3.1.6 月结算复费率电能累计量 Information Object
+///7.3.1.6 月结算复费率电能累计量 Information Object
 struct Obj_M_IT_TA_C_2 {
 	ioa_t ioa;//
 	struct Month_mit mmit;
@@ -232,13 +234,13 @@ struct stFrame_M_IT_TA_C_2{
 	struct Frame_tail farme_tail;
 };
 #endif
-//7.3.1.7 表计谐波数据 顺序信息体(SQ=0) information object
+///7.3.1.7 表计谐波数据 顺序信息体(SQ=0) information object
 struct Obj_M_THD {
 	ioa_t ioa;//
 	struct Harmonic_data mhd;
 };
 // 7.3.2 ************* 在监视方向上的**系统信息**的应用服务数据单元 *************
-// 7.3.2.1 M_EI_NA_2 初始化结束
+/// 7.3.2.1 M_EI_NA_2 初始化结束
 struct Obj_M_EI_NA_2 {
 	ioa_t ioa;//
 	union Coi coi;
@@ -250,7 +252,7 @@ struct stFrame_M_EI_NA_2{
 	struct Obj_M_EI_NA_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 7.3.2.2 P_MP NA_2 电能累计量数据终端设备的制造厂和产品的规范
+/// 7.3.2.2 P_MP NA_2 电能累计量数据终端设备的制造厂和产品的规范
 struct Obj_P_MP_NA_2 {
 	struct Dos dos;
 	factcode_t fcode;
@@ -263,7 +265,7 @@ struct stFrame_P_MP_NA_2{
 	struct Obj_P_MP_NA_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 7.3.2.3 M_TI_TA_2 电能累计量数据终端设备目前的系统时间
+/// 7.3.2.3 M_TI_TA_2 电能累计量数据终端设备目前的系统时间
 struct Obj_M_TI_TA_2 {
 	struct Tb t;
 };
@@ -274,7 +276,7 @@ struct stFrame_M_TI_TA_2{
 	struct Obj_M_TI_TA_2 obj;
 	struct Frame_tail farme_tail;
 };
-// C10.2 在监视方向的确认帧 电能累计量数据终端系统时间同步确认帧
+/// C10.2 在监视方向的确认帧 电能累计量数据终端系统时间同步确认帧
 struct stFrame_M_SYN_TA_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
@@ -282,7 +284,7 @@ struct stFrame_M_SYN_TA_2{
 	struct Tb tb;
 	struct Frame_tail farme_tail;
 };
-// 7.3.3 ************ 在控制方向上的**系统信息**的应用服务数据单元 ***************
+/// 7.3.3 ************ 在控制方向上的**系统信息**的应用服务数据单元 ***************
 // 7.3.3.1 C_RD NA_2 读制造厂和产品的规范
 struct stFrame_C_RD_NA_2{
 	struct Frame_head farme_head;
@@ -290,14 +292,14 @@ struct stFrame_C_RD_NA_2{
 	struct Duid duid;
 	struct Frame_tail farme_tail;
 };
-// 7.3.3.2 读带时标的单点信息记录
+/// 7.3.3.2 读带时标的单点信息记录
 struct stFrame_C_SP_NA_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
 	struct Duid duid;
 	struct Frame_tail farme_tail;
 };
-// 7.3.3.3 C_SP_NB_2 读选定时间范围的带时标的单点信息记录
+/// 7.3.3.3 C_SP_NB_2 读选定时间范围的带时标的单点信息记录
 struct Obj_C_SP_NB_2 {
 	struct Ta starttime;
 	struct Ta endtime;
@@ -309,7 +311,7 @@ struct stFrame_C_SP_NB_2{
 	struct Obj_C_SP_NB_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 7.3.3.4 C_TI_NA_2 读电能累计量数据终端设备的目前的系统时间
+/// 7.3.3.4 C_TI_NA_2 读电能累计量数据终端设备的目前的系统时间
 struct stFrame_C_TI_NA_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
@@ -318,14 +320,14 @@ struct stFrame_C_TI_NA_2{
 	struct Frame_tail farme_tail;
 };
 // 7.3.3.5 (四种 CI 读取,结构一样) C_CI_NR_2  C_CI_NS_2 C_CI_NA_B_2 C_CI_NA_C_2
-// 信息体结构(四种都一样) 共用
+/// 信息体结构(四种都一样) 共用
 struct Obj_C_CI_XX_2 {
 	ioa_t start_ioa;
 	ioa_t end_ioa;
 	struct Ta Tstart;
 	struct Ta Tend;
 };
-// 	C_CI_NR_2 读一个选定的时间范围和一个选定的地址范围的记账(计费)电能累计量
+/// 	C_CI_NR_2 读一个选定的时间范围和一个选定的地址范围的记账(计费)电能累计量
 struct stFrame_C_CI_NR_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
@@ -333,7 +335,7 @@ struct stFrame_C_CI_NR_2{
 	struct Obj_C_CI_XX_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 	C_CI_NS_2 读一个选定的时间范围和一个选定的地址范围的周期地复位的记账(计费)电能累计量
+/// 	C_CI_NS_2 读一个选定的时间范围和一个选定的地址范围的周期地复位的记账(计费)电能累计量
 struct stFrame_C_CI_NS_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
@@ -341,7 +343,7 @@ struct stFrame_C_CI_NS_2{
 	struct Obj_C_CI_XX_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 	C_CI_NA_B_2 读一个选定的时间范围和一个选定的地址范围的复费率记帐(计费)电能累计量
+/// 	C_CI_NA_B_2 读一个选定的时间范围和一个选定的地址范围的复费率记帐(计费)电能累计量
 struct stFrame_C_CI_NA_B_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
@@ -349,7 +351,7 @@ struct stFrame_C_CI_NA_B_2{
 	struct Obj_C_CI_XX_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 	C_CI_NA_C_2 读一个选定的时间范围和一个选定的地址范围的月结算复费率电能累计量
+/// 	C_CI_NA_C_2 读一个选定的时间范围和一个选定的地址范围的月结算复费率电能累计量
 struct stFrame_C_CI_NA_C_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;
@@ -357,7 +359,7 @@ struct stFrame_C_CI_NA_C_2{
 	struct Obj_C_CI_XX_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 7.3.3.6 C_YC_TA_2 读一个选定时间范围和选定地址范围的遥测(YC=遥测)量;
+/// 7.3.3.6 C_YC_TA_2 读一个选定时间范围和选定地址范围的遥测(YC=遥测)量;
 struct Obj_C_YC_TA_2 {
 	ioa_t start_ioa;
 	ioa_t end_ioa;
@@ -371,7 +373,7 @@ struct stFrame_C_YC_TA_2{
 	struct Obj_C_YC_TA_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 7.3.3.7 C_XL_NB_2 读一个选定时间范围和选定地址范围的月最大需量(XL)
+/// 7.3.3.7 C_XL_NB_2 读一个选定时间范围和选定地址范围的月最大需量(XL)
 struct Obj_C_XL_NB_2 {
 	ioa_t start_ioa;
 	ioa_t end_ioa;
@@ -385,7 +387,7 @@ struct stFrame_C_XL_NB_2{
 	struct Obj_C_XL_NB_2 obj;
 	struct Frame_tail farme_tail;
 };
-// 7.3.3.8 C_CI_NA_D_2 读一个选定时间范围和选定地址范围的表计谐波数据
+/// 7.3.3.8 C_CI_NA_D_2 读一个选定时间范围和选定地址范围的表计谐波数据
 //	[规约错误写成C_CI_NA_C_2,注意!]
 struct Obj_C_CI_NA_D_2 {
 	ioa_t start_ioa;
@@ -400,7 +402,7 @@ struct stFrame_C_CI_NA_D_2{
 	struct Obj_C_CI_NA_D_2 obj;
 	struct Frame_tail farme_tail;
 };
-// C10.1 在控制方向的系统时间同步命令
+/// C10.1 在控制方向的系统时间同步命令
 struct stFrame_C_SYN_TA_2{
 	struct Frame_head farme_head;
 	struct Udat_head lpdu_head;

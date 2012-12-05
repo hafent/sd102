@@ -1,8 +1,9 @@
 /**
  * @file: sd102.cpp
- *
- 山东102规约 实现文件 引用 DL/T719-2000（IEC60870-5-102：1996）
- 引用 GB/T 18657.2-2002 等效与 IEC60870-5-2:1990 链路传输规则*/
+ * @author: 李培钢
+ * @brief: 山东102规约 实现文件 引用 DL/T719-2000（IEC60870-5-102：1996）\n
+ * 引用 GB/T 18657.2-2002 等效与 IEC60870-5-2:1990 链路传输规则
+ */
 #include <sys/msg.h>
 #include <stdio.h>
 #include <string>
@@ -28,10 +29,10 @@ enum err_no_e {
 	ERR_WORRY_START_BYTE,  //起始码错误,不是0x10 和0x68
 	ERR_
 };
-extern "C" CProtocol *
-/***
- * 主函数调用动态连接库接口
+/** 主程序调用规约入口
+ * @return
  */
+extern "C" CProtocol *
 CreateCProto_sd102()
 {
 	printf(PREFIX"Version: %d.%d.%d,", MAJOR, MINOR, PATCHLEVEL);
@@ -39,8 +40,9 @@ CreateCProto_sd102()
 	printf(PREFIX"create so lib\n");
 	return new Csd102;
 }
-/**构造函数
- * */
+/**
+ *
+ */
 Csd102::Csd102()
 {
 	printf(PREFIX"struct Csd102\n");
@@ -86,7 +88,7 @@ Csd102::~Csd102()
 }
 /**
  * 初始化函数
- * @param tmp_portcfg
+ * @param tmp_portcfg 从终端的到的一些配置信息
  * @return
  */
 int Csd102::Init(struct stPortConfig *tmp_portcfg)
@@ -1930,7 +1932,11 @@ int Csd102::ioa_range(const struct Obj_C_CI_XX_2 obj) const
 	}
 	return 0;
 }
-/**输入帧 逻辑上是否正确*/
+/**
+ * 判断输入帧格式是否正确,符合逻辑
+ * @param fin
+ * @return
+ */
 int Csd102::format_ok(struct stFrame_C_CI_NR_2 fin) const
         {
 	if (this->time_range(fin.obj)!=0) {
@@ -1943,14 +1949,21 @@ int Csd102::format_ok(struct stFrame_C_CI_NR_2 fin) const
 	}
 	return 0;
 }
-
+/**
+ * 打印错误信息
+ * @param msg
+ * @return
+ */
 int Csd102::print_err_msg(int msg) const
         {
 	msg++;
 	return 0;
 }
-/** 7.2.4 电能累计量数据终端设备地址,
+/**
+ *  7.2.4 电能累计量数据终端设备地址,
  * "信息体每超过一次255个信息点的情况".
+ * @param obj_num
+ * @return
  */
 inline rtu_addr_t Csd102::makeaddr(int obj_num) const
         {
@@ -1959,6 +1972,10 @@ inline rtu_addr_t Csd102::makeaddr(int obj_num) const
 	}
 	return (obj_num/255)+1;
 }
+/**
+ * 打印时间
+ * @param t Linux系统的时间格式
+ */
 inline void Csd102::showtime(const struct tm t) const
         {
 	printf("tm %4d-%02d-%02d %02d:%02d:%02d timezone:%s\n",
@@ -1967,6 +1984,10 @@ inline void Csd102::showtime(const struct tm t) const
 	fflush(stdout);
 	return;
 }
+/**
+ * 打印时间
+ * @param t 规约中的Ta时间格式
+ */
 inline void Csd102::showtime(const struct Ta t) const
         {
 	printf("Ta %4d-%02d-%02d %02d:%02d \n",
@@ -1974,6 +1995,10 @@ inline void Csd102::showtime(const struct Ta t) const
 	fflush(stdout);
 	return;
 }
+/**
+ * 打印时间
+ * @param t 规约中的Tb时间格式
+ */
 inline void Csd102::showtime(const struct Tb t) const
         {
 	printf("Tb %4d-%02d-%02d %02d:%02d:%02d %4dms ",
@@ -2001,9 +2026,12 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
 	return (cbak.fcv==1)&&(c.fcv==1)&&(c.fcb==cbak.fcb);
 }
 
-/** 将Ta时间格式换算成 从1900年1月1日0时0分到目前为止的(分钟/秒)数.
- * return	0 错误
- * 		到目前为止的分钟数
+/**
+ * 将Ta时间格式换算成 从1900年1月1日0时0分到目前为止的(分钟/秒)数.
+ * @param ta
+ * @return 长整型
+ * @retval 0 错误
+ * @retval 非0  从1970年到现在时刻经过的分钟数
  */
 u32 Csd102::get_min(Ta ta) const
         {
