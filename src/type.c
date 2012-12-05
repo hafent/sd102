@@ -1,17 +1,18 @@
-/* 定义各种描述,在sd102.h中通过 extern 引用.
- * 只有在c文件中 g++ 才支持 指定初始化 Designated Initializers,
- * http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html
- * 在cpp中即使extern和无法使用, 指定初始化是c90标准(C语言标准)不是C++标准.
- * g++尚未是现实对指定初始化的支持(包括数组的和结构体的),结构体的指定初始化可以通过
- * 	GNU的扩展语法实现,但是数组的指定初始化在g++中尚未支持.
- * 若必须使用,则可以在1.c中实现,编译成1.o,然后和main.cpp编译成的main.o通过g++链接
- * 	而成. 例如,有 main.cpp(主程序) 1.c(使用指定初始化的实现)
- * 	在mian.cpp中使用 extern 引用 1.c中的变量
- * 	gcc -c 1.c 	-o 1.o
- * 	g++ -c main.cpp -o main.o
- * 	g++ 1.o main.o 	-o main.exe
- * 未被使用,使用需要修改Makefile,取消gcc的注销,
- * 	修改 "sd102_ctDuid.h" "sd102_ctUdat.h",开启对extern的宏编译
+/** @file type.c
+ *  定义各种描述,在sd102.h中通过 extern 引用.\n
+ * 只有在c文件中 g++ 才支持 指定初始化 Designated Initializers,\n
+ * http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html\n
+ * 在cpp中即使extern和无法使用, 指定初始化是c90标准(C语言标准)不是C++标准.\n
+ * g++尚未是现实对指定初始化的支持(包括数组的和结构体的),结构体的指定初始化可以通过\n
+ * 	GNU的扩展语法实现,但是数组的指定初始化在g++中尚未支持.\n
+ * 若必须使用,则可以在1.c中实现,编译成1.o,然后和main.cpp编译成的main.o通过g++链接\n
+ * 	而成. 例如,有 main.cpp(主程序) 1.c(使用指定初始化的实现)\n
+ * 	在mian.cpp中使用 extern 引用 1.c中的变量\n
+ * 	gcc -c 1.c 	-o 1.o\n
+ * 	g++ -c main.cpp -o main.o\n
+ * 	g++ 1.o main.o 	-o main.exe\n
+ * 未被使用,使用需要修改Makefile,取消gcc的注销,\n
+ * 	修改 "sd102_ctDuid.h" "sd102_ctUdat.h",开启对extern的宏编译\ns
  * */
 #include "typedefine.h"
 #include "sd102_ctDuid.h"

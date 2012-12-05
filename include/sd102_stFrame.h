@@ -73,13 +73,10 @@
 */
 /// C1.1 可变帧长帧 - 帧头 Frame head
 struct Frame_head {
-	/// 开始字符
-	u8 start_byte1;
-	/// 长度
-	u8 len1;
-	u8 len2;
-	/// 开始字节(副本)
-	u8 start_byte2;
+	u8 start_byte1;///< 开始字符
+	u8 len1;///< 长度
+	u8 len2;///< 长度2
+	u8 start_byte2;///< 开始字节(副本)
 };
 /// IEC60870-5-2 3.2中的用户数据 头部分
 struct Udat_head {
@@ -98,7 +95,7 @@ struct Udat_head {
 };
 /// 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
 struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
-	u8 typ;
+	u8 typ;///<类型TYP
 	union  Vsq vsq;
 	union Cot cot;
 	/* 7.2.4 电能累计量数据终端设备的地址从1开始，

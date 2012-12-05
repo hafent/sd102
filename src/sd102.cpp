@@ -152,9 +152,9 @@ void Csd102::SendProc(void)
 	return;
 }
 
-/**接收(从主站发来的)报文 主处理流程
- * @param void
+/** 接收(从主站发来的)报文 主处理流程
  * @return 没有
+ * @note 规约实现的主流程在这里实现
  */
 int Csd102::ReciProc(void)
 {
@@ -351,7 +351,7 @@ int Csd102::transfer(const struct Frame f)
 }
 
 /** 从帧中获取控制域,一个字节
- @param	f(in)	帧/字节流
+ @param[in]	f	帧/字节流
  @return	控制字节(union Ctrl_down)
  */
 u8 Csd102::get_ctrl_field(const struct Frame f) const
@@ -936,13 +936,15 @@ void Csd102::print_tou_head(const struct touFilehead filehead) const
 	                );
 	return;
 }
-/* 根据时间范围和信息体地址范围 从 历史数据 his 文件中读取
+/** 根据时间范围和信息体地址范围 从 历史数据 his 文件中读取
  * 指定的信息体 和时间信息 分别到信息体队列 和 Ta 时间队列.备用
- * in	时间范围 ts~ta
- * 	信息体地址范围
- * out	it信息体队列
- * 	ta时间队列,1对多个it
- * return	暂时不输出错误
+ * @param[in] ts	输入时间范围 time start
+ * @param[in] te	输入时间范围 time end
+ * @param[in] saddr	信息体地址范围 start addr
+ * @param[in] endaddr	信息体地址范围 end addr
+ * @param[out] q_IT	it信息体队列
+ * @param[out] q_Ta	ta时间队列,1对多个it
+ * @return	暂时不输出错误
  * */
 int Csd102::hisdat(const Ta ts,const Ta te,
 	ioa_t saddr,ioa_t endaddr,
@@ -1017,7 +1019,7 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 				//看看是退出 还是 发送<没有数据>帧
 			}
 			//采样周期,分钟.
-			//! 注意! 这里修改了外层循环的步距
+			///@attention 注意! 这里修改了外层循环的步距
 			lastCycle=minCycle;
 			minCycle = filehead.save_cycle_hi*256+filehead.save_cycle_lo;
 			int curCycle=minCycle;//当前周期,用于求偏移量
@@ -1122,9 +1124,9 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 	return 0;
 }
 /**	M_IT_TA_2 发送带时标(T)的电量(IT)
- in:	fi	输入帧结构
- out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
- return:	0	成功
+ @param in:	fi	输入帧结构
+ @param out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
+ @return:	0	成功
  */
 int Csd102::make_M_IT_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q1) const
@@ -2028,7 +2030,7 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
 
 /**
  * 将Ta时间格式换算成 从1900年1月1日0时0分到目前为止的(分钟/秒)数.
- * @param ta
+ * @param[in] ta
  * @return 长整型
  * @retval 0 错误
  * @retval 非0  从1970年到现在时刻经过的分钟数

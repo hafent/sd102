@@ -5,9 +5,9 @@
 #define SD102_H
 #include "CBASE102s.h"
 #include "sd102_stFrame.h"//结构定义
-#include "sd102_ctDuid.h"//常量定义
-#include "sd102_ctUdat.h"
-#include "sd102_ctStart.h"
+//#include "sd102_ctDuid.h"//常量定义
+//#include "sd102_ctUdat.h"
+//#include "sd102_ctStart.h"
 #include <queue>
 #define VER
 #ifndef MAJOR
@@ -81,7 +81,10 @@ struct Tou{
 
 extern "C" CProtocol* CreateCProto_sd102();
 
-/// **** 规约实现类,所有用能由本类实现 继承 class CBASE102 ****
+/** 规约实现类,所有用能由本类实现 继承 class CBASE102 .
+ * 详细描述
+ *
+ */
 class Csd102: public CBASE102 {
 public:
 	Csd102();
@@ -159,7 +162,6 @@ private:
 	void print_tou_dat(const struct Tou  tou) const;
 	u32 get_min(Ta ta)const;
 	u32 get_min_2(Ta ta)const;
-	///从历史文件中按照时间范围和信息体返回读取数据到连个队列 qTa和qIT
 	int hisdat(const Ta ts,const Ta te,
 		ioa_t saddr,ioa_t endaddr,
 		std::queue<struct Ta> &q_Ta,
