@@ -236,23 +236,7 @@ do
 		end
 		--校验和
 		--全部判断完成:
-
-		--t:add(f_start,buf(0,1)) 
-		local ctrlbyte = t:add(f_ctrl,buf(1,1))
-		--	分上下行解析
-		if bit.rshift(bit.band(buf(1,1):uint(), 0x40), 6) == 1 then --控制站向采集端
-			ctrlbyte:add(f_funcode,buf(1,1))
-			ctrlbyte:add(f_fcv,buf(1,1))
-			ctrlbyte:add(f_fcb,buf(1,1))
-			ctrlbyte:add(f_prm,buf(1,1))
-			--ctrlbyte:add(f_dir,buf(1,1))
-		else --采集端 向控制端
-			ctrlbyte:add(f_funcode_rsp,buf(1,1))
-			ctrlbyte:add(f_dfc,buf(1,1))
-			ctrlbyte:add(f_acd,buf(1,1))
-			ctrlbyte:add(f_prm,buf(1,1))
-			--ctrlbyte:add(f_dir,buf(1,1))
-		end
+		addCF(t,1,buf)
 
 		local linkaddr = t:add_le(f_linkaddr,buf(2,2))
 		linkaddr:add(f_addr1,buf(2,1)) 
@@ -261,7 +245,31 @@ do
 		t:add(f_end,buf(5,1)) 
 		return true
 	end
-
+	-- 添加位域的显示
+	function addCF(t,base,buf)
+		local sizeCF=1 --控制域的大小
+		local ctrlbyte = t:add(f_ctrl,buf(base,sizeCF))
+		local funcode=bit.band(buf(base,1):uint(),0x0f)
+		--	分上下行解析
+		local isDownMsg =bit.rshift(bit.band(buf(base,1):uint(), 0x40), 6) 
+		if isDownMsg == 1 then --控制站向采集端
+			ctrlbyte:add(f_funcode,buf(base,1))
+			ctrlbyte:add(f_fcv,buf(base,1))
+			ctrlbyte:add(f_fcb,buf(base,1))
+			ctrlbyte:add(f_prm,buf(base,1))
+			--ctrlbyte:add(f_dir,buf(1,1))
+			ctrlbyte:append_text(" 下行,")
+		else --采集端 向控制端
+			ctrlbyte:add(f_funcode_rsp,buf(base,1))
+			ctrlbyte:add(f_dfc,buf(base,1))
+			ctrlbyte:add(f_acd,buf(base,1))
+			ctrlbyte:add(f_prm,buf(base,1))
+			ctrlbyte:append_text(" 上行,")
+			--ctrlbyte:add(f_dir,buf(1,1))
+		end
+		ctrlbyte:append_text(" FC=")
+		ctrlbyte:append_text(funcode)
+	end
 	----------------长帧/变长帧---------------- 函数长度有限制
 	function FT_change_farme(buf,pkt,root)
 		local len = buf:len();
@@ -293,20 +301,7 @@ do
 		farmehead:add(f_len1,buf(1,1))
 		farmehead:add(f_len2,buf(2,1))
 		farmehead:add(f_start,buf(3,1))
-		local ctrlbyte = t:add(f_ctrl,buf(4,1))
-		if bit.rshift(bit.band(buf(4,1):uint(), 0x40), 6) == 1 then --控制站向采集端
-			ctrlbyte:add(f_funcode,buf(4,1))
-			ctrlbyte:add(f_fcv,buf(4,1))
-			ctrlbyte:add(f_fcb,buf(4,1))
-			ctrlbyte:add(f_prm,buf(4,1))
-			--ctrlbyte:add(f_dir,buf(4,1))
-		else --采集端 向控制端
-			ctrlbyte:add(f_funcode_rsp,buf(4,1))
-			ctrlbyte:add(f_dfc,buf(4,1))
-			ctrlbyte:add(f_acd,buf(4,1))
-			ctrlbyte:add(f_prm,buf(4,1))
-			--ctrlbyte:add(f_dir,buf(4,1))
-		end
+		addCF(t,4,buf)
 		local linkaddr = t:add_le(f_linkaddr,buf(5,2))
 		linkaddr:add(f_addr1,buf(5,1)) 
 		linkaddr:add(f_addr2,buf(6,1))
