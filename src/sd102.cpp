@@ -195,7 +195,7 @@ int Csd102::ReciProc(void)
 	//S2: **** 2类服务(写指令)
 	case FCN_C_RCU:
 		printf(PREFIX"S2: 0-复位链路\n");
-		//TODO 可能终端施行复位操作,暂时就清除保存帧
+		///@todo 可能终端施行复位操作,暂时就清除保存帧
 		clear_fcb(reci_frame_bak);
 		ret = 0;
 		//rcu();
@@ -217,7 +217,7 @@ int Csd102::ReciProc(void)
 	case FCN_C_TRANS_DAT:
 		printf(PREFIX"S2: 3-数据传输\n");
 		//应答之后即刻 开始处理事务
-		//TODO 应答之前是否要处理什么??
+		///\todo 应答之前是否要处理什么??
 		printf(PREFIX"S2: 0-确认\n");
 		ack(send_frame);
 		if (reci_frame.dat[0]!=START_LONG_FRAME) {
@@ -310,7 +310,7 @@ int Csd102::ReciProc(void)
 	return 0;
 }
 /**复制帧, 从sf复制到df
- * @return 0 成功执行 非0 出错
+ * @retval 0 成功执行 非0 出错
  */
 int Csd102::copyframe(struct Frame &df, const struct Frame sf) const
         {
