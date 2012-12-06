@@ -1,12 +1,16 @@
-/*     filename: sd102_element.h
-	定义7.2  IEC 60870-5-4（应用信息元素的定义和编码）的结构
+/**     @file sd102_stElement.h
+	定义7.2  IEC 60870-5-4（应用信息元素的定义和编码）的结构.
 	application information elements(仅定义结构体)
+
 说明:
+
 	未注明的章节号内容参考资料1,其他章节号见其具体协议编号.
 	数据格式按照 GB/T18657.4 idt IEC60870-5-4
 	*_t 为无符号整型数据(8位/16位等)
 	首字母大写的单词为结构体类型/联合体 如  It Vsq
+
 参考资料:
+
 	1.山东电网 DL/T 719-2000 电力系统电能累计量传输配套标准实施规范(2011)
 	 	 ref IEC60870-5-102
 	2.http://en.wikipedia.org/wiki/IEC_60870-5
@@ -31,7 +35,7 @@
 #define SPA_PARA_MOD_GX		8//参数修改
 
 
-//7.2.2 可变结构限定词（VARIABLE OF STRUCTURE QUALIFIER）
+///7.2.2 可变结构限定词（VARIABLE OF STRUCTURE QUALIFIER）
 union  Vsq {
 	u8 val;
 	struct {
@@ -46,7 +50,7 @@ union  Vsq {
 #endif /*__BYTE_ORDER*/
 	};
 };
-/*7.2.3 传送原因 (Cause Of Transmission)
+/**7.2.3 传送原因 (Cause Of Transmission) .
  7 6 5 4 3 2 1 0
 +-+-+-+-+-+-+-+-+
 |T|P|  cause    |
@@ -67,14 +71,14 @@ union Cot {
 #endif /*__BYTE_ORDER*/
 	};
 };
-/* 7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASDU_addr rtu addr */
+/** 7.2.4 电能累计量数据终端设备地址(应用服务单元公共地址)ASDU_addr rtu addr */
 typedef u16 rtu_addr_t; //协议一小尾端方式存储,不像通常的使用网络字节序
-/* 7.2.5 记录地址(RAD)	Record Address
+/** 7.2.5 记录地址(RAD)	Record Address
 */
 typedef u8 rad_t;
-//7.2.6 信息体地址(IOA) Information Object Address
+///7.2.6 信息体地址(IOA) Information Object Address
 typedef u8 ioa_t;
-/* 7.2.7 信息体元素
+/** 7.2.7 信息体元素
    7.2.7.1 序列号和数据状态 字节 //sd102中全改为状态位, */
 union Seq_number {
 	u8 val;
@@ -94,7 +98,7 @@ union Seq_number {
 	};
 };
 #ifdef SD102_Special_structure
-//7.2.7.1 序列号和数据状态 字节 //替代上面的 1表示这种状态,0表示没有这种状态
+///7.2.7.1 序列号和数据状态 字节 //替代上面的 1表示这种状态,0表示没有这种状态
 union Data_status {
 	u8 val;
 	struct {
@@ -121,12 +125,12 @@ union Data_status {
 	};
 };
 #endif /*SD102_Special_structure*/
-//7.2.7.1 电能累计量 IT (Integrated total)
+///7.2.7.1 电能累计量 IT (Integrated total)
 struct	It {
 	u32 dat;
 	union Data_status d_status;
 };
-//7.2.7.2 5字节时间信息 a(Time information a,分至年)
+///7.2.7.2 5字节时间信息 a(Time information a,分至年)
 struct Ta {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	//Byte 1
@@ -168,7 +172,7 @@ struct Ta {
 #else
 #endif
 };
-//7.2.7.3 7字节时间信息 b(Time information b,毫秒至年)
+///7.2.7.3 7字节时间信息 b(Time information b,毫秒至年)
 struct Tb {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	u16 ms:10;//毫秒 <0..999>
@@ -216,24 +220,24 @@ struct Tb {
 #endif /*__BYTE_ORDER*/
 };
 
-//7.2.7.4 标准的日期(DOS)Date of standard
+///7.2.7.4 标准的日期(DOS)Date of standard
 struct Dos {
 	u8 month:4;//月 <1..12>
 	u8 year:4;//年 <0..9>
 };
-//7.2.7.5 制造厂编码 Manufacturer code
+///7.2.7.5 制造厂编码 Manufacturer code
 typedef u8 factcode_t; //<0..255>
-//7.2.7.6 产品编码 product code ;BS32 bit strings 32bits
+///7.2.7.6 产品编码 product code ;BS32 bit strings 32bits
 typedef u32 productcode_bs;
-//7.2.7.7 带地址和限定词的单点信息 single-point information
+///7.2.7.7 带地址和限定词的单点信息 single-point information
 struct Spinfo {
 	u8 spa;//single-point address
 	u8 spi:1;//
 	u8 spq:7;//
 };
-//7.2.7.8 电能累计量数据保护的校核 TODO:再详细查阅规约,查询对哪几部分CS
+///7.2.7.8 电能累计量数据保护的校核 TODO:再详细查阅规约,查询对哪几部分CS
 typedef u8 signature_t;
-//7.2.7.9 初始化原因 Cause of initialization
+///7.2.7.9 初始化原因 Cause of initialization
 union Coi {
 	u8 val;
 	struct {
@@ -242,7 +246,7 @@ union Coi {
 	};
 };
 
-//7.2.7.10 复费率电能累计量 Multi-rate  Integrated total
+///7.2.7.10 复费率电能累计量 Multi-rate  Integrated total
 struct Multi_it {
 	u32 total;
 	u32 rate1;//费率1
@@ -252,7 +256,7 @@ struct Multi_it {
 	u32 rate5;//保留为0
 	union Data_status d_status;
 };
-//7.2.7.11 月结算复费率电能累计量 Monthly balance sheet multi-rate  IT
+///7.2.7.11 月结算复费率电能累计量 Monthly balance sheet multi-rate  IT
 struct Month_mit {
 	u32 total;
 	u32 rate1;//费率1
@@ -262,17 +266,17 @@ struct Month_mit {
 	u32 rate5;//保留为0
 	union Data_status d_status;
 };
-//7.2.7.12 月总最大需量及发生时间 Monthly total demand and time
+///7.2.7.12 月总最大需量及发生时间 Monthly total demand and time
 struct Month_maxdemand {
 	u32 total_maxdemand;//月总最大需量值
 	struct Ta occur_time;
 };
-//7.2.7.13 遥测量 Remote measurement
+///7.2.7.13 遥测量 Remote measurement
 struct	Remote_measure {
 	u32 dat;
 	union Data_status dst;
 };
-//7.2.7.14 表计谐波数据 Meter harmonic data
+///7.2.7.14 表计谐波数据 Meter harmonic data
 struct Harmonic_data {
 	u32  fa_thd ;//forward active Total harmonic power
 	u32  ra_thd;//Reverse active total harmonic power

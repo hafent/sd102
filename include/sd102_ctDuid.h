@@ -1,15 +1,20 @@
-/*数据单元标识符 duid的常量定义(仅定义常量,不定义结构,结构在element中定义)
+/** @file sd102_ctDuid.h
+ * 数据单元标识符 duid的常量定义.
+ * 仅定义常量,不定义结构,结构在element中定义
  * duid={Type,VSQ,COT,ASDU addr,RAD}
+ * @page  数据单元标识符Duid 定义
+ * @code
  +-----------+-------------+------+--------+
- |           |  Type Id    |1 byte|        |
- | ASDU head |    VSQ      |1 byte|        |
- |  (DUID)   |    COT      |1 byte|6 Bytes |
+ |           |    typ_t    |1 byte|        |
+ | ASDU head |    Vsq      |1 byte|        |
+ |  (Duid)   |    Cot      |1 byte|6 Bytes |
  |           | ASDU addr lo|1 byte|        |
  |           | ASDU addr hi|1 byte|        |
  |           |    RAD      |1 byte|        |
  +-----------+-------------+------+--------+
- |	    其他信息体元素的常量定义	   |
+ |           其他信息体元素的常量定义        |
  +-----------------------------------------+
+ @endcode
  * */
 #ifndef _SD102_DUID_H_
 #define _SD102_DUID_H_

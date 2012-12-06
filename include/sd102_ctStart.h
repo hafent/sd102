@@ -1,4 +1,5 @@
-/*FT1.2帧的两种启动字符 (0x68 0x10)一种单一字符 (0xE5) 一种结束符号(0x16)
+/**@file sd102_ctStart.h
+ * FT1.2帧的两种启动字符 (0x68 0x10)一种单一字符 (0xE5) 一种结束符号(0x16)
  * */
 #ifndef SD102_START_CHAR_H
 #define SD102_START_CHAR_H

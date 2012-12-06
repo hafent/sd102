@@ -1,6 +1,6 @@
 /** @file type.c
- *  定义各种描述,在sd102.h中通过 extern 引用.\n
- * 只有在c文件中 g++ 才支持 指定初始化 Designated Initializers,\n
+ * 定义各种描述,在sd102.h中通过 extern 引用.
+ * 只有在c文件中 g++ 才支持 指定初始化(Designated Initializers):
  * http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html\n
  * 在cpp中即使extern和无法使用, 指定初始化是c90标准(C语言标准)不是C++标准.\n
  * g++尚未是现实对指定初始化的支持(包括数组的和结构体的),结构体的指定初始化可以通过\n
@@ -12,7 +12,8 @@
  * 	g++ -c main.cpp -o main.o\n
  * 	g++ 1.o main.o 	-o main.exe\n
  * 未被使用,使用需要修改Makefile,取消gcc的注销,\n
- * 	修改 "sd102_ctDuid.h" "sd102_ctUdat.h",开启对extern的宏编译\ns
+ * 	修改 "sd102_ctDuid.h" "sd102_ctUdat.h",开启对extern的宏编译\n
+ * @author 李培钢
  * */
 #include "typedefine.h"
 #include "sd102_ctDuid.h"

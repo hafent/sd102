@@ -1,6 +1,7 @@
-   /* File encode:	 GB2312
-   filename:	typedefine.h
-定义一些较为通用的自定义类型*/
+/** @file typedefine.h File encode UTF-8
+	定义一些较为通用的自定义类型.
+	如 8位无符号整形 u8 等
+*/
 #ifndef TYPEDEFINE_H
 #define TYPEDEFINE_H
 #define SD102_Special_structure //标识山东102特定的结构

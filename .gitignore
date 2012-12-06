@@ -1,7 +1,9 @@
 #eclipse项目文件#
 .settings/*
-.html/*
-.latex/*
+./html/*
+./latex/*
+html/
+latex/
 .cproject
 #.gitignore
 src/CBASE102s.cpp

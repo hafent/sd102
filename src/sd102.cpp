@@ -1,9 +1,12 @@
 /**
- * @file: sd102.cpp
- * @author: 李培钢
- * @brief: 山东102规约 实现文件 引用 DL/T719-2000（IEC60870-5-102：1996）\n
- * 引用 GB/T 18657.2-2002 等效与 IEC60870-5-2:1990 链路传输规则
+ * @file sd102.cpp
+ * 山东102规约 实现文件 .
+ * 	引用 DL/T719-2000（IEC60870-5-102：1996）
+ * 	引用 GB/T 18657.2-2002 等效与 IEC60870-5-2:1990 链路传输规则
+ * @author 李培钢
  */
+
+
 #include <sys/msg.h>
 #include <stdio.h>
 #include <string>
@@ -29,7 +32,7 @@ enum err_no_e {
 	ERR_WORRY_START_BYTE,  //起始码错误,不是0x10 和0x68
 	ERR_
 };
-/** 主程序调用规约入口
+/** 主程序调用规约入口.
  * @return
  */
 extern "C" CProtocol *
@@ -77,17 +80,17 @@ Csd102::Csd102()
 	}
 	spon = 60;
 
+
 }
 /**
- * */
+ */
 Csd102::~Csd102()
 {
 	PRINT_HERE
 //memset(this->reci_farme_bak,0x00,sizeof(reci_farme_bak)*sizeof(u8));
 //this->reci_farme_bak_len=0;
 }
-/**
- * 初始化函数
+/** 初始化.
  * @param tmp_portcfg 从终端的到的一些配置信息
  * @return
  */
@@ -109,7 +112,8 @@ int Csd102::Init(struct stPortConfig *tmp_portcfg)
 	return 0;
 }
 
-/**终端(从站)主动发送.在山东102,可以用於非平衡传输(协议规定)不需要
+/**终端(从站)发送到主站.
+ * 在山东102,可以用於非平衡传输(协议规定)不需要
  * */
 void Csd102::SendProc(void)
 {
@@ -152,7 +156,7 @@ void Csd102::SendProc(void)
 	return;
 }
 
-/** 接收(从主站发来的)报文 主处理流程
+/** 接收(从主站发来的)报文(主处理流程)
  * @return 没有
  * @note 规约实现的主流程在这里实现
  */
@@ -309,8 +313,9 @@ int Csd102::ReciProc(void)
 	}
 	return 0;
 }
-/**复制帧, 从sf复制到df
- * @retval 0 成功执行 非0 出错
+/**将sf复制到df.
+ * @retval 0 成功执行
+ * @retval 非0 出错
  */
 int Csd102::copyframe(struct Frame &df, const struct Frame sf) const
         {
@@ -318,7 +323,9 @@ int Csd102::copyframe(struct Frame &df, const struct Frame sf) const
 	return 0;
 }
 
-/*S2:发送/确认帧 的终端应答(确认) 形成确认帧
+/**S2:发送/确认帧 的终端应答(确认) 形成确认帧
+ * @param[out] f 构造好的帧
+ * @return
  */
 int Csd102::ack(struct Frame &f) const
         {
@@ -326,18 +333,20 @@ int Csd102::ack(struct Frame &f) const
 	f.len = sizeof(START_SC_FRAME);
 	return 0;
 }
-/*S3的 没有数据的 否定应答	形成否定帧(nack)
+/**
+ * S3的 没有数据的 否定应答,形成否定帧(nack)
+ * @param[out] f 构造好的帧
+ * @return
  */
 int Csd102::nack(struct Frame &f) const
         {
 	f.dat[0] = START_SC_FRAME;
 	f.len = sizeof(START_SC_FRAME);
 	return 0;
-}
-
-/*发送帧 将 f 通过复制到 m_transBuf 结构体发送.
- in:	f	通用帧,字节数组+长度
- out:	m_transBuf	修改的发送缓冲区结构体,发送数据[类成员,隐含使用!]
+  }
+/**将帧结构通过 m_transBuf 发送给主站
+ * @param[in] f 构造好的帧结构(通用帧,字节数组+长度)
+ * @param[out] m_transBuf 修改的发送缓冲区结构体,发送数据[类成员,隐含使用!]
  */
 int Csd102::transfer(const struct Frame f)
 {
@@ -378,13 +387,13 @@ u8 Csd102::get_ctrl_field(const struct Frame f) const
 	return c.val;
 }
 
-/*	初步分离出正确的报文.帧前的数据清除,帧尾的数据保留在缓冲队列.
- 高效的过滤大部分不合格的报文
- 经过处理之后准确无误的报文被保存在 readbuf[len] 数组中,传递出来
- In/Out:	m_recvBuf 输入缓冲区/修改 [注意:被隐含的使用]
- out:		f	通用帧结构
- return:	0-成功
- 非0-失败
+
+/**
+ * 初步分离出正确的报文.帧前的数据清除,帧尾的数据保留在缓冲队列.
+ *  高效的过滤大部分不合格的报文,
+ *  经过处理之后准确无误的报文被保存在 readbuf[len] 数组中,传递出来
+ * @param[out] f 通用帧结构
+ * @return  非0-失败
  */
 int Csd102::separate_msg(struct Frame &f)
 {
@@ -440,11 +449,14 @@ int Csd102::separate_msg(struct Frame &f)
 	}
 	return 0;
 }
-/*分离报文子操作,按照格式分离,可以有效处理粘包,分离有误判的可能性,但很小
- 通过简单的比较帧头,起始字节,结束字节,帧长 这几样
- // in:	buffer 输入数字
- out:	farme_len 分离成功则输出帧长,失败则输出0
- return:	0-成功;	非0-失败;
+
+/**
+ * 分离报文子操作,按照格式分离.可以有效处理粘包,分离有误判的可能性,但很小
+ * 通过简单的比较帧头,起始字节,结束字节,帧长 这几项
+ * @param[in] buffer 输入数字
+ * @param[out] farme_len 分离成功则输出帧长,失败则输出0
+ * @retval  0-成功
+ * @retval 非0-失败
  */
 int Csd102::sync_head(const u8 *buffer, int &farme_len) const
         {
@@ -483,11 +495,12 @@ int Csd102::sync_head(const u8 *buffer, int &farme_len) const
 	farme_len = 0;
 	return -1;
 }
-/* 进一步检验帧. 和校验,地址检测.不会写类的成员变量(const[this])
- 检测 固定帧 和 变长帧
- in:	dat	数据数组
- len	数组长度
- return:	0-通过检测;非0-未通过检测
+
+/**
+ * 进一步检验帧. 和校验,地址检测.不会写类的成员变量(const[this])
+ * @param[in] f 待检测帧
+ * @retval 0-通过检测;
+ * @retval 非0-未通过检测
  */
 int Csd102::verify_frame(const struct Frame f) const
         {
@@ -565,11 +578,13 @@ int Csd102::verify_frame(const struct Frame f) const
 	return 0;     //4. 结束
 }
 
-/*解析 FT1.2 固定帧长帧
- in:	fin	输入帧
- out:	f_out	输出帧
- return:	0	正确处理
- 非0	处理失败
+
+/**
+ * 解析 FT1.2 固定帧长帧
+ * @param[in] fin 输
+ * @param[out] f_out 出
+ * @retval 0 正确处理
+ * @retval !0  处理失败
  */
 int Csd102::process_short_frame(const struct Frame fin,
         struct Frame* f_out) const
@@ -636,15 +651,18 @@ int Csd102::process_short_frame(const struct Frame fin,
 //	       ,send_farme.start_byte,T frame[0],t_len);
 	return 0;
 }
-/*解析 FT1.2 变帧长帧 /处理请求,分类构造数据报文(可能是一系列).
- 接收变长帧,按 type(TYP)分类处理下行报文(主站发出的)
- in	fin	输入的帧
- out	q1	输出到1类数据
- q2	输出到2类数据
+
+/**
+ * 解析 FT1.2 变帧长帧 /处理请求,分类构造数据报文(可能是一系列).
+ * 接收变长帧,按 type(TYP)分类处理下行报文(主站发出的)
+ * @param[in] fin 输入的帧
+ * @param[out] q1 输出到1类数据
+ * @param[out] q2 输出到2类数据
+ * @return
  */
 int Csd102::process_request(const struct Frame fin,
         std::queue<struct Frame> &q1,
-        std::queue<struct Frame> &q2 __attribute__ ((unused)))
+        std::queue<struct Frame> &q2 )
 {
 	int ret;
 	int offset = 0;
@@ -742,7 +760,12 @@ int Csd102::process_request(const struct Frame fin,
 	return 0;
 }
 
-//清空备份帧,将备份帧全置0.
+
+/**
+ * 清空备份帧,将备份帧全置0.
+ * @param fbak
+ * @return
+ */
 int Csd102::clear_fcb(struct Frame &fbak) const
         {
 
@@ -751,8 +774,13 @@ int Csd102::clear_fcb(struct Frame &fbak) const
 	//memcpy(&frame, this->reci_frame_bak, sizeof(frame));
 	return 0;
 }
-/* 从 系统时间(systime)中将时间复制到Tb时间结构中.
- * */
+
+/**
+ * 将系统HL时间(systime)复制到规约时间结构 Tb 中.
+ * @param t
+ * @param systime
+ * @return
+ */
 int Csd102::getsystime(struct Tb &t, const struct m_tSystime systime) const
         {
 	t.ms = systime.msec;
@@ -770,8 +798,13 @@ int Csd102::getsystime(struct Tb &t, const struct m_tSystime systime) const
 	t.res2 = TB_RESERVE2;
 	return 0;
 }
-/* 从 系统时间(systime)中将时间复制到Ta时间结构中.
- * */
+
+/**
+ * 系统HL时间(systime)中将时间复制到规约时间结构 Ta 中.
+ * @param[out] t 规约时间类型
+ * @param[in] systime HL时间类型
+ * @return
+ */
 int Csd102::getsystime(struct Ta & t, const struct m_tSystime systime) const
         {
 	t.min = systime.min;
@@ -786,8 +819,12 @@ int Csd102::getsystime(struct Ta & t, const struct m_tSystime systime) const
 	t.res2 = TB_RESERVE2;
 	return 0;
 }
-/* 将tm结构时间转化位 Ta结构时间
- * */
+/**
+ * 将标准库时间结构 tm 转化为规约时间结构 Ta
+ * @param[out] t 规约时间
+ * @param[in] time 标准库时间
+ * @return
+ */
 int Csd102::tm2ta(struct Ta & t, const struct tm time) const
         {
 	t.min = time.tm_min;
@@ -802,7 +839,13 @@ int Csd102::tm2ta(struct Ta & t, const struct tm time) const
 	t.res2 = TB_RESERVE2;
 	return 0;
 }
-// 从Tb结构体设置.复制时间到(TMStruct)systime结构体,备用
+
+/**
+ * 从 Tb 结构体复制时间到(TMStruct)systime结构体,备用
+ * @param[out] systime hl 时间结构体
+ * @param[in] t 规约时间结构体 Tb
+ * @return
+ */
 int Csd102::setsystime(TMStruct &systime, const struct Tb t) const
         {
 	systime.m_sec = t.ms;
@@ -818,10 +861,11 @@ int Csd102::setsystime(TMStruct &systime, const struct Tb t) const
 
 #pragma  GCC diagnostic ignored  "-Wunused-parameter"
 // ************** 在监视方向的**过程信息** *************
-/*	M_SP_TA_2	上传单点信息
- in:	fi	输入帧
- out:	q	输出队列
- return:	0	成功
+/**
+ * 构造 M_SP_TA_2(上传单点信息)帧
+ * @param[in] fi 输入帧
+ * @param[out] q 输出队列
+ * @return
  */
 int Csd102::make_M_SP_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
@@ -910,6 +954,10 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 	}		//fno 一帧结束
 	return 0;
 }
+/**
+ * 打印电量文件的电量数据体
+ * @param[in]	tou
+ */
 void Csd102::print_tou_dat(const struct Tou tou) const
         {
 	printf("%d[%d] ", tou.FA.total.val, tou.FA.total.iv);
@@ -919,6 +967,10 @@ void Csd102::print_tou_dat(const struct Tou tou) const
 	printf("\n");
 	return;
 }
+/**
+ * 打印电量文件的文件头信息
+ * @param[in]	filehead
+ */
 void Csd102::print_tou_head(const struct touFilehead filehead) const
         {
 	printf("tou file head:%d-%d-%d([%02X][%02X][%02X])\n"
@@ -1124,9 +1176,9 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 	return 0;
 }
 /**	M_IT_TA_2 发送带时标(T)的电量(IT)
- @param in:	fi	输入帧结构
- @param out:	q1	输出一系列数据帧到队列和头尾两个镜像帧
- @return:	0	成功
+ @param[in]	fi	输入帧结构
+ @param[out]	q1	输出一系列数据帧到队列和头尾两个镜像帧
+ @retval	0	成功
  */
 int Csd102::make_M_IT_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q1) const
@@ -1277,22 +1329,36 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	q1.push(fi);
 	return 0;
 }
-/**	M_IT_TD_2 周期复位记账(计费)电能累计量,每个量为四个八位位组
- * */
+
+/**
+ * M_IT_TD_2 周期复位记账(计费)电能累计量,每个量为四个八位位组
+ * @param fi
+ * @param q
+ * @return
+ */
 int Csd102::make_M_IT_TD_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {     //M_IT_TD_2
 	return 0;
 }
-/*	M_IT_TA_B_2 复费率记帐(计费)电能累计量
- * */
+
+/**
+ * M_IT_TA_B_2 复费率记帐(计费)电能累计量
+ * @param fi
+ * @param q
+ * @return
+ */
 int Csd102::make_M_IT_TA_B_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {     //M_IT_TA_B_2
 	return 0;
 }
-/**	M_YC_TA_2 遥测
- * */
+/**
+ * M_YC_TA_2 遥测
+ * @param fi
+ * @param q
+ * @return
+ */
 int Csd102::make_M_YC_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
@@ -1380,7 +1446,7 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 			 （n - 1）×8 + 8 C相电流
 			 */
 			int addr = fin->obj.start_ioa+fno*maxperframe+i;
-			int mtrno = addr/8;		//表号 base 0
+			//int mtrno = addr/8;		//表号 base 0
 			//数据无效标志,
 			bool iv = false;
 			obj[i].ioa = addr;
@@ -1403,8 +1469,13 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 	return 0;
 }
 
-/**	M_XL_TA_2 需量
- * */
+
+/**
+ * M_XL_TA_2 需量
+ * @param fi
+ * @param q
+ * @return
+ */
 int Csd102::make_M_XL_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
@@ -1486,41 +1557,56 @@ int Csd102::make_M_XL_TA_2(const struct Frame fi,
 			 *反向无功 addr = (电表号)*4+4	;ti=3
 			 */
 			int addr = fin->obj.start_ioa+fno*maxperframe+i;
-			bool iv;
+			//bool iv;
 			obj[i].ioa = addr;
 			obj[i].mmd.total_maxdemand = 0x0;
 			/* 发生时间 */
+
 		}
+
 		GetSystemTime_RTC(&systime);
 		getsystime(*ta, systime);
 		//struct Frame_tail
 		f_tail->cs = this->check_sum(frame_out.dat+sizeof(Frame_head),
 		                fhead->len1);
 		f_tail->end_byte = END_BYTE;
-		//		printf("duid->cf_m.funcode:%d", ufead->c_up.funcode);
-		//		printf("f_tail->end_byte:%X", f_tail->end_byte);
+		//printf("duid->cf_m.funcode:%d", ufead->c_up.funcode);
+		//printf("f_tail->end_byte:%X", f_tail->end_byte);
 		//print_array(frame_out.dat, frame_out.len);
 		q.push(frame_out);			//这一帧加入到队列
 		printf("push to queue,qsize=%d\n", q.size());
 	}			//fno 一帧结束
 	return 0;
 }
-/**	M_IT_TA_C_2 月结算复费率电能累计量
- * */
+
+/**
+ * M_IT_TA_C_2 月结算复费率电能累计量
+ * @param fi
+ * @param q
+ * @return
+ */
 int Csd102::make_M_IT_TA_C_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
 	return 0;
 }
-/*	M_IT_TA_D_2 表计谐波数据
- * */
+
+/**
+ * M_IT_TA_D_2 表计谐波数据
+ * @param fi
+ * @param q
+ * @return
+ */
 int Csd102::make_M_IT_TA_D_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
         {
 	return 0;
 }
 // ************** 在监视方向的**系统信息** *************
-/*	M_EI_NA_2 初始化结束
+/**
+ * M_EI_NA_2 初始化结束
+ * @param q
+ * @return
  */
 int Csd102::make_M_EI_NA_2(std::queue<struct Frame> &q) const
         {
@@ -1561,7 +1647,11 @@ int Csd102::make_M_EI_NA_2(std::queue<struct Frame> &q) const
 	q.push(f);
 	return 0;
 }
-/*	P_MP_NA_2 电能累计量数据终端设备的制造厂和产品规范
+
+/**
+ * 构造 P_MP_NA_2 电能累计量数据终端设备的制造厂和产品规范
+ * @param[out] q 数据输出到队列
+ * @return
  */
 int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
         {
@@ -1605,9 +1695,11 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 }
 /* 电能累计量数据终端设备目前的系统时间 报文的制作.
  * */
-/*	M_TI_TA_2 返回终端时间帧
- out:	q	返回保存到1类数据队列中
- return:	0	成功
+
+/**
+ * 构造M_TI_TA_2 返回终端时间帧
+ * @param[out] q1 返回保存到1类数据队列中
+ * @return 0 成功
  */
 int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
         {
@@ -1694,11 +1786,12 @@ int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
 #endif
 }
 
-/*	召唤2级数据,没有2级数据,但是有1级数据
- 回复M_NV_NA_2,fc:FN_M_NO_DAT 没有所召唤的数据(但是有1级数据ACD=1)
- Reset Communication Unit
- in:
- out:	f	通用帧结构
+/**
+ * 召唤2级数据,没有2级数据,但是有1级数据.
+ * 回复M_NV_NA_2,fc:FN_M_NO_DAT 没有所召唤的数据(但是有1级数据ACD=1)
+ * Reset Communication Unit
+ * @param[out] f 通用帧结构
+ * @return
  */
 int Csd102::make_M_NV_NA_2(struct Frame &f) const
         {
@@ -1719,9 +1812,11 @@ int Csd102::make_M_NV_NA_2(struct Frame &f) const
 
 }
 
-/*	回复链路状态请求(FN_C_RLK FC9)的帧
- 回复: M_LKR_NA_2 FN_M_RSP FC11 以链路状态回应
- out:	f
+
+/**
+ * 回复链路状态请求(FN_C_RLK FC9)的帧  FN_M_RSP FC11
+ * @param f
+ * @return
  */
 int Csd102::make_M_LKR_NA_2(struct Frame &f) const
         {
@@ -1741,7 +1836,11 @@ int Csd102::make_M_LKR_NA_2(struct Frame &f) const
 	return 0;
 }
 
-/*	C10.2 M_SYN_TA_2 时间同步返回帧
+/**
+ * C10.2 M_SYN_TA_2 时间同步返回帧
+ * @param[in] fi
+ * @param[out] q 数据队列
+ * @return
  */
 int Csd102::make_M_SYN_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q) const
@@ -1778,6 +1877,12 @@ int Csd102::make_M_SYN_TA_2(const struct Frame fi,
  * 	acd	输入帧是否逻辑正确,正确,则有数据,acd置1,错误这结束此轮数据采集,acd=0
  * out	f	稍作修改输出的镜像帧
  * */
+/**
+ * 构造一轮数据采集的前1镜像帧, 开始的镜像帧
+ * @param pf
+ * @param b_acd
+ * @return
+ */
 template<typename T>
 int Csd102::make_mirror_1(T pf, bool b_acd) const
         {
@@ -1790,10 +1895,12 @@ int Csd102::make_mirror_1(T pf, bool b_acd) const
 	pf->farme_tail.cs = check_sum(*pf);
 	return 0;
 }
-/* 构造一轮数据采集的后1镜像帧, 结束的镜像帧
- * in	f	输入帧(数据采集指定)
- * out	f	稍作修改输出的镜像帧
- * */
+
+/**
+ * 构造一轮数据采集的后1镜像帧, 结束的镜像帧
+ * @param[out] pf 稍作修改输出的镜像帧
+ * @return
+ */
 template<typename T>
 int Csd102::make_mirror_2(T pf) const
         {
@@ -1806,11 +1913,11 @@ int Csd102::make_mirror_2(T pf) const
 	pf->farme_tail.cs = check_sum(*pf);
 	return 0;
 }
-/*一般校验和程序.
- in:	a	数组(u8 *)
- len	数组长度(int)
- out	无
- return:		一个字节校验和(u8)
+/**
+ * 一般校验和程序.
+ * @param[in] a 数组(u8 *)
+ * @param[in] len 数组长度(int)
+ * @return 一个字节校验和
  */
 u8 Csd102::check_sum(u8 const *a, int const len) const
         {
@@ -1820,19 +1927,24 @@ u8 Csd102::check_sum(u8 const *a, int const len) const
 	}
 	return sum;
 }
-/*求各种已知长度的特定用途帧的校验值(固定长度的长帧)
- * in	f	例如 stFrame_C_SP_NB_2 ,stFrame_C_TI_NA_2,stFrame_M_EI_NA_2等
- * 		这样的[确定长度的],[特定用途]的帧结构体,参见file:frame.h
- * 		必须要有帧头 farme_head 结构
- * out
- * return	u8一字节校验值
- * */
+
+/**
+ * 求各种已知长度的特定用途帧的校验值(固定长度的长帧)
+ * @param[in] f 例如 stFrame_C_SP_NB_2 ,stFrame_C_TI_NA_2,stFrame_M_EI_NA_2 等 \n
+ * 		这样的[确定长度的],[特定用途]的帧结构体,参见@file sd102_stFrame.h \n
+ * 		必须要有帧头 Farme_head 成员结构
+ * @return
+ */
 template<typename T>
 u8 Csd102::check_sum(const T f) const
         {
 	return check_sum((u8*) &f+sizeof(Frame_head), f.farme_head.len1);
 }
-/*打印字符数组*/
+/**
+ * 打印字符数组
+ * @param[in] a 单纯的字符数组
+ * @param[in] len 长度
+ */
 void Csd102::print_array(const u8 *a, const int len) const
         {
 	int i;
@@ -1843,7 +1955,11 @@ void Csd102::print_array(const u8 *a, const int len) const
 	printf("\n");
 	return;
 }
-//显示等待状态(可选)
+/**
+ * 通过显示(\|/-\)符号表示库正在运行,
+ * @param[in] stat
+ * @param[out] stat
+ */
 void Csd102::show_wait(u32 &stat) const
         {
 	printf("\r[sd102]:等待接收...");
@@ -1867,7 +1983,13 @@ void Csd102::show_wait(u32 &stat) const
 	fflush(stdout);
 	return;
 }
-/*比较开始时间和结束时间的正确性*/
+
+/**
+ * 比较开始时间和结束时间的正确性
+ * @param[in] starttime
+ * @param[in] endtime
+ * @return
+ */
 int Csd102::time_range(const struct Ta starttime, const struct Ta endtime) const
         {
 	u32 stime = Calc_Time_102(starttime.min, starttime.hour,
@@ -1888,7 +2010,12 @@ int Csd102::time_range(const struct Ta starttime, const struct Ta endtime) const
 	}
 	return 0;
 }
-/*开始时间和结束时间是否正确*/
+
+/**
+ * 开始时间和结束时间是否正确
+ * @param[in] obj
+ * @return
+ */
 int Csd102::time_range(const struct Obj_C_CI_XX_2 obj) const
         {
 	u32 stime = Calc_Time_102(obj.Tstart.min, obj.Tstart.hour,
@@ -1921,7 +2048,12 @@ int Csd102::time_range(const struct Obj_C_CI_XX_2 obj) const
 	}
 	return 0;
 }
-/*信息体地址发范围是否正确*/
+/**
+ * 判断信息体地址发范围是否正确
+ * @param[in] obj 信息体
+ * @retval 0 正确
+ * @retval 非0 错误
+ */
 int Csd102::ioa_range(const struct Obj_C_CI_XX_2 obj) const
         {
 	if (obj.start_ioa<1u) {
@@ -1962,9 +2094,9 @@ int Csd102::print_err_msg(int msg) const
 	return 0;
 }
 /**
- *  7.2.4 电能累计量数据终端设备地址,
- * "信息体每超过一次255个信息点的情况".
- * @param obj_num
+ *  7.2.4 计算电能累计量数据终端设备地址.
+ * "信息体每超过一次255个信息点的情况,这个地址加1,从1开始".
+ * @param[in] obj_num
  * @return
  */
 inline rtu_addr_t Csd102::makeaddr(int obj_num) const
@@ -1976,7 +2108,7 @@ inline rtu_addr_t Csd102::makeaddr(int obj_num) const
 }
 /**
  * 打印时间
- * @param t Linux系统的时间格式
+ * @param[in] t Linux系统的时间格式
  */
 inline void Csd102::showtime(const struct tm t) const
         {
@@ -1988,7 +2120,7 @@ inline void Csd102::showtime(const struct tm t) const
 }
 /**
  * 打印时间
- * @param t 规约中的Ta时间格式
+ * @param[in] t 规约中的Ta时间格式
  */
 inline void Csd102::showtime(const struct Ta t) const
         {
@@ -1999,7 +2131,7 @@ inline void Csd102::showtime(const struct Ta t) const
 }
 /**
  * 打印时间
- * @param t 规约中的Tb时间格式
+ * @param[in] t 规约中的Tb时间格式
  */
 inline void Csd102::showtime(const struct Tb t) const
         {
@@ -2009,12 +2141,14 @@ inline void Csd102::showtime(const struct Tb t) const
 	fflush(stdout);
 	return;
 }
-/** 通过比较 上次接收的帧和本次接收的帧 确定是否需要重新发送上次的发送帧
- * in	:	rf_bak	receive frame backup 备份的上次接收帧
- * 		rf	receive frame 本次的接收帧
- * return	true	需要重发
- * 		false	不需要重发
- * */
+
+/**
+ * 通过比较 上次接收的帧和本次接收的帧 确定是否需要重新发送上次的发送帧
+ * @param[in] rf_bak
+ * @param[in] rf
+ * @retval true	需要重发
+ * @retval false	不需要重发
+ */
 bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
         const
         {
@@ -2031,7 +2165,6 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
 /**
  * 将Ta时间格式换算成 从1900年1月1日0时0分到目前为止的(分钟/秒)数.
  * @param[in] ta
- * @return 长整型
  * @retval 0 错误
  * @retval 非0  从1970年到现在时刻经过的分钟数
  */

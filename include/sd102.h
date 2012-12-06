@@ -1,5 +1,6 @@
 /**
  * @file: sd102.h
+ * sd102规约包含的头文件.
  */
 #ifndef SD102_H
 #define SD102_H
@@ -32,12 +33,12 @@
 #define MAX_UDAT_LEN (255)
 //最大帧长
 #define MAX_FRAME_LEN (4+MAX_UDAT_LEN+2) //sd102最大幀長,帧头+len+帧尾
-//通用的帧格式,
+///通用的帧格式.包括一个字节数组和一个指示帧长度的整形,能概括102所有帧格式
 struct Frame {
 	u8 dat[MAX_FRAME_LEN];
 	int len;
 };
-//tou 电量　文件头 //TODO　这是存储方面的头文件，以后应该修改定义到存储方面
+///tou 电量　文件头 //TODO　这是存储方面的头文件，以后应该修改定义到存储方面
 struct touFilehead{
 	u8 year;
 	u8 month;

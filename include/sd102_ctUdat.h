@@ -1,10 +1,14 @@
-/*定义   用户数据头 结构 和一些数据类型的常量表达式
+/** @file sd102_ctUdat.h
+ * 用户数据头 结构 和一些数据类型的常量表达式.
  * 用户数据头={控制域,链路地址}
+ * @page 用户数据头(Udat_head ) 结构
+@code
 +---------+------------------+-------------+------+--------+
-| u_dat   |                  |  Ctrl Field |1 byte|        |
-|   head  |                  | Link addr lo|1 byte|3 Bytes |
+|         |                  |  Ctrl Field |1 byte|        |
+|Udat_head|                  | Link addr lo|1 byte|3 Bytes |
 |         |                  | Link addr hi|1 byte|        |
 +---------+------+-----------+-------------+------+--------+
+@endcode
  * 每一位的状态定义
 */
 #ifndef SD102_UDAT_H
@@ -20,9 +24,9 @@ struct stFcn_info {
 extern struct stFcn_info fcn_info_c[];
 extern struct stFcn_info fcn_info_m[];
 #endif
-//C3.1
+///C3.1
 typedef u8 fcn_t;//u8:4 functions code number
-//C3.1 控制域 主站->终端(下行) 控制
+///C3.1 控制域 主站->终端(下行) 控制
 union Ctrl_c {
 	u8 val;
 	struct {
@@ -33,7 +37,7 @@ union Ctrl_c {
 		u8 dir:1;//非平衡传输,应保留为0
 	};
 } ;
-//C3.1 控制域 终端->主站(上行) 监视
+///C3.1 控制域 终端->主站(上行) 监视
 union Ctrl_m {
 	u8 val;
 	struct {
@@ -46,11 +50,11 @@ union Ctrl_m {
 };
 
 //6.1传输帧格式
-typedef u16 link_addr_t;//链路地址
+typedef u16 link_addr_t;///<链路地址
 //S2	发送/确认	由控制站向电能累计量数据终端发送命令等(写指令)
 //S3	请求/响应	由控制站向电能累计量数据终端召唤数据或事件(读数据)
 
-// C3.2.5 功能码:控制站向电能累计量数据终端传输的帧中功能码的定义 Ctrl(下行)
+/// C3.2.5 功能码:控制站向电能累计量数据终端传输的帧中功能码的定义 Ctrl(下行)
 enum e_fcn_c{
 	// S2: 帧类型 0,3 发送 帧
 	FCN_C_RCU=0,//复位 Reset Communication Unit
@@ -63,8 +67,7 @@ enum e_fcn_c{
 	FCN_C_RES2=13//备用2
 };
 
-// C3.3.4 功能码:电能累计量数据终端向控制站传输的帧中功能码的定义 Monitor(上行)
-
+/// C3.3.4 功能码:电能累计量数据终端向控制站传输的帧中功能码的定义 Monitor(上行)
 enum e_fcn_m{
 	// S2: 帧类型: 0 1 确认
 	FCN_M_CON=0,//确认 Confirm
@@ -74,7 +77,7 @@ enum e_fcn_m{
 	FCN_M_NO_DAT=9,//没有所召唤的数据 no data
 	FCN_M_RSP=11,//以链路状态或访问请求回答请求帧 Response
 };
-//控制位的其他定义 Ctrl Field other bit define
+///控制位的其他定义 Ctrl Field other bit define
 const u8 ACD_ACCESS=1;//有数据需要访问
 const u8 ACD_NO_ACCESS=0;//无数据
 const u8 PRM_DOWN=1;//下行 C

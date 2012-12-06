@@ -1,4 +1,4 @@
-#文件
+# 文件
 1. hello.lua	: wireshark的lua语言API插件,  
 	根据sd102规约使用wireshark解析报文.目前正在完善中.
 
@@ -6,7 +6,7 @@
 
 3. 1.png	: 效果图
 
-#使用
+# 使用
 1. 将hello.lua文件复制到 wireshark 目录下.  
 	Linux默认为 /usr/share/wireshark
 
