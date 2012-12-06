@@ -18,6 +18,7 @@
 #include "typedefine.h"
 #include "sd102_ctDuid.h"
 #include "sd102_ctUdat.h"
+///下行(c)功能码及描述结构体数组
 struct stFcn_info fcn_info_c[]={
 		[FCN_C_RCU]={"Reset Communication Unit","复位通讯单元"},
 		[FCN_C_RLK]={"Call Link Status","链路状态请求"},
@@ -26,7 +27,7 @@ struct stFcn_info fcn_info_c[]={
 		[FCN_C_RES1]={"Reseave","保留1"},
 		[FCN_C_RES2]={"Reseave","保留2"},
 };
-
+///上行(m|p)功能码及描述结构体数组
 struct stFcn_info fcn_info_m[]={
 		[FCN_M_CON]={"Confirm","确认"},
 		[FCN_M_LINK_BUSY]={"Link busy","链路繁忙"},
@@ -36,6 +37,6 @@ struct stFcn_info fcn_info_m[]={
 };
 
 struct stTyp typ_info_c[]={
-		[TYP_C_RD_NA_2]={"Read Manufact","读制造厂和产品规范"}
+		[C_RD_NA_2]={"Read Manufact","读制造厂和产品规范"}
 };
 

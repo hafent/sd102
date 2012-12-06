@@ -139,7 +139,7 @@ void Csd102::SendProc(void)
 		fsp->udat_head.cf_m.res = CF_RES;
 		fsp->udat_head.link_addr = this->link_addr;
 		fsp->duid.rad = RAD_ALL_SP_INFO;
-		fsp->duid.typ = TYP_M_SP_TA_2;
+		fsp->duid.typ = M_SP_TA_2;
 		fsp->duid.vsq.n = 1;
 		fsp->duid.vsq.sq = SQ_Similar;
 		fsp->duid.cot.cause = COT_SPONT;
@@ -346,7 +346,7 @@ int Csd102::nack(struct Frame &f) const
   }
 /**将帧结构通过 m_transBuf 发送给主站
  * @param[in] f 构造好的帧结构(通用帧,字节数组+长度)
- * @param[out] m_transBuf 修改的发送缓冲区结构体,发送数据[类成员,隐含使用!]
+ * @note param[out] m_transBuf 修改的发送缓冲区结构体,发送数据[类成员,隐含使用!]
  */
 int Csd102::transfer(const struct Frame f)
 {
@@ -683,32 +683,32 @@ int Csd102::process_request(const struct Frame fin,
 			frame_tail->cs ,frame_tail->end_byte);
 #endif
 	switch (uhead->typ) {
-	case TYP_C_RD_NA_2:		//读制造厂和产品规范
+	case C_RD_NA_2:		//读制造厂和产品规范
 		make_P_MP_NA_2(q1);
 		PRINT_HERE
 		break;
-	case TYP_C_SP_NA_2:		//读单点数据
+	case C_SP_NA_2:		//读单点数据
 		ret = make_M_SP_TA_2(fin, q1);
 		printf("1类数据队列 size %d\n", q1.size());
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		break;
-	case TYP_C_SP_NB_2:		//读单点数据
+	case C_SP_NB_2:		//读单点数据
 		ret = make_M_SP_TA_2(fin, q1);
 		printf("1类数据队列 size %d\n", q1.size());
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		break;
-	case TYP_C_TI_NA_2:     //读取时间
+	case C_TI_NA_2:     //读取时间
 		ret = make_M_TI_TA_2(q1);
 		printf("1类数据队列 size %d\n", q1.size());
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		break;
-	case TYP_C_CI_NR_2:     //读取电量
+	case C_CI_NR_2:     //读取电量
 		// 读取数据至1类数据队列
 		ret = make_M_IT_TA_2(fin, q1);
 		printf("1类数据队列 size %d\n", q1.size());
@@ -716,39 +716,39 @@ int Csd102::process_request(const struct Frame fin,
 			PRINT_HERE
 		}
 		break;
-	case TYP_C_CI_NS_2:		//读记账复位电量
+	case C_CI_NS_2:		//读记账复位电量
 		make_M_IT_TD_2(fin, q1);
 		PRINT_HERE
 		break;
-	case TYP_C_SYN_TA_2:		//设置时间
+	case C_SYN_TA_2:		//设置时间
 		ret = make_M_SYN_TA_2(fin, q1);
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		break;
-	case TYP_C_CI_NA_B_2:		//复费率记帐(计费)电能累计量
+	case C_CI_NA_B_2:		//复费率记帐(计费)电能累计量
 		make_M_IT_TA_B_2(fin, q1);
 		PRINT_HERE
 		break;
-	case TYP_C_YC_TA_2:		//遥测
+	case C_YC_TA_2:		//遥测
 		ret = make_M_YC_TA_2(fin, q1);
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		//PRINT_HERE
 		break;
-	case TYP_C_CI_NA_C_2:		//月结算复费率电能累计量
+	case C_CI_NA_C_2:		//月结算复费率电能累计量
 		make_M_IT_TA_C_2(fin, q1);
 		PRINT_HERE
 		break;
-	case TYP_C_XL_NB_2:		//需量
+	case C_XL_NB_2:		//需量
 		ret = make_M_XL_TA_2(fin, q1);
 		if (ret!=0) {
 			PRINT_HERE
 		}
 		//PRINT_HERE
 		break;
-	case TYP_C_CI_NA_D_2:		//谐波数据
+	case C_CI_NA_D_2:		//谐波数据
 		make_M_IT_TA_D_2(fin, q1);
 		PRINT_HERE
 		break;
@@ -927,7 +927,7 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 		udat_head->cf_m.dfc = DFC_NOT_FULL;
 		udat_head->cf_m.res = CF_RES;
 		udat_head->link_addr = this->link_addr;
-		duid->typ = TYP_M_SP_TA_2;
+		duid->typ = M_SP_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = SQ_Similar;
 		duid->cot.cause = COT_REQUEST;
@@ -1267,7 +1267,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		udat_head->cf_m.dfc = DFC_NOT_FULL;
 		udat_head->cf_m.res = CF_RES;
 		udat_head->link_addr = this->link_addr;
-		duid->typ = TYP_M_IT_TA_2;
+		duid->typ = M_IT_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = SQ_Similar;
 		duid->cot.cause = COT_REQUEST;
@@ -1425,7 +1425,7 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 		ufead->cf_m.dfc = DFC_NOT_FULL;
 		ufead->cf_m.res = CF_RES;
 		ufead->link_addr = this->link_addr;
-		duid->typ = TYP_M_YC_TA_2;
+		duid->typ = M_YC_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = 0;
 		duid->cot.cause =
@@ -1541,7 +1541,7 @@ int Csd102::make_M_XL_TA_2(const struct Frame fi,
 		ufead->cf_m.dfc = DFC_NOT_FULL;
 		ufead->cf_m.res = CF_RES;
 		ufead->link_addr = this->link_addr;
-		duid->typ = TYP_M_YC_TA_2;
+		duid->typ = M_YC_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = 0;
 		duid->cot.cause = COT_REQUEST;
@@ -1621,14 +1621,14 @@ int Csd102::make_M_EI_NA_2(std::queue<struct Frame> &q) const
 	frame->farme_head.len2 = frame->farme_head.len1;
 	frame->farme_head.start_byte2 = START_LONG_FRAME;
 	//lpdu
-	frame->lpdu_head.cf_m.fcn = FCN_M_CON;		//
-	frame->lpdu_head.cf_m.acd = ACD_NO_ACCESS;
-	frame->lpdu_head.cf_m.dfc = DFC_NOT_FULL;  //1 bit
-	frame->lpdu_head.cf_m.prm = PRM_UP;  //1bit
-	frame->lpdu_head.cf_m.res = CF_RES;  //1bit
-	frame->lpdu_head.link_addr = this->link_addr;
+	frame->udat_head.cf_m.fcn = FCN_M_CON;		//
+	frame->udat_head.cf_m.acd = ACD_NO_ACCESS;
+	frame->udat_head.cf_m.dfc = DFC_NOT_FULL;  //1 bit
+	frame->udat_head.cf_m.prm = PRM_UP;  //1bit
+	frame->udat_head.cf_m.res = CF_RES;  //1bit
+	frame->udat_head.link_addr = this->link_addr;
 	//asdu
-	frame->duid.typ = TYP_M_EI_NA_2;
+	frame->duid.typ = M_EI_NA_2;
 	frame->duid.vsq.sq = SQ_Similar;
 	frame->duid.vsq.n = num_iobj;
 	frame->duid.cot.cause = COT_INIT;
@@ -1672,7 +1672,7 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 	frame->udat_head.cf_m.res = CF_RES;  //1bit
 	frame->udat_head.link_addr = this->link_addr;
 	//
-	frame->duid.typ = TYP_P_MP_NA_2;
+	frame->duid.typ = P_MP_NA_2;
 	frame->duid.vsq.sq = SQ_Similar;
 	frame->duid.vsq.n = num_iobj;
 	frame->duid.cot.cause = COT_INIT;
@@ -1695,7 +1695,6 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 }
 /* 电能累计量数据终端设备目前的系统时间 报文的制作.
  * */
-
 /**
  * 构造M_TI_TA_2 返回终端时间帧
  * @param[out] q1 返回保存到1类数据队列中
@@ -1722,7 +1721,7 @@ int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
 	fo->udat_head.cf_m.dfc = DFC_NOT_FULL;
 	fo->udat_head.link_addr = this->link_addr;
 	//
-	fo->duid.typ = TYP_M_TI_TA_2;
+	fo->duid.typ = M_TI_TA_2;
 	fo->duid.vsq.sq = SQ_Similar;
 	fo->duid.vsq.n = iObj_num;     //一个信息体
 	fo->duid.cot.cause = COT_REQUEST;     //cot传输原因
@@ -1809,13 +1808,11 @@ int Csd102::make_M_NV_NA_2(struct Frame &f) const
 	                sizeof(union Ctrl_m)+sizeof(link_addr_t));
 	frame->farme_tail.end_byte = END_BYTE;
 	return 0;
-
 }
-
 
 /**
  * 回复链路状态请求(FN_C_RLK FC9)的帧  FN_M_RSP FC11
- * @param f
+ * @param[out] f
  * @return
  */
 int Csd102::make_M_LKR_NA_2(struct Frame &f) const
@@ -1865,7 +1862,6 @@ int Csd102::make_M_SYN_TA_2(const struct Frame fi,
 	pfo->lpdu_head.cf_m.dfc = DFC_NOT_FULL;
 	pfo->lpdu_head.link_addr = this->link_addr;
 	//
-
 	fo.len = sizeof(stFrame_C_SYN_TA_2);
 	q.push(fi);
 	return 0;
@@ -1914,6 +1910,18 @@ int Csd102::make_mirror_2(T pf) const
 	return 0;
 }
 /**
+ * 求各种已知长度的特定用途帧的校验值(固定长度的长帧).
+ * @param[in] f 例如 stFrame_C_SP_NB_2 ,stFrame_C_TI_NA_2,stFrame_M_EI_NA_2 等.
+ * 		这样的[确定长度的],[特定用途]的帧结构体,参见 @file sd102_stFrame.h
+ * 		必须要有帧头 Farme_head 成员结构
+ * @return
+ */
+template<typename T>
+u8 Csd102::check_sum(const T f) const
+        {
+	return check_sum((u8*) &f+sizeof(Frame_head), f.farme_head.len1);
+}
+/**
  * 一般校验和程序.
  * @param[in] a 数组(u8 *)
  * @param[in] len 数组长度(int)
@@ -1926,19 +1934,6 @@ u8 Csd102::check_sum(u8 const *a, int const len) const
 		sum += a[i];
 	}
 	return sum;
-}
-
-/**
- * 求各种已知长度的特定用途帧的校验值(固定长度的长帧)
- * @param[in] f 例如 stFrame_C_SP_NB_2 ,stFrame_C_TI_NA_2,stFrame_M_EI_NA_2 等 \n
- * 		这样的[确定长度的],[特定用途]的帧结构体,参见@file sd102_stFrame.h \n
- * 		必须要有帧头 Farme_head 成员结构
- * @return
- */
-template<typename T>
-u8 Csd102::check_sum(const T f) const
-        {
-	return check_sum((u8*) &f+sizeof(Frame_head), f.farme_head.len1);
 }
 /**
  * 打印字符数组

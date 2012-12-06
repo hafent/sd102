@@ -51,9 +51,10 @@ struct touFilehead{
 	u8 save_flag3;
 	u8 save_flag4;
 };
-//某单独电量结构,如 总电量 或者 谷电量
-//这个结构文件存储中的结构和规约定义的结构有差别,
-//规约进一步定义了保留的 低7位每一位的意义.但是主程序中没有设置这些位.(终端功能欠缺)
+/**某单独电量结构,如 总电量 或者 谷电量.
+* 这个结构文件存储中的结构和规约定义的结构有差别,
+* 规约进一步定义了保留的 低7位每一位的意义.但是主程序中没有设置这些位.(终端功能欠缺)
+* */
 struct Ti{
 	int val;
 	union{
@@ -65,7 +66,7 @@ struct Ti{
 	};
 };
 
-//tou 总尖峰平谷,
+///单类电量的总尖峰平谷
 struct Ti_Category{
 	struct Ti total;
 	struct Ti tip;
@@ -73,18 +74,20 @@ struct Ti_Category{
 	struct Ti flat;
 	struct Ti valley;
 };
+
+///四类[正|反][有|无]共电量结构
 struct Tou{
 	struct Ti_Category FA;//正有
 	struct Ti_Category RA;//反有
 	struct Ti_Category FR;//正无
 	struct Ti_Category RR;//反无
 };
-
+///主程序动态链接库调用接口
 extern "C" CProtocol* CreateCProto_sd102();
 
-/** 规约实现类,所有用能由本类实现 继承 class CBASE102 .
- * 详细描述
- *
+/** 规约实现类,所有用能由本类实现 .
+ * 继承 class CBASE102 ,同理主要由 SendProc 和 ReciProc 两个函数处理发送和接收
+ * 的报文.其中又主要(90%)是由 ReciProc 处理接收报文进行应答.
  */
 class Csd102: public CBASE102 {
 public:
@@ -170,25 +173,25 @@ private:
 private:
 	//typ_t last_typ;
 	//u8 acd;
-	u32 spon; ///模擬突發的信息
-	u32 status; ///用于显示接收数据状态.不是很重要
-	link_addr_t link_addr;
-	//备份的(上次接收的帧
+	u32 spon; ///<模擬突發的信息
+	u32 status; ///<用于显示接收数据状态.不是很重要
+	link_addr_t link_addr; ///<链路地址
+	///备份的(上次接收的帧
 	struct Frame reci_frame_bak;
-	//备份的(上次发送的帧
+	///备份的(上次发送的帧
 	struct Frame send_frame_bak;
-	//本次接收的帧
+	///本次接收的帧
 	struct Frame reci_frame;
-	//本次发送的帧
+	///本次发送的帧
 	struct Frame send_frame;
 	struct Frame mirror_farme;
-	std::queue<struct Frame> qclass1;
-	std::queue<struct Frame> qclass2;
+	std::queue<struct Frame> qclass1;///<1类数据队列
+	std::queue<struct Frame> qclass2;///<2类数据队列
 
 };
-//在采集历史电量中使用:
+///在采集历史电量中使用:
 std::queue<struct Ta> qTa;//Ta,没个元素表示一次记录,
-//表示一个[开始信息体-结束信息体],之后再重复入队列,直到<记录次数>次.
+///表示一个[开始信息体-结束信息体],之后再重复入队列,直到[记录次数]次.
 std::queue<struct Obj_M_IT_TX_2> qIT;
 
 #endif // SD102_H

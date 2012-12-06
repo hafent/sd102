@@ -41,7 +41,8 @@
 #define VARIABLE_LENGTH_FRAME 1 //不固定长度的帧,通常时应为包含n个信息体,调试时置1,使用时置0
 #define INFO_OBJ_NUM 1 // 信息体数量,按照实际情况在定义帧时重新设置!
 #define __LINK_ADD_LEN 2 //链路地址域长度
-/** @page  变长帧格式
+/**变长帧格式概括
+ * @page  变长帧格式
  * @code
  * 帧结构中部分已知的结构, 帧头 帧尾 各种单元头等
  * 本规约中 LSDU=ASDU=APDU
@@ -55,11 +56,11 @@
 |       |                            |length(copy) |1 byte|        |          |
 |       |                            |    0x68     |1 byte|        | LPCI     |
 +-------+----------------------------+-------------+------+--------+ 60870-5-2|
-|       | Udat_head                  |  Ctrl Field |1 byte|        |          |
+|       | Udat_head                  |Ctrl_c/Ctrl_m|1 byte|        |          |
 |       |                            |link_addr_t L|1 byte|3 Bytes |          |
 |       |                            |link_addr_t H|1 byte|        |          |
 |       +---------+------+-----------+-------------+------+--------+-----\    |
-|       |         |      |           |  Type Id    |1 byte|        |     |    |
+|       |         |      |           |e_typ_t_c(m) |1 byte|        |     |    |
 |       |         |      | ASDU head |    Vsq      |1 byte|        |     |    |
 |       |         |      |  (Duid)   |    Cot      |1 byte|6 Bytes |     |    |
 | User  |         |      |           |rtu_addr_t lo|1 byte|        |     |    |
@@ -81,14 +82,14 @@
 +-------+----------------------------+-------------+------+--------+----------+
 @endcode
 */
-/// C1.1 可变帧长帧 - 帧头 Frame head
+/// C1.1 可变帧长帧 - 帧头 Frame_head
 struct Frame_head {
 	u8 start_byte1;///< 开始字符
 	u8 len1;///< 长度
 	u8 len2;///< 长度2
 	u8 start_byte2;///< 开始字节(副本)
 };
-/// IEC60870-5-2 3.2中的用户数据 头部分
+/// IEC60870-5-2 3.2 中的用户数据头部分
 struct Udat_head {
 	union { //控制域 Crtl field
 		union Ctrl_c cf_c;
@@ -116,16 +117,16 @@ struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
 	/* 7.2.5 记录地址(RAD) */
 	rad_t rad;
 };
-//Information Object 信息体,按照不通类型不通.
-/// C1.1  变长/定长帧尾 Frame Tail
+// 填补信息体(Information Object),按照不通类型不通.
+/// C1.1  变长/定长帧尾 Frame_tail
 struct Frame_tail {
 	u8 cs;
 	u8 end_byte;
 };
 
-/**C1.2 固定帧长帧 - 帧体.
- *	@page 定长帧格式
- *	@code
+/** C1.2 固定帧长帧-帧体
+ * @page 定长帧格式
+ * @code
  *	+------------+-----------------+-------+
  *	| Frame_head |START_SHORT_FRAME|1 byte |
  *	+------------+-----------------+-------+
@@ -136,8 +137,9 @@ struct Frame_tail {
  *	| Frame_tail |     cs          |1 byte |
  *	|            | 0x16(End byte)  |1 byte |
  *	+------------+-----------------+-------+
- *	@endcode
+ * @endcode
  */
+/// C1.2 固定帧长帧-帧体
 struct Short_frame {
 	u8 start_byte; //开始字节
 	union { //控制域
@@ -152,13 +154,13 @@ struct Short_frame {
 //********************** 第二部分 特定类型的帧定义 **************************
 // ****服务数据单元的定义和表示 APDU(Application Service Data Unit)*******
 // 7.3.1 ************* 在监视方向上的**过程信息**的应用服务数据单元 *************
-/// 7.3.1.1 M_SP_TA_2  带时标的单点信息(Single-Point)
+/// 7.3.1.1 M_SP_TA_2 带时标的单点(Single-Point)信息体
 struct Obj_M_SP_TA_2 {
 	struct Spinfo sp;
 	struct Tb tb;
 };
 #if 1 //VARIABLE_LENGTH_FRAME
-/// 7.3.1.1 M_SP_TA_2  带时标的单点信息(Single-Point)
+/// 7.3.1.1 M_SP_TA_2 带时标的单点(Single-Point)信息帧
 struct stFrame_M_SP_TA_2{
 	struct Frame_head head;
 	struct Udat_head udat_head;
@@ -167,13 +169,14 @@ struct stFrame_M_SP_TA_2{
 	struct Frame_tail tail;
 };
 #endif
-/// 7.3.1.2 M_IT_TA_2 ~ M_IT_TM_2 电能累计量 information object (X取 A~M)
+/// 7.3.1.2 M_IT_TA_2 ~ M_IT_TM_2 电能累计量信息体
 struct Obj_M_IT_TX_2 {
 	ioa_t ioa;//
 	struct It it_power;
 	signature_t cs;//电能累计量数据保护的校核
 };
 #if VARIABLE_LENGTH_FRAME
+/// 7.3.1.2 M_IT_TA_2 ~ M_IT_TM_2 电能累计量帧
 struct stFrame_M_IT_TX_2{
 	struct Frame_head farme_head;
 	struct Udat_head udat_head;
@@ -263,7 +266,7 @@ struct Obj_M_EI_NA_2 {
 /// 7.3.2.1 M_EI_NA_2 初始化结束
 struct stFrame_M_EI_NA_2{
 	struct Frame_head farme_head;
-	struct Udat_head lpdu_head;
+	struct Udat_head udat_head;
 	struct Duid duid;
 	struct Obj_M_EI_NA_2 obj;
 	struct Frame_tail farme_tail;
@@ -274,7 +277,7 @@ struct Obj_P_MP_NA_2 {
 	factcode_t fcode;
 	productcode_bs pcode;
 };
-/// 7.3.2.2 P_MP NA_2 电能累计量数据终端设备的制造厂和产品的规范
+/// 7.3.2.2 P_MP_NA_2 电能累计量数据终端设备的制造厂和产品的规范
 struct stFrame_P_MP_NA_2{
 	struct Frame_head farme_head;
 	struct Udat_head udat_head;

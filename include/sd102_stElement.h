@@ -41,7 +41,7 @@ union  Vsq {
 	struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 		u8 n:7;
-		u8 sq:1;//n的寻址方式:0-顺序 1-单独.
+		u8 sq:1;///<n的寻址方式:0-顺序 1-单独.
 #elif __BYTE_ORDER == __BIG_ENDIAN
 		u8 sq:1;
 		u8 n:7;
@@ -84,10 +84,10 @@ union Seq_number {
 	u8 val;
 	struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		u8 sn:5;//序列号
-		u8 cy:1;//carry
-		u8 ca:1;//计数器被调整(CA＝counter was adjusted)
-		u8 iv:1;//无效(IV＝invalid)
+		u8 sn:5;///<序列号
+		u8 cy:1;///<carry
+		u8 ca:1;///<计数器被调整(CA＝counter was adjusted)
+		u8 iv:1;///<无效(IV＝invalid)
 #elif __BYTE_ORDER == __BIG_ENDIAN
 		u8 iv:1;
 		u8 ca:1;
@@ -103,14 +103,14 @@ union Data_status {
 	u8 val;
 	struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		u8 lv:1;//失压 lost v
-		u8 phb:1;//断相
-		u8 lc:1;//lose current
-		u8 wph:1;// wrong phase
-		u8 blv:1;//Battery lose voltage
-		u8 ct:1;//timeout
-		u8 com_terminal:1;//Communication terminal
-		u8 iv:1;//invalid
+		u8 lv:1;///<失压 lost v
+		u8 phb:1;///<断相
+		u8 lc:1;///<lose current
+		u8 wph:1;///< wrong phase
+		u8 blv:1;///<Battery lose voltage
+		u8 ct:1;///<timeout
+		u8 com_terminal:1;///<Communication terminal
+		u8 iv:1;///<invalid
 #elif __BYTE_ORDER == __BIG_ENDIAN
 		u8 iv:1;
 		u8 com_terminal:1;
@@ -135,22 +135,22 @@ struct Ta {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	//Byte 1
 	u8 min:6;
-	u8 tis:1;//费率信息开关 0-off tariff information switch
-	u8 iv:1;//时间陈述无效标志位 invalid
+	u8 tis:1;///<费率信息开关 0-off tariff information switch
+	u8 iv:1;///<时间陈述无效标志位 invalid
 	//Byte 2
 	u8 hour:5;
-	u8 res1:2;//备用 reserve 1 <0>
-	u8 su:1;//夏令时 summer time
+	u8 res1:2;///<备用 reserve 1 <0>
+	u8 su:1;///<夏令时 summer time
 	//Byte 3
-	u8 day:5;//几号 1-31
-	u8 week:3;//星期几 1-7
+	u8 day:5;///<几号 1-31
+	u8 week:3;///<星期几 1-7
 	//Byte 4
 	u8 month:4;
-	u8 eti:2; //能量费率信息(ETI＝energy tariff information)
-	u8 pti:2;//功率费率信息(PTI＝power tariff information)
+	u8 eti:2; ///<能量费率信息(ETI＝energy tariff information)
+	u8 pti:2;///<功率费率信息(PTI＝power tariff information)
 	//Byte 5
-	u8 year:7;
-	u8 res2:1;//备用2(RES2＝reserve 2) <0>
+	u8 year:7;///< 2000到目前为止的年数<0..99>
+	u8 res2:1;///<备用2(RES2＝reserve 2) <0>
 #elif __BYTE_ORDER == __BIG_ENDIAN
 	u8 iv:1;
 	u8 tis:1;
@@ -175,26 +175,26 @@ struct Ta {
 ///7.2.7.3 7字节时间信息 b(Time information b,毫秒至年)
 struct Tb {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	u16 ms:10;//毫秒 <0..999>
+	u16 ms:10;///<毫秒 <0..999>
 	u16 second:6;
 	//
 	u8 min:6;
-	u8 tis:1;//费率信息开关 0-off tariff information switch
-	u8 iv:1;//时间陈述无效标志位 invalid
+	u8 tis:1;///<费率信息开关 0-off tariff information switch
+	u8 iv:1;///<时间陈述无效标志位 invalid
 	//
 	u8 hour:5;
-	u8 res1:2;//备用 reserve 1
-	u8 su:1;//夏令时 summer time
+	u8 res1:2;///<备用 reserve 1
+	u8 su:1;///<夏令时 summer time
 	//
-	u8 day:5;//几号 1-31
-	u8 week:3;//星期几 1-7
+	u8 day:5;///<几号 1-31
+	u8 week:3;///<星期几 1-7
 	//
-	u8 month:4;// <1..12>
-	u8 eti:2; //energy tariff information
-	u8 pti:2;//power tariff information
+	u8 month:4;///< <1..12>
+	u8 eti:2; ///<energy tariff information
+	u8 pti:2;///<power tariff information
 	//
 	u8 year:7;
-	u8 res2:1;//reserve 2
+	u8 res2:1;///<reserve 2
 #elif __BYTE_ORDER == __BIG_ENDIAN
 	u16 second:6;
 	u16 ms:10;
@@ -222,11 +222,11 @@ struct Tb {
 
 ///7.2.7.4 标准的日期(DOS)Date of standard
 struct Dos {
-	u8 month:4;//月 <1..12>
-	u8 year:4;//年 <0..9>
+	u8 month:4;///<月 <1..12>
+	u8 year:4;///<年 <0..9>
 };
 ///7.2.7.5 制造厂编码 Manufacturer code
-typedef u8 factcode_t; //<0..255>
+typedef u8 factcode_t; ///<<0..255>
 ///7.2.7.6 产品编码 product code ;BS32 bit strings 32bits
 typedef u32 productcode_bs;
 ///7.2.7.7 带地址和限定词的单点信息 single-point information
@@ -241,34 +241,34 @@ typedef u8 signature_t;
 union Coi {
 	u8 val;
 	struct {
-		u8 coi:7;//初始化原因
-		u8 pc:1;//local parameter change. 0-unchanged 1-changed;
+		u8 coi:7;///<初始化原因
+		u8 pc:1;///<local parameter change. 0-unchanged 1-changed;
 	};
 };
 
 ///7.2.7.10 复费率电能累计量 Multi-rate  Integrated total
 struct Multi_it {
 	u32 total;
-	u32 rate1;//费率1
+	u32 rate1;///<费率1
 	u32 rate2;
 	u32 rate3;
 	u32 rate4;
-	u32 rate5;//保留为0
+	u32 rate5;///<保留为0
 	union Data_status d_status;
 };
 ///7.2.7.11 月结算复费率电能累计量 Monthly balance sheet multi-rate  IT
 struct Month_mit {
 	u32 total;
-	u32 rate1;//费率1
+	u32 rate1;///<费率1
 	u32 rate2;
 	u32 rate3;
 	u32 rate4;
-	u32 rate5;//保留为0
+	u32 rate5;///<保留为0
 	union Data_status d_status;
 };
 ///7.2.7.12 月总最大需量及发生时间 Monthly total demand and time
 struct Month_maxdemand {
-	u32 total_maxdemand;//月总最大需量值
+	u32 total_maxdemand;///<月总最大需量值
 	struct Ta occur_time;
 };
 ///7.2.7.13 遥测量 Remote measurement
@@ -278,14 +278,14 @@ struct	Remote_measure {
 };
 ///7.2.7.14 表计谐波数据 Meter harmonic data
 struct Harmonic_data {
-	u32  fa_thd ;//forward active Total harmonic power
-	u32  ra_thd;//Reverse active total harmonic power
-	u32  ta_distortion;//Total active the harmonic power consumption distortion rate
-	u32  v_distortion;//Total voltage harmonic distortion
-	u32  c_distortion;//Total current harmonic distortion
-	u32  res1;//备用1 reserve 1
-	u32  res2;//备用2
-	u32  res3;//备用3
+	u32  fa_thd ;///<forward active Total harmonic power
+	u32  ra_thd;///<Reverse active total harmonic power
+	u32  ta_distortion;///<Total active the harmonic power consumption distortion rate
+	u32  v_distortion;///<Total voltage harmonic distortion
+	u32  c_distortion;///<Total current harmonic distortion
+	u32  res1;///<备用1 reserve 1
+	u32  res2;///<备用2
+	u32  res3;///<备用3
 };
 
 
