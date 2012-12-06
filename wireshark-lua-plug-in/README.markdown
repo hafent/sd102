@@ -9,7 +9,7 @@
 
 1. 将hello.lua文件复制到 wireshark 目录下.  
 	Linux默认为 /usr/share/wireshark
-2. 修改 wireshark 目录下的 init.lua 文件. 在最末尾添加
+2. 修改 wireshark 目录下的 init.lua 文件.在最末尾(注意文中注释)添加:
 
 	dofile(DATA_DIR.."hello.lua")
 

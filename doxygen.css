@@ -613,7 +613,7 @@ dl.reflist dd {
 }       
         
 .params .paramdir {
-        font-family: "courier new",courier,monospace;
+        font-family: "courier new",courier,文泉驿等宽正黑;
         vertical-align: top;
 }
 
@@ -993,21 +993,21 @@ dl.section dd {
  
 #projectname
 {
-	font: 300% Tahoma, Arial,sans-serif;
+	font: 300% 文泉驿等宽正黑, Arial,sans-serif;
 	margin: 0px;
 	padding: 2px 0px;
 }
     
 #projectbrief
 {
-	font: 120% Tahoma, Arial,sans-serif;
+	font: 120% 文泉驿等宽正黑, Arial,sans-serif;
 	margin: 0px;
 	padding: 0px;
 }
 
 #projectnumber
 {
-	font: 50% Tahoma, Arial,sans-serif;
+	font: 50% 文泉驿等宽正黑, Arial,sans-serif;
 	margin: 0px;
 	padding: 0px;
 }
@@ -1075,14 +1075,14 @@ div.toc {
 
 div.toc li {
         background: url("bdwn.png") no-repeat scroll 0 5px transparent;
-        font: 10px/1.2 Verdana,DejaVu Sans,Geneva,sans-serif;
+        font: 10px/1.2 文泉驿等宽正黑,DejaVu Sans,Geneva,sans-serif;
         margin-top: 5px;
         padding-left: 10px;
         padding-top: 2px;
 }
 
 div.toc h3 {
-        font: bold 12px/1.2 Arial,FreeSans,sans-serif;
+        font: bold 12px/1.2 文泉驿等宽正黑,FreeSans,sans-serif;
 	color: #4665A2;
         border-bottom: 0 none;
         margin: 0;
