@@ -51,15 +51,19 @@
 	    ├── hello.lua
 	    ├── README.markdown
 	    └── sd102.pcap
+文件含义:
+* `Makefile` 顶层makefile文件
 * `src/` 源代码目录
 * `include/` 头文件目录
 * `html/` 帮助文档目录
-	* `html/index.html` 帮助文档首页(使用浏览器打开)
+	* `index.html` 帮助文档首页(使用浏览器打开)
+* `doc/` 其他帮助信息
+	* `tou_dat_format` 终端电量文件结构说明
 * `README.markdown`自述文件(本文件)
-* `tou_dat_format` 终端电量文件结构说明
 * `sd102.doxyfile` 帮助文档(doxygen)生成配置文件
-* `Makefile` 顶层makefile文件
-	 
+* `doxygen.css` 用于生成帮助文档的级联样式表(css)
+
+
 ## 维护事项
 
 ## 开发事项

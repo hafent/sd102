@@ -571,7 +571,6 @@ int Csd102::verify_frame(const struct Frame f) const
 #endif
 		return 0x14;
 	}
-
 	return 0;     //4. 结束
 }
 
@@ -581,6 +580,7 @@ int Csd102::verify_frame(const struct Frame f) const
  * @param[out] f_out 出
  * @retval 0 正确处理
  * @retval !0  处理失败
+ * @bug 这个函数已经完全不需要了?按照长短帧分类不科学,应该按照控制域,再按照标识类型分类
  */
 int Csd102::process_short_frame(const struct Frame fin,
         struct Frame* f_out) const
@@ -636,15 +636,11 @@ int Csd102::process_short_frame(const struct Frame fin,
 		PRINT_HERE
 		break;
 	}
-//memcpy(farme_out,&frame_up,sizeof(struct Short_farme));
-//其他公共的信息 上行/开始/结束
 	frame_up->start_byte = START_SHORT_FRAME;
 	frame_up->farme_tail.end_byte = END_BYTE;
 	frame_up->c_up.prm = 0;
 	frame_up->c_up.res = 0;
 	f_out->len = sizeof(struct Short_frame);
-//	printf("send_farme.start_byte=%x T frame[0]=%x t_len=%d\n"
-//	       ,send_farme.start_byte,T frame[0],t_len);
 	return 0;
 }
 
@@ -658,7 +654,7 @@ int Csd102::process_short_frame(const struct Frame fin,
  */
 int Csd102::process_request(const struct Frame fin,
         std::queue<struct Frame> &q1,
-        std::queue<struct Frame> &q2 )
+        std::queue<struct Frame> &q2)
 {
 	int ret;
 	int offset = 0;
@@ -1035,7 +1031,7 @@ int Csd102::hisdat(const Ta ts, const Ta te,
 		//最外层循环.按表号(文件)来循环 一般日期跨度小,
 		for (int i = saddr; i<=endaddr; i++) {		//信息体号
 			int mtrno = (i-1)/4;	//从信息体计算成表号
-			int datclass = (i-1)%4;	//信息体对应在每个表不同数据分类
+			int datclass = (i-1)%4;  //信息体对应在每个表不同数据分类
 			///@note　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
 			std::string tou_file;
 			GetFileName_Day(&tou_file, month, day, mtrno, TASK_TOU);
@@ -1213,8 +1209,8 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	                /sizeof(Obj_M_IT_TX_2);
 	int meybe_err = 0;
 	printf("每帧最大信息体数=%d "
-		"每条记录包含的信息体数量%d\n",
-		maxperframe, rs_len);
+			"每条记录包含的信息体数量%d\n",
+	                maxperframe, rs_len);
 	while (!qIT.empty()
 	                &&meybe_err++ <65536  //循环太多次的话可能就是出错了,或者数据量不正常的多.
 	) {			//直到数据传玩
@@ -1272,7 +1268,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		int i = 0;		//本帧信息体现在数量,每帧都重置
 		//M_IT_TX_2_iObj []
 		while (!qIT.empty() 			//1.数据传完了(这个和下面冗余)
-		&&i<maxperframe	//2.信息体数量过多,分帧
+		&&i<maxperframe  //2.信息体数量过多,分帧
 		&&cur_re_idx<rs_len	//3.本记录所有信息体读完,换一帧
 		) {
 			printf("#");
@@ -1296,7 +1292,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		printf("push to 1类数据队列 ,qsize=%d\n", q1.size());
 		printf("结束:记录队列(时间条目):\t\t\tqTa.size=%d\n", qTa.size());
 		printf(" 数据队列(信息体个数*时间条目):\tqIT.size=%d\n", qIT.size());
-	}// 一帧结束
+	}	// 一帧结束
 
 	//完成后还有一帧镜像帧,激活结束
 	make_mirror_end(*fin);

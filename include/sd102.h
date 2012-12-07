@@ -7,33 +7,29 @@
 
 #include "CBASE102s.h"
 #include "sd102_stFrame.h"//结构定义
-//#include "sd102_ctDuid.h"//常量定义
-//#include "sd102_ctUdat.h"
-//#include "sd102_ctStart.h"
 #include <queue>
 #define VER
 #ifndef MAJOR
-#define MAJOR 0
+#define MAJOR 0 ///库版本号:主版本号
 #endif
 #ifndef MINOR
-#define MINOR 0
+#define MINOR 0 ///库版本号:次版本号
 #endif
 #ifndef PATCHLEVEL
-#define PATCHLEVEL 0
+#define PATCHLEVEL 0 ///库版本号:修订号
 #endif
 #define KIND_OF_102 SD102 ///<定义特殊类别的102规约,指示为山东102
-#define PREFIX "[sd102]" //打印用的前缀,方便区分
-#define PREERR "[sd102 ERR]"//
+#define PREFIX "[sd102]" ///<打印前缀:一般信息
+#define PREERR "[sd102 ERR]"///<打印前缀:错误信息
 ///标准发布日期,山东电力集团公司 发布 2011年3月24日
-#define  STANDARD_YEAR (11)
-#define  STANDARD_MONTH (3)
-///厂商编号,产品编号
-#define FACT_ID (123)
-#define PRODUCT_ID (456)
+#define STANDARD_YEAR (11)
+#define STANDARD_MONTH (3)
+#define FACT_ID (123)	///<厂商编号
+#define PRODUCT_ID (456)///<产品编号
 #define CLASS2MAX (256) //最大数据存储量:256帧单点数据
 ///最大用户数据区长度,由len=1字节限制
 #define MAX_UDAT_LEN (255)
-//最大帧长
+///最大帧长(字节)
 #define MAX_FRAME_LEN (4+MAX_UDAT_LEN+2) //sd102最大幀長,帧头+len+帧尾
 ///通用的帧格式.包括一个字节数组和一个指示帧长度的整形,能概括102所有帧格式
 struct Frame {

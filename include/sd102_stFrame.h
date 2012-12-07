@@ -35,11 +35,10 @@
 #include "sd102_ctDuid.h"
 #include "sd102_ctUdat.h"
 #include "sd102_stElement.h" //定义了应用信息元素,如Tb,Typ等的结构
-
 #pragma pack(1)
 //********************** 第一部分 通用帧类型说明和定义 **************************
 #define VARIABLE_LENGTH_FRAME 1 //不固定长度的帧,通常时应为包含n个信息体,调试时置1,使用时置0
-#define INFO_OBJ_NUM 0 // 信息体数量,按照实际情况在定义帧时重新设置!
+#define INFO_OBJ_NUM 1 // 信息体数量,按照实际情况在定义帧时重新设置!
 #define __LINK_ADD_LEN 2 //链路地址域长度
 /**变长帧格式概括
  * @page  变长帧格式
@@ -78,11 +77,11 @@
 |       |         |      |           | (Optional)  |      |        |     |    |
 +-------+---------+------+-----------+-------------+------+--------+-----/    |
 | Frame_tail                         |     CS      |1 byte|2 Bytes |   LPCI   |
-|       |                  END_BYTE->|    0x16     |1 byte|        |          |
+|       |                            |END_BYTE:0x16|1 byte|        |          |
 +-------+----------------------------+-------------+------+--------+----------+
 @endcode
 */
-/// C1.1 可变帧长帧 - 帧头 Frame_head
+/// C1.1 可变帧长帧 - 帧头
 struct Frame_head {
 	u8 start_byte1;///< 开始字符
 	u8 len1;///< 长度
@@ -122,7 +121,7 @@ struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
 	rad_t rad;
 };
 // 填补信息体(Information Object),按照不通类型不通.
-/// C1.1  变长/定长帧尾 Frame_tail
+/// C1.1  变长/定长帧尾
 struct Frame_tail {
 	u8 cs;
 	u8 end_byte;
@@ -134,19 +133,19 @@ struct Frame_tail {
  *	+------------+-----------------+-------+
  *	| Frame_head |START_SHORT_FRAME|1 byte |
  *	+------------+-----------------+-------+
- *	|            | Ctrl Field      |1 byte |
+ *	|            | Ctrl_c/Ctrl_m   |1 byte |
  *	| LPDU       | link_addr_t Lo  |1 byte |
- *	|            | link_addr_t Hi  |1 byte |
+ *	| (Udat_head)| link_addr_t Hi  |1 byte |
  *	+------------+-----------------+-------+
  *	| Frame_tail |     cs          |1 byte |
- *	|            | 0x16(End byte)  |1 byte |
+ *	|            | END_BYTE(0x16)  |1 byte |
  *	+------------+-----------------+-------+
  * @endcode
  */
 /// C1.2 固定帧长帧-帧体
 struct Short_frame {
 	u8 start_byte; //开始字节
-	union { //控制域
+	union {
 		union Ctrl_c c_down;
 		union Ctrl_m c_up;
 	};
@@ -163,7 +162,7 @@ struct Obj_M_SP_TA_2 {
 	struct Spinfo sp;
 	struct Tb tb;
 };
-#if 1 //VARIABLE_LENGTH_FRAME
+#if VARIABLE_LENGTH_FRAME
 /// 7.3.1.1 M_SP_TA_2 带时标的单点(Single-Point)信息帧
 struct stFrame_M_SP_TA_2{
 	struct Frame_head head;

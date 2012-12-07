@@ -1,6 +1,6 @@
 major	= 0
 minor	= 1
-patch	= 3
+patch	= 4
 build = git
 ver = $(major).$(minor).$(patch).$(build)
 INCS    = -I../include -I../../../../include -I../../base102/include
