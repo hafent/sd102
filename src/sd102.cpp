@@ -1194,12 +1194,12 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	showtime(fin->obj.Tstart);
 	showtime(fin->obj.Tend);
 	if (this->format_ok(*fin)!=0/* 数据数据错误*/) {
-		make_mirror_1(fin, false);
+		make_mirror_1(*fin, false);
 		printf(PREFIX"input instruction err 输入指令无效\n");
 		q1.push(fi);
 		return 1;
 	} else {	//有效 镜像帧
-		make_mirror_1(fin, true);
+		make_mirror_1(*fin, true);
 		q1.push(fi);
 	}
 	this->hisdat( fin->obj.Tstart, fin->obj.Tend,
@@ -1322,7 +1322,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	}		//fno 一帧结束
 
 	//完成后还有一帧镜像帧,激活结束
-	make_mirror_2(fin);
+	make_mirror_2(*fin);
 	q1.push(fi);
 	return 0;
 }
@@ -1873,15 +1873,15 @@ int Csd102::make_M_SYN_TA_2(const struct Frame fi,
  * @return
  */
 template<typename T>
-int Csd102::make_mirror_1(T pf, bool b_acd) const
+int Csd102::make_mirror_1(T &f, bool b_acd) const
         {
-	pf->lpdu_head.cf_m.fcn = FCN_M_SEND_DAT;
-	pf->lpdu_head.cf_m.prm = PRM_UP;
-	pf->lpdu_head.cf_m.acd = b_acd ? ACD_ACCESS : ACD_NO_ACCESS;
-	pf->lpdu_head.cf_m.dfc = DFC_NOT_FULL;
-	pf->lpdu_head.cf_m.res = CF_RES;
-	pf->duid.cot.cause = COT_ACTCON;
-	pf->farme_tail.cs = check_sum(*pf);
+	f.lpdu_head.cf_m.fcn = FCN_M_SEND_DAT;
+	f.lpdu_head.cf_m.prm = PRM_UP;
+	f.lpdu_head.cf_m.acd = b_acd ? ACD_ACCESS : ACD_NO_ACCESS;
+	f.lpdu_head.cf_m.dfc = DFC_NOT_FULL;
+	f.lpdu_head.cf_m.res = CF_RES;
+	f.duid.cot.cause = COT_ACTCON;
+	f.farme_tail.cs = check_sum(f);
 	return 0;
 }
 
@@ -1891,15 +1891,15 @@ int Csd102::make_mirror_1(T pf, bool b_acd) const
  * @return
  */
 template<typename T>
-int Csd102::make_mirror_2(T pf) const
+int Csd102::make_mirror_2(T &f) const
         {
-	pf->lpdu_head.cf_m.fcn = FCN_M_SEND_DAT;
-	pf->lpdu_head.cf_m.prm = PRM_UP;
-	pf->lpdu_head.cf_m.acd = ACD_ACCESS;
-	pf->lpdu_head.cf_m.dfc = DFC_NOT_FULL;
-	pf->lpdu_head.cf_m.res = CF_RES;
-	pf->duid.cot.cause = COT_ACTTREM;
-	pf->farme_tail.cs = check_sum(*pf);
+	f.lpdu_head.cf_m.fcn = FCN_M_SEND_DAT;
+	f.lpdu_head.cf_m.prm = PRM_UP;
+	f.lpdu_head.cf_m.acd = ACD_ACCESS;
+	f.lpdu_head.cf_m.dfc = DFC_NOT_FULL;
+	f.lpdu_head.cf_m.res = CF_RES;
+	f.duid.cot.cause = COT_ACTTREM;
+	f.farme_tail.cs = check_sum(f);
 	return 0;
 }
 /**

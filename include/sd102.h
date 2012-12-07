@@ -155,8 +155,8 @@ private:
 	int time_range(const struct Ta starttime, const struct Ta endtime) const;
 	int print_err_msg(int msg) const;
 	template<typename T> u8 check_sum(const T f) const;
-	template<typename T>int make_mirror_1( T pf,bool b_acd) const;
-	template<typename T>int make_mirror_2( T pf) const;
+	template<typename T>int make_mirror_1( T &f,bool b_acd) const;
+	template<typename T>int make_mirror_2( T &f) const;
 	int clear_fcb(struct Frame &fbak) const;
 	void print_array(const u8 *transbuf, const int len) const;
 	int copyframe(struct Frame &df, const struct Frame sf) const;
@@ -164,7 +164,7 @@ private:
 	//TODO　读写数据库（文件）相关的本应该有DB来完成
 	void print_tou_head(const struct touFilehead  filehead)const;
 	void print_tou_dat(const struct Tou  tou) const;
-	u32 get_min(Ta ta)const;
+	u32 get_min(const Ta ta)const;
 	u32 get_min_2(Ta ta)const;
 	int hisdat(const Ta ts,const Ta te,
 		ioa_t saddr,ioa_t endaddr,
