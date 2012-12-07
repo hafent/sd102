@@ -39,7 +39,7 @@
 #pragma pack(1)
 //********************** 第一部分 通用帧类型说明和定义 **************************
 #define VARIABLE_LENGTH_FRAME 1 //不固定长度的帧,通常时应为包含n个信息体,调试时置1,使用时置0
-#define INFO_OBJ_NUM 1 // 信息体数量,按照实际情况在定义帧时重新设置!
+#define INFO_OBJ_NUM 0 // 信息体数量,按照实际情况在定义帧时重新设置!
 #define __LINK_ADD_LEN 2 //链路地址域长度
 /**变长帧格式概括
  * @page  变长帧格式
@@ -60,7 +60,7 @@
 |       |                            |link_addr_t L|1 byte|3 Bytes |          |
 |       |                            |link_addr_t H|1 byte|        |          |
 |       +---------+------+-----------+-------------+------+--------+-----\    |
-|       |         |      |           |e_typ_t_c(m) |1 byte|        |     |    |
+|       |         |      |           |e_typm/e_typc|1 byte|        |     |    |
 |       |         |      | ASDU head |    Vsq      |1 byte|        |     |    |
 |       |         |      |  (Duid)   |    Cot      |1 byte|6 Bytes |     |    |
 | User  |         |      |           |rtu_addr_t lo|1 byte|        |     |    |
@@ -78,7 +78,7 @@
 |       |         |      |           | (Optional)  |      |        |     |    |
 +-------+---------+------+-----------+-------------+------+--------+-----/    |
 | Frame_tail                         |     CS      |1 byte|2 Bytes |   LPCI   |
-|       |                            |    0x16     |1 byte|        |          |
+|       |                  END_BYTE->|    0x16     |1 byte|        |          |
 +-------+----------------------------+-------------+------+--------+----------+
 @endcode
 */
@@ -106,7 +106,11 @@ struct Udat_head {
 };
 /// 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
 struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
-	u8 typ;
+	union{
+		u8 typ;
+		e_typc typc;
+		e_typm typm;
+	};
 	union  Vsq vsq;
 	union Cot cot;
 	/* 7.2.4 电能累计量数据终端设备的地址从1开始，

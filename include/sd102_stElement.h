@@ -60,13 +60,13 @@ union Cot {
 	u8 val;
 	struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		u8 cause:6;//传送原因＝Cause of transmission
+		e_cot cause:6;//传送原因＝Cause of transmission
 		u8 pn:1;// 应答
 		u8 t:1;//test 试验
 #elif __BYTE_ORDER == __BIG_ENDIAN
 		u8 t:1
 		u8 pn:1
-		u8 cause:6
+		e_cot cause:6
 #else
 #endif /*__BYTE_ORDER*/
 	};

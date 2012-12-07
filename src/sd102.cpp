@@ -1208,23 +1208,20 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	//这里开始检查写两个队列的数据是否正确:
 	printf("记录队列(时间条目):\t\t\tqTa.size=%d\n",qTa.size());
 	printf("数据队列(信息体个数*时间条目):\tqIT.size=%d\n",qIT.size());
-//	ret = Search_CircleDBS(filename, 12,
-//	                12, 1,
-//	                &Save_Num, &Save_XL[0], TASK_TOU);
-	//printf("ret=%d\n", ret);
 	//一条时刻记录中包含的信息体数量,当传了几帧(因为一帧传不完)后,总数等于这个,
 	//则要换帧,并且换Ta.
 	const int rs_len =fin->obj.end_ioa-fin->obj.start_ioa+1;
 	int cur_re_idx=0;//当前记录中的信息体个数(索引)指示这是本记录的第几个信息体,base on 0
 	// 但前总的信息体索引从0到max 共max+1个
 	int io_ind=0;
-	//一帧最多可以包含的信息体个数(含)
+	///一帧最多可以包含的信息体个数(含)
 	maxperframe = (MAX_UDAT_LEN-sizeof(Udat_head)-sizeof(Duid)-sizeof(Ta))
 	                /sizeof(Obj_M_IT_TX_2);
 	int meybe_err=0;
-	printf("每帧最大信息体数=%d 每条记录包含的信息体数量%d\n", maxperframe,rs_len);
+	printf("每帧最大信息体数=%d 每条记录包含的信息体数量%d\n",
+		maxperframe,rs_len);
 	while( !qIT.empty()
-			&& meybe_err++ <256 //循环太多次的话可能就是出错了,或者数据量不正常的多.
+			&& meybe_err++ <65536 //循环太多次的话可能就是出错了,或者数据量不正常的多.
 			){			//直到数据传玩
 		printf("*");
 		int n;	//本帧包含的信息体数量
@@ -1267,7 +1264,7 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		udat_head->cf_m.dfc = DFC_NOT_FULL;
 		udat_head->cf_m.res = CF_RES;
 		udat_head->link_addr = this->link_addr;
-		duid->typ = M_IT_TA_2;
+		duid->typm = M_IT_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = SQ_Similar;
 		duid->cot.cause = COT_REQUEST;
@@ -1428,8 +1425,7 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 		duid->typ = M_YC_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = 0;
-		duid->cot.cause =
-		                (islastframe) ? COT_ACTTREM : COT_REQUEST;
+		duid->cot.cause = COT_REQUEST;
 		duid->cot.pn = COT_PN_ACK;
 		duid->cot.t = COT_T_NOT_TEST;
 		duid->rad = RAD_DEFAULT;
@@ -1868,15 +1864,12 @@ int Csd102::make_M_SYN_TA_2(const struct Frame fi,
 
 }
 #pragma  GCC diagnostic warning  "-Wunused-parameter"
-/* 构造一轮数据采集的前1镜像帧, 开始的镜像帧
- * in	f	输入帧(数据采集指定)
- * 	acd	输入帧是否逻辑正确,正确,则有数据,acd置1,错误这结束此轮数据采集,acd=0
- * out	f	稍作修改输出的镜像帧
- * */
+
 /**
  * 构造一轮数据采集的前1镜像帧, 开始的镜像帧
- * @param pf
- * @param b_acd
+ * @param[in] pf 输入帧(数据采集指定)
+ * @param[in] b_acd 输入帧是否逻辑正确,正确,则有数据,acd置1,错误这结束此轮数据采集,acd=0
+ * @param[out] pf 稍作修改输出的镜像帧
  * @return
  */
 template<typename T>
@@ -2158,12 +2151,12 @@ bool Csd102::need_resend(const struct Frame rf_bak, const struct Frame rf)
 }
 
 /**
- * 将Ta时间格式换算成 从1900年1月1日0时0分到目前为止的(分钟/秒)数.
+ * 将Ta时间格式换算成 从1970年1月1日0时0分到目前为止的(分钟/秒)数.
  * @param[in] ta
  * @retval 0 错误
  * @retval 非0  从1970年到现在时刻经过的分钟数
  */
-u32 Csd102::get_min(Ta ta) const
+u32 Csd102::get_min(const Ta ta) const
         {
 	unsigned int mins, hours, days;
 	unsigned char months, years;
@@ -2172,7 +2165,7 @@ u32 Csd102::get_min(Ta ta) const
 	hours = ta.hour;
 	days = ta.day-1;
 	months = ta.month;
-	u8 YEARL = ta.year+30;//base 2000-> base1970
+	u8 YEARL = ta.year+30;//base 2000 -> base 1970
 	years = YEARL%100;
 	if (mins>59)
 		return 0;
