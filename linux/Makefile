@@ -1,6 +1,6 @@
 major	= 0
 minor	= 1
-patch	= 2
+patch	= 3
 build = git
 ver = $(major).$(minor).$(patch).$(build)
 INCS    = -I../include -I../../../../include -I../../base102/include
@@ -34,14 +34,16 @@ all :  debug
 release:$(SOURCE) 
 #	arm-linux-gcc ../src/type.c -c -o type.o $(INCS)
 	$(CXX) $(LDFALGS) $(CXXFLAGS) -shared $(MARCO) \
-	$(INCS) $(SOURCE) -o $(LIB)/lib$(NAME).so $(LIBS) \
+	$(INCS) $(SOURCE) -o ./lib$(NAME).so $(LIBS) \
 	$(fdebug) $(wflag) -pipe
+	cp ./lib$(NAME).so $(LIB)/lib$(NAME).so
 	
 
 debug:$(SOURCE)
 	$(CXX) $(LDFALGS) $(CXXFLAGS) -shared $(MARCO) \
-	$(INCS) $(SOURCE) -o $(LIB)/lib$(NAME)-dbg.so $(LIBS) \
+	$(INCS) $(SOURCE) -o ./lib$(NAME)-dbg.so $(LIBS) \
 	$(fdebug) $(wflag) -pipe
+	cp ./lib$(NAME)-dbg.so $(LIB)/lib$(NAME)-dbg.so
 info:
 	patch = 
 	echo $(patch)

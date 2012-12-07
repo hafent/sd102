@@ -3,7 +3,8 @@
  *  @page  数据单元标识符Duid定义
  * 数据单元标识符 duid的常量定义.
  * 仅定义常量,不定义结构,结构在element中定义
- * Duid={e_typc|e_typm,Vsq,Cot,rtu_addr_t,rad_t}
+ * Duid={标识类型(e_typc|e_typm),可变结构体(Vsq),传输原因(Cot),
+ * 	终端地址(rtu_addr_t),记录地址(rad_t)}
  * @code
  +-----------+-------------+------+--------+
  |           |    typ_t    |1 byte|        |
@@ -11,7 +12,7 @@
  |  (Duid)   |    Cot      |1 byte|6 Bytes |
  |           |rtu_addr_t lo|1 byte|        |
  |           |rtu_addr_t hi|1 byte|        |
- |           |    RAD      |1 byte|        |
+ |           |    rad_t    |1 byte|        |
  +-----------+-------------+------+--------+
  |           其他信息体元素的常量定义        |
  +-----------------------------------------+
@@ -20,7 +21,6 @@
 #ifndef _SD102_DUID_H_
 #define _SD102_DUID_H_
 #include "typedefine.h"
-//#include "sd102_stElement.h"
 #pragma pack(1)
 struct stTyp {
 	const char *msg;
@@ -30,8 +30,7 @@ struct stTyp {
 extern struct stTyp typ_info_c[];
 extern struct stTyp typ_info_m[];  //
 #endif
-//7.2.1.1 类型标识域值的语义的定义
-//typedef u8 typ_t;
+
 // **************** Type ID 常量定义 ***************
 // 7.2.1.1 类型标识域值的语义的定义,
 /// 表6 类型标识的语义-在控制方向上的系统信息		(下行,主站发送)
@@ -71,7 +70,7 @@ enum e_typm {
 const int SQ_Similar = 0;  //在同一种类型的一些信息体中寻址一个个别的元素或综合的元素
 const int SQ_sequence = 1;  //在一个体中寻址一个顺序的元素
 
-///**************** COT 传输原因 常量定义 ***************
+///COT 传输原因
 enum e_cot {
 	COT_TEST = 1,  ///<主站测试链路,并不执行操作
 	COT_CYCLE = 2,  ///<主站周期性轮询
@@ -83,15 +82,21 @@ enum e_cot {
 	COT_DEACT = 8,  ///<取消激活
 	COT_DEATCCON = 9,  ///<取消激活-确认[回复取消激活]
 	COT_ACTTREM = 10,  ///<激活终止[自发]
-	COT_NO_DAT = 13,
-	COT_NO_ASDU = 14,
+	COT_NO_DAT = 13, ///<没有数据
+	COT_NO_ASDU = 14, ///<没有应用程序服务单元(ASDU)
 	COT_SYN_TIME = 48  ///<时间同步
 };
-//PN 和 test位
-const int COT_PN_ACK = 0;  //肯定确认
-const int COT_PN_NACK = 1;  //否定确认
-const int COT_T_NOT_TEST = 0;  //非测试,执行
-const int COT_T_TEST = 1;  //测试链路,不执行
+///传输原因(COT)的确认否认(P/N)位
+enum e_cot_pn{
+	 COT_PN_ACK = 0,  ///<肯定确认
+	 COT_PN_NACK = 1  ///<否定确认
+};
+///传输原因(COT)的测试(test)位
+enum e_cot_t{
+	 COT_T_NOT_TEST = 0, ///<非测试,执行
+	 COT_T_TEST = 1  ///<测试链路,不执行
+};
+
 //**************** RAD 记录地址 常量定义 ***************
 /* RAD
  <0>：＝缺省
@@ -123,24 +128,30 @@ const int COT_T_TEST = 1;  //测试链路,不执行
  <128.. 255>：＝为特殊应用（专用范围） */
 const int RAD_DEFAULT = 0;
 const int RAD_ALL_SP_INFO = 51;
-// ************  其他信息体元素的常量定义  ************ //
-/*SPQ Single-Point*/
-enum Tb_e {
-	TB_VALID = 0,  //时间有效
-	TB_INVALID = 1,  //时间无效
-	TB_STANDARD_TIME = 0,  //标准时
-	TB_SUMMER_TIME = 1,  //夏令时
-	TB_RESERVE1 = 0,  //保留1
-	TB_RESERVE2 = 0,  //保留2
+///@todo 这些应该被移动到另外分类 ****  其他信息体元素的常量定义  ************ //
+/**电量Tb一些类型*/
+enum e_Tb {
+	TB_VALID = 0,  ///<时间有效
+	TB_INVALID = 1,  ///<时间无效
+	TB_STANDARD_TIME = 0,  ///<标准时
+	TB_SUMMER_TIME = 1,  ///<夏令时
+	TB_RESERVE1 = 0,  ///<保留1
+	TB_RESERVE2 = 0,  ///<保留2
 };
-const int COI_LOC_POWON = 0;
-const int COI_LOC_MANUAL_RESET = 1;
-const int COI_RETOME_RESET = 2;
-/*	<3..31> 为此配套标准的标准定义保留（兼容范围）
- * 	<32..127>：＝为特殊应用保留（专用范围）
+/**7.2.7.9 初始化原因
  * */
-const int COI_PARAMETER_UNCHANGED = 0;
-const int COI_PARAMETER_CHANGED = 1;
+enum e_Coi{
+	 COI_LOC_POWON = 0,///,当地电源合上
+	 COI_LOC_MANUAL_RESET = 1,///<当地手动复位
+	 COI_RETOME_RESET = 2,///<远方复位
+	/**	<3..31> 为此配套标准的标准定义保留（兼容范围）
+	 * 	<32..127>：＝为特殊应用保留（专用范围）
+	 * */
+	 COI_PARAMETER_UNCHANGED = 0,///<当地参数未被改变的初始化
+	 COI_PARAMETER_CHANGED = 1///<当地参数改变后的初始化
+};
+
+
 
 
 const int SPA_INIT = 1;  // 重新启动

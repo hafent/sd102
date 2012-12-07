@@ -6,7 +6,6 @@
  * @author 李培钢
  */
 
-
 #include <sys/msg.h>
 #include <stdio.h>
 #include <string>
@@ -80,7 +79,6 @@ Csd102::Csd102()
 	}
 	spon = 60;
 
-
 }
 /**
  */
@@ -139,7 +137,7 @@ void Csd102::SendProc(void)
 		fsp->udat_head.cf_m.res = CF_RES;
 		fsp->udat_head.link_addr = this->link_addr;
 		fsp->duid.rad = RAD_ALL_SP_INFO;
-		fsp->duid.typ = M_SP_TA_2;
+		fsp->duid.typm = M_SP_TA_2;
 		fsp->duid.vsq.n = 1;
 		fsp->duid.vsq.sq = SQ_Similar;
 		fsp->duid.cot.cause = COT_SPONT;
@@ -343,7 +341,7 @@ int Csd102::nack(struct Frame &f) const
 	f.dat[0] = START_SC_FRAME;
 	f.len = sizeof(START_SC_FRAME);
 	return 0;
-  }
+}
 /**将帧结构通过 m_transBuf 发送给主站
  * @param[in] f 构造好的帧结构(通用帧,字节数组+长度)
  * @note param[out] m_transBuf 修改的发送缓冲区结构体,发送数据[类成员,隐含使用!]
@@ -386,7 +384,6 @@ u8 Csd102::get_ctrl_field(const struct Frame f) const
 	}
 	return c.val;
 }
-
 
 /**
  * 初步分离出正确的报文.帧前的数据清除,帧尾的数据保留在缓冲队列.
@@ -578,7 +575,6 @@ int Csd102::verify_frame(const struct Frame f) const
 	return 0;     //4. 结束
 }
 
-
 /**
  * 解析 FT1.2 固定帧长帧
  * @param[in] fin 输
@@ -654,7 +650,7 @@ int Csd102::process_short_frame(const struct Frame fin,
 
 /**
  * 解析 FT1.2 变帧长帧 /处理请求,分类构造数据报文(可能是一系列).
- * 接收变长帧,按 type(TYP)分类处理下行报文(主站发出的)
+ * 接收变长帧,按 type(typc)分类处理下行报文(主站发出的)
  * @param[in] fin 输入的帧
  * @param[out] q1 输出到1类数据
  * @param[out] q2 输出到2类数据
@@ -668,21 +664,19 @@ int Csd102::process_request(const struct Frame fin,
 	int offset = 0;
 	/*从输入帧中分解出一些数据单元
 	 :Lpdu_head + Asdu_head + (信息体未解析) + Farme_tail*/
-//	struct Udat_head *udat_head = (struct Udat_head *) (fin.dat
-//			+ sizeof(struct Frame_head));
+
 	offset = sizeof(Frame_head)+sizeof(Udat_head);
 	struct Duid *uhead = (Duid *) (fin.dat+offset);
-//	struct Frame_tail *frame_tail = (struct Frame_tail *) (fin.dat + fin.len
-//			- sizeof(struct Frame_tail));
+
 #if 0
 	printf("addr=%d , cf=%02X \n",
 			udat_head->link_addr ,udat_head->cf_c.val);
-	printf("asdu_head->typ=%d , asdu_head->rad=%02X \n",
-			duid->typ ,duid->rad);
+	printf("asdu_head->typc=%d , asdu_head->rad=%02X \n",
+			duid->typc ,duid->rad);
 	printf("farme_tail->cs=%02X , farme_tail->end_byte=%02X \n",
 			frame_tail->cs ,frame_tail->end_byte);
 #endif
-	switch (uhead->typ) {
+	switch (uhead->typc) {
 	case C_RD_NA_2:		//读制造厂和产品规范
 		make_P_MP_NA_2(q1);
 		PRINT_HERE
@@ -759,7 +753,6 @@ int Csd102::process_request(const struct Frame fin,
 //
 	return 0;
 }
-
 
 /**
  * 清空备份帧,将备份帧全置0.
@@ -889,7 +882,7 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 		fin->farme_tail.cs = check_sum(*fin);
 		q.push(fi);
 	}
-	const int obj_num = 99;  //NOTE 信息体数量待计算
+	const int obj_num = 99;  ///@todo 信息体数量待计算
 	maxperframe = (255-sizeof(Udat_head)-sizeof(Duid))
 	                /sizeof(Obj_M_SP_TA_2);
 	printf("总信息体数=%d 每帧最大信息体数=%d\n", obj_num, maxperframe);
@@ -927,7 +920,7 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 		udat_head->cf_m.dfc = DFC_NOT_FULL;
 		udat_head->cf_m.res = CF_RES;
 		udat_head->link_addr = this->link_addr;
-		duid->typ = M_SP_TA_2;
+		duid->typm = M_SP_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = SQ_Similar;
 		duid->cot.cause = COT_REQUEST;
@@ -936,7 +929,7 @@ int Csd102::make_M_SP_TA_2(const struct Frame fi,
 		duid->rad = RAD_DEFAULT;
 		duid->rtu_addr = makeaddr(obj_num);
 		// obj_M_SP_TA_2[] :
-		for (u8 i = 0; i<n; i++) {	//TODO 从文件读取数据/事件?
+		for (u8 i = 0; i<n; i++) {	///@todo 从文件读取数据/事件?
 			//int addr = 0;	//
 			obj[i].sp.spa = 1;
 			getsystime(obj[i].tb, systime);
@@ -998,12 +991,12 @@ void Csd102::print_tou_head(const struct touFilehead filehead) const
  * @param[out] q_Ta	ta时间队列,1对多个it
  * @return	暂时不输出错误
  * */
-int Csd102::hisdat(const Ta ts,const Ta te,
-	ioa_t saddr,ioa_t endaddr,
-	std::queue<struct Ta> &q_Ta,
-	std::queue<struct Obj_M_IT_TX_2> &q_IT)const
-{
-	unsigned long min_start, min_end, min_now;//三种时刻的分钟数
+int Csd102::hisdat(const Ta ts, const Ta te,
+        ioa_t saddr, ioa_t endaddr,
+        std::queue<struct Ta> &q_Ta,
+        std::queue<struct Obj_M_IT_TX_2> &q_IT) const
+        {
+	unsigned long min_start, min_end, min_now;		//三种时刻的分钟数
 	struct m_tSystime systime;
 	GetSystemTime_RTC(&systime);
 	struct Ta Tnow;
@@ -1012,38 +1005,38 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 	min_end = get_min(te);
 	min_now = get_min(Tnow);
 	Ta taa;
-	time_t tsec=min_start*60L;
+	time_t tsec = min_start*60L;
 	struct tm t_ch;
-	memset(&t_ch,0x00,sizeof(t_ch));
+	memset(&t_ch, 0x00, sizeof(t_ch));
 	printf("Time to min(start)=%ld\n", min_start);
 	printf("Time to min(end)=%ld\n", min_end);
-	u8 month = 0;//用于查找文件的日期
+	u8 month = 0;		//用于查找文件的日期
 	u8 day = 0;
-	int lastCycle = 0;//上次采集的周期,
-	int minCycle=0;//最小采集周期(分钟),外层循环步距
-	int snumber = 0;//采样次数,可能出现多次才同一个点的情况
+	int lastCycle = 0;		//上次采集的周期,
+	int minCycle = 0;		//最小采集周期(分钟),外层循环步距
+	int snumber = 0;		//采样次数,可能出现多次才同一个点的情况
 	struct Obj_M_IT_TX_2 objit;
 	/* 向后移动一个周期(周期可能变化!)
-	   查询表示方法是 查 00分钟 到 15分钟 表示 [00,15] 两端闭区间
-	   而采集表示方法是 第一点,00采样周期15分钟,那么[00,15) 区间都是由第一个采样点表示
-	   [15,30) 由第二个采样点表示. 前闭后开.
-	   数据类似[图表1]的形式,以行为一条数据(记录),时刻相同.一列为一块电表.
-	   外层 遍历时刻;内层 遍历电量.
-	   */
+	 查询表示方法是 查 00分钟 到 15分钟 表示 [00,15] 两端闭区间
+	 而采集表示方法是 第一点,00采样周期15分钟,那么[00,15) 区间都是由第一个采样点表示
+	 [15,30) 由第二个采样点表示. 前闭后开.
+	 数据类似[图表1]的形式,以行为一条数据(记录),时刻相同.一列为一块电表.
+	 外层 遍历时刻;内层 遍历电量.
+	 */
 	//变步距!注意!,在内层中根据周期修改步距
 	for (u32 t = min_start; t<=min_end; t += minCycle) {
 		snumber++;
-		tsec=t*60;
-		gmtime_r(&tsec,&t_ch);
-		month=t_ch.tm_mon+1;//两种时间表示法月份基数不一样
-		day=t_ch.tm_mday;
+		tsec = t*60;
+		gmtime_r(&tsec, &t_ch);
+		month = t_ch.tm_mon+1;		//两种时间表示法月份基数不一样
+		day = t_ch.tm_mday;
 		printf("[本条记录时间]:");
 		showtime(t_ch);
 		//最外层循环.按表号(文件)来循环 一般日期跨度小,
-		for (int i = saddr; i<=endaddr; i++) {//信息体号
+		for (int i = saddr; i<=endaddr; i++) {		//信息体号
 			int mtrno = (i-1)/4;	//从信息体计算成表号
-			int datclass = (i-1)%4;//信息体对应在每个表不同数据分类
-			//FIXME　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
+			int datclass = (i-1)%4;	//信息体对应在每个表不同数据分类
+			///@note　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
 			std::string tou_file;
 			GetFileName_Day(&tou_file, month, day, mtrno, TASK_TOU);
 			std::cout<<"\t打开文件:"<<tou_file<<std::endl;
@@ -1053,7 +1046,7 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 			Tou toudat;
 			memset(&toudat, 0x00, sizeof(toudat));
 			fp = fopen(tou_file.c_str(), "rb");
-			if (fp==NULL) {//应该是没有这块表,跳过继续寻找下一块表的数据
+			if (fp==NULL) {			//应该是没有这块表,跳过继续寻找下一块表的数据
 				perror("open file");
 				//如果是没有文件的错误,则继续
 				continue;//继续下一个信息体
@@ -1065,45 +1058,46 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 				//这个错误在意料中?!
 				PRINT_HERE
 			}
-			//TODO 比较头,是否是本年本月的数据,因为月是对保存时间(几个月)取摸的.
+			///@todo 比较头,是否是本年本月的数据,因为月是对保存时间(几个月)取摸的.
 			//进行比较
-			if(0/*如果没有数据(月份不对什么的*/){
+			if (0/*如果没有数据(月份不对什么的*/) {
 				//看看是退出 还是 发送<没有数据>帧
 			}
 			//采样周期,分钟.
 			///@attention 注意! 这里修改了外层循环的步距
-			lastCycle=minCycle;
-			minCycle = filehead.save_cycle_hi*256+filehead.save_cycle_lo;
-			int curCycle=minCycle;//当前周期,用于求偏移量
+			lastCycle = minCycle;
+			minCycle = filehead.save_cycle_hi*256
+			                +filehead.save_cycle_lo;
+			int curCycle = minCycle;		//当前周期,用于求偏移量
 			/*对于不同的表采集周期不一样的情况:
 			 * 产生这种现象的原因可能是修改了表计个数,同是采样周期也修改了,
 			 * 造成之前存储的值的某些表与现在的不一样,过了一个最大存储周期后
 			 * 他们会变的相同的.
 			 * 保证按最小的采集周期计算
-			*/
-			int bchangectl=false;
-			if( minCycle>lastCycle && lastCycle !=0 && minCycle!=0 ){
+			 */
+			int bchangectl = false;
+			if (minCycle>lastCycle&&lastCycle!=0&&minCycle!=0) {
 				//printf("改变周期 %d -> %d",lastCycle,minCycle);
-				minCycle=lastCycle;
-				bchangectl=true;
-			}else{
-				bchangectl=false;
+				minCycle = lastCycle;
+				bchangectl = true;
+			} else {
+				bchangectl = false;
 			}
 			//距离这一天凌晨00:00的偏移量(分钟)/采样周期=文件中偏移的字节
-			int Soffset = (t%(60*24))/minCycle; //预设的偏离量
-			int modmin =(t%(60*24))%minCycle;//不是周期整数被,余数
+			int Soffset = (t%(60*24))/minCycle;  //预设的偏离量
+			int modmin = (t%(60*24))%minCycle;  //不是周期整数被,余数
 			/*向上元整,对于[图表1]情况,如果开始时间正好是(00:00~00:15]之间,
 			 * 那么即使表2有数据,也会因为表1没有数据而向上元整跳过,
 			 * 直接从4号记录开始.能记录到之后的,如[图表1]所示的
 			 * 4,5,6...记录
 			 * 例如00:20的小周期的记录是能被记录的.
 			 * (功能性缺失,不是致命bug)
-			*/
-			if(modmin!=0){//不正好是周期的整数倍
-				t+=(minCycle-modmin);//时间加上几分钟,使到达分钟的整数倍.
+			 */
+			if (modmin!=0) {  //不正好是周期的整数倍
+				t += (minCycle-modmin);  //时间加上几分钟,使到达分钟的整数倍.
 				//重新计算现在的日期和时间.
-				tsec=t*60;
-				gmtime_r(&tsec,&t_ch);
+				tsec = t*60;
+				gmtime_r(&tsec, &t_ch);
 				printf("时刻上元整");
 				//向上元整,偏移点也应该增加(修改)
 				Soffset = (t%(60*24))/minCycle;
@@ -1122,9 +1116,9 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 			 * 没有保存数据的表1保留上次的数据,即5分钟的数据和10分钟的
 			 * 数据都是0分钟的数据.且有效.
 			 * */
-			if(bchangectl){//周期改变了
-				//printf("没有偏移到下一个数据体");
-				Soffset=(t%(60*24))/curCycle;
+			if (bchangectl) {				//周期改变了
+			                                                //printf("没有偏移到下一个数据体");
+				Soffset = (t%(60*24))/curCycle;
 				//只是不偏移,但是数据还是生成的,只是和之前的数据是一样的
 			}
 
@@ -1136,9 +1130,9 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 				printf("读取电量信息错误:ret=%d", ret);
 				PRINT_HERE
 			}
-			objit.ioa=i;
-			memcpy(&objit.it_power,&toudat.FA.total,sizeof(objit.it_power));
-			objit.cs=0xFF;//校验暂时不进行.
+			objit.ioa = i;
+			memcpy(&objit.it_power, &toudat.FA.total, sizeof(objit.it_power));
+			objit.cs = 0xFF;			//校验暂时不进行.
 			q_IT.push(objit);
 			printf("\t表号:%d ", mtrno);
 			switch (datclass) {
@@ -1165,12 +1159,12 @@ int Csd102::hisdat(const Ta ts,const Ta te,
 			fclose(fp);
 		}
 		//所有请求的信息体历史文件都不存在.
-		if(minCycle==0){
+		if (minCycle==0) {
 			printf("没有请求的数据!\n");
 			break;
 		}
 		//一次时间完成:(对应帧中的信息体公共时间单元)
-		tm2ta(taa,t_ch);
+		tm2ta(taa, t_ch);
 		q_Ta.push(taa);
 	}
 	return 0;
@@ -1194,35 +1188,36 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	showtime(fin->obj.Tstart);
 	showtime(fin->obj.Tend);
 	if (this->format_ok(*fin)!=0/* 数据数据错误*/) {
-		make_mirror_1(*fin, false);
+		make_mirror_start(*fin, false);
 		printf(PREFIX"input instruction err 输入指令无效\n");
 		q1.push(fi);
 		return 1;
 	} else {	//有效 镜像帧
-		make_mirror_1(*fin, true);
+		make_mirror_start(*fin, true);
 		q1.push(fi);
 	}
-	this->hisdat( fin->obj.Tstart, fin->obj.Tend,
-		fin->obj.start_ioa, fin->obj.end_ioa,
-		qTa,qIT);
+	this->hisdat(fin->obj.Tstart, fin->obj.Tend,
+	                fin->obj.start_ioa, fin->obj.end_ioa,
+	                qTa, qIT);
 	//这里开始检查写两个队列的数据是否正确:
-	printf("记录队列(时间条目):\t\t\tqTa.size=%d\n",qTa.size());
-	printf("数据队列(信息体个数*时间条目):\tqIT.size=%d\n",qIT.size());
+	printf("记录队列(时间条目):\t\t\tqTa.size=%d\n", qTa.size());
+	printf("数据队列(信息体个数*时间条目):\tqIT.size=%d\n", qIT.size());
 	//一条时刻记录中包含的信息体数量,当传了几帧(因为一帧传不完)后,总数等于这个,
 	//则要换帧,并且换Ta.
-	const int rs_len =fin->obj.end_ioa-fin->obj.start_ioa+1;
-	int cur_re_idx=0;//当前记录中的信息体个数(索引)指示这是本记录的第几个信息体,base on 0
+	const int rs_len = fin->obj.end_ioa-fin->obj.start_ioa+1;
+	int cur_re_idx = 0;	//当前记录中的信息体个数(索引)指示这是本记录的第几个信息体,base on 0
 	// 但前总的信息体索引从0到max 共max+1个
-	int io_ind=0;
+	int io_ind = 0;
 	///一帧最多可以包含的信息体个数(含)
 	maxperframe = (MAX_UDAT_LEN-sizeof(Udat_head)-sizeof(Duid)-sizeof(Ta))
 	                /sizeof(Obj_M_IT_TX_2);
-	int meybe_err=0;
-	printf("每帧最大信息体数=%d 每条记录包含的信息体数量%d\n",
-		maxperframe,rs_len);
-	while( !qIT.empty()
-			&& meybe_err++ <65536 //循环太多次的话可能就是出错了,或者数据量不正常的多.
-			){			//直到数据传玩
+	int meybe_err = 0;
+	printf("每帧最大信息体数=%d "
+		"每条记录包含的信息体数量%d\n",
+		maxperframe, rs_len);
+	while (!qIT.empty()
+	                &&meybe_err++ <65536  //循环太多次的话可能就是出错了,或者数据量不正常的多.
+	) {			//直到数据传玩
 		printf("*");
 		int n;	//本帧包含的信息体数量
 		//本帧个数待确定
@@ -1230,10 +1225,10 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 			n = rs_len;
 		} else {
 			//记录级长-当前索引<=最大信息体数,则这帧可以讲剩余部分全部发完
-			if((rs_len-1-cur_re_idx)<=maxperframe){
-				n=rs_len-cur_re_idx;
-			}else{
-				n=maxperframe;
+			if ((rs_len-1-cur_re_idx)<=maxperframe) {
+				n = rs_len-cur_re_idx;
+			} else {
+				n = maxperframe;
 			}
 		}
 		printf("n=%d\n", n);
@@ -1271,58 +1266,40 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 		duid->cot.pn = COT_PN_ACK;
 		duid->cot.t = COT_T_NOT_TEST;
 		duid->rad = RAD_DEFAULT;
-		duid->rtu_addr = makeaddr(io_ind+1);//根据信息体索引填写地址,
+		duid->rtu_addr = makeaddr(io_ind+1);  //根据信息体索引填写地址,
 		//从信息体队列弹出若干信息体(直到本时刻的信息体全发完,
 		//或者发不完,已经超过最大帧长.
-		int i=0;//本帧信息体现在数量,每帧都重置
+		int i = 0;		//本帧信息体现在数量,每帧都重置
 		//M_IT_TX_2_iObj []
-		while(!qIT.empty() 			//1.数据传玩了.
-				&& i<maxperframe	//2.信息体数量过多,分帧
-				&& cur_re_idx<rs_len	//3.本记录所有信息体读完,换一帧
-				){
-			/*正向有功 addr = (电表号)*4+1	;ti=0
-			 *反向有功 addr = (电表号)*4+2	;ti=1
-			 *正向无功 addr = (电表号)*4+3	;ti=2
-			 *反向无功 addr = (电表号)*4+4	;ti=3
-			 */
-//			int addr = fin->obj.start_ioa-1+fno*maxperframe+i;
-//			int mtrno = addr/4;		//表号 base 0
-//			int ti = (addr-1)%4;		//电量类型
-//			//数据无效标志,
-//			bool iv;
-//			obj[i].ioa = addr;
-//			obj[i].it_power.dat = ti;
-//			//TODO 其他事件待定
-//			obj[i].it_power.d_status.val = 0xFF;
-//			//TODO 校验的源待定.
-//			obj[i].cs = check_sum((u8*) &obj[i], sizeof(It));
+		while (!qIT.empty() 			//1.数据传完了(这个和下面冗余)
+		&&i<maxperframe	//2.信息体数量过多,分帧
+		&&cur_re_idx<rs_len	//3.本记录所有信息体读完,换一帧
+		) {
 			printf("#");
-			obj[i]=qIT.front();
+			obj[i] = qIT.front();
 			qIT.pop();
-			i++;//最小的循环累加:一帧中信息体排列下标 0~maxperframe-1
-			cur_re_idx++;//次级累加: 一条记录中信息体排列下标 0~rs_len-1
-			io_ind++;//最大: 本次请求的数据的信息体排列下标 0~?
+			i++;	//最小的循环累加:一帧中信息体排列下标 0~maxperframe-1
+			cur_re_idx++;	//次级累加: 一条记录中信息体排列下标 0~rs_len-1
+			io_ind++;	//最大: 本次请求的数据的信息体排列下标 0~?
 		}
-		*ta=qTa.front();
+		*ta = qTa.front();
 		//一条时刻的记录已经发送完,换下一个时刻.
-		if(cur_re_idx>=rs_len){
-			cur_re_idx=0;
+		if (cur_re_idx>=rs_len) {
+			cur_re_idx = 0;
 			qTa.pop();
 		}
 		f_tail->cs = this->check_sum(fout.dat+sizeof(Frame_head),
 		                f_head->len1);
 		f_tail->end_byte = END_BYTE;
-//		printf("duid->cf_m.funcode:%d", udat_head->cf_m.funcode);
-//		printf("f_tail->end_byte:%X", f_tail->end_byte);
 		//print_array(fout.dat, fout.len);
-		q1.push(fout);		//这一帧加入到队列
+		q1.push(fout);	//这一帧加入到队列
 		printf("push to 1类数据队列 ,qsize=%d\n", q1.size());
-		printf("结束:记录队列(时间条目):\t\t\tqTa.size=%d\n",qTa.size());
-		printf("     数据队列(信息体个数*时间条目):\tqIT.size=%d\n",qIT.size());
-	}		//fno 一帧结束
+		printf("结束:记录队列(时间条目):\t\t\tqTa.size=%d\n", qTa.size());
+		printf(" 数据队列(信息体个数*时间条目):\tqIT.size=%d\n", qIT.size());
+	}// 一帧结束
 
 	//完成后还有一帧镜像帧,激活结束
-	make_mirror_2(*fin);
+	make_mirror_end(*fin);
 	q1.push(fi);
 	return 0;
 }
@@ -1422,7 +1399,7 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 		ufead->cf_m.dfc = DFC_NOT_FULL;
 		ufead->cf_m.res = CF_RES;
 		ufead->link_addr = this->link_addr;
-		duid->typ = M_YC_TA_2;
+		duid->typm = M_YC_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = 0;
 		duid->cot.cause = COT_REQUEST;
@@ -1464,7 +1441,6 @@ int Csd102::make_M_YC_TA_2(const struct Frame fi,
 	}			//fno 一帧结束
 	return 0;
 }
-
 
 /**
  * M_XL_TA_2 需量
@@ -1537,7 +1513,7 @@ int Csd102::make_M_XL_TA_2(const struct Frame fi,
 		ufead->cf_m.dfc = DFC_NOT_FULL;
 		ufead->cf_m.res = CF_RES;
 		ufead->link_addr = this->link_addr;
-		duid->typ = M_YC_TA_2;
+		duid->typm = M_YC_TA_2;
 		duid->vsq.n = n;
 		duid->vsq.sq = 0;
 		duid->cot.cause = COT_REQUEST;
@@ -1624,7 +1600,7 @@ int Csd102::make_M_EI_NA_2(std::queue<struct Frame> &q) const
 	frame->udat_head.cf_m.res = CF_RES;  //1bit
 	frame->udat_head.link_addr = this->link_addr;
 	//asdu
-	frame->duid.typ = M_EI_NA_2;
+	frame->duid.typm = M_EI_NA_2;
 	frame->duid.vsq.sq = SQ_Similar;
 	frame->duid.vsq.n = num_iobj;
 	frame->duid.cot.cause = COT_INIT;
@@ -1668,7 +1644,7 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 	frame->udat_head.cf_m.res = CF_RES;  //1bit
 	frame->udat_head.link_addr = this->link_addr;
 	//
-	frame->duid.typ = P_MP_NA_2;
+	frame->duid.typm = P_MP_NA_2;
 	frame->duid.vsq.sq = SQ_Similar;
 	frame->duid.vsq.n = num_iobj;
 	frame->duid.cot.cause = COT_INIT;
@@ -1717,7 +1693,7 @@ int Csd102::make_M_TI_TA_2(std::queue<struct Frame> &q1) const
 	fo->udat_head.cf_m.dfc = DFC_NOT_FULL;
 	fo->udat_head.link_addr = this->link_addr;
 	//
-	fo->duid.typ = M_TI_TA_2;
+	fo->duid.typm = M_TI_TA_2;
 	fo->duid.vsq.sq = SQ_Similar;
 	fo->duid.vsq.n = iObj_num;     //一个信息体
 	fo->duid.cot.cause = COT_REQUEST;     //cot传输原因
@@ -1867,13 +1843,12 @@ int Csd102::make_M_SYN_TA_2(const struct Frame fi,
 
 /**
  * 构造一轮数据采集的前1镜像帧, 开始的镜像帧
- * @param[in] pf 输入帧(数据采集指定)
  * @param[in] b_acd 输入帧是否逻辑正确,正确,则有数据,acd置1,错误这结束此轮数据采集,acd=0
- * @param[out] pf 稍作修改输出的镜像帧
+ * @param[out] f 输入帧(数据采集指定)/稍作修改输出的镜像帧
  * @return
  */
 template<typename T>
-int Csd102::make_mirror_1(T &f, bool b_acd) const
+int Csd102::make_mirror_start(T &f, bool b_acd) const
         {
 	f.lpdu_head.cf_m.fcn = FCN_M_SEND_DAT;
 	f.lpdu_head.cf_m.prm = PRM_UP;
@@ -1887,11 +1862,11 @@ int Csd102::make_mirror_1(T &f, bool b_acd) const
 
 /**
  * 构造一轮数据采集的后1镜像帧, 结束的镜像帧
- * @param[out] pf 稍作修改输出的镜像帧
+ * @param[out] f 传入帧/稍作修改输出的镜像帧
  * @return
  */
 template<typename T>
-int Csd102::make_mirror_2(T &f) const
+int Csd102::make_mirror_end(T &f) const
         {
 	f.lpdu_head.cf_m.fcn = FCN_M_SEND_DAT;
 	f.lpdu_head.cf_m.prm = PRM_UP;
@@ -1907,7 +1882,7 @@ int Csd102::make_mirror_2(T &f) const
  * @param[in] f 例如 stFrame_C_SP_NB_2 ,stFrame_C_TI_NA_2,stFrame_M_EI_NA_2 等.
  * 		这样的[确定长度的],[特定用途]的帧结构体,参见 @file sd102_stFrame.h
  * 		必须要有帧头 Farme_head 成员结构
- * @return
+ * @retval 1字节校验值
  */
 template<typename T>
 u8 Csd102::check_sum(const T f) const
@@ -2101,8 +2076,8 @@ inline rtu_addr_t Csd102::makeaddr(int obj_num) const
 inline void Csd102::showtime(const struct tm t) const
         {
 	printf("tm %4d-%02d-%02d %02d:%02d:%02d timezone:%s\n",
-			1900+t.tm_year, t.tm_mon+1, t.tm_mday,
-	                t.tm_hour, t.tm_min,t.tm_sec,t.tm_zone);
+	                1900+t.tm_year, t.tm_mon+1, t.tm_mday,
+	                t.tm_hour, t.tm_min, t.tm_sec, t.tm_zone);
 	fflush(stdout);
 	return;
 }
@@ -2165,7 +2140,7 @@ u32 Csd102::get_min(const Ta ta) const
 	hours = ta.hour;
 	days = ta.day-1;
 	months = ta.month;
-	u8 YEARL = ta.year+30;//base 2000 -> base 1970
+	u8 YEARL = ta.year+30;		//base 2000 -> base 1970
 	years = YEARL%100;
 	if (mins>59)
 		return 0;

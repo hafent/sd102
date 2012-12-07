@@ -107,18 +107,18 @@ struct Udat_head {
 /// 7.1 数据单元标识(应用服务数据单元头),Application Service Data Unit(ASDU)
 struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
 	union{
-		u8 typ;
-		e_typc typc;
-		e_typm typm;
+		typ_t typ;
+		typ_t typc;
+		typ_t typm;
 	};
 	union  Vsq vsq;
 	union Cot cot;
-	/* 7.2.4 电能累计量数据终端设备的地址从1开始，
+	/** 7.2.4 电能累计量数据终端设备的地址从1开始，
 	对于信息体每超过一次255个信息点的情况，
 	将终端设备地址依次加1。
 	终端设备的地址可以和链路地址不一致。*/
 	rtu_addr_t rtu_addr;
-	/* 7.2.5 记录地址(RAD) */
+	/** 7.2.5 记录地址(RAD) */
 	rad_t rad;
 };
 // 填补信息体(Information Object),按照不通类型不通.
@@ -156,8 +156,8 @@ struct Short_frame {
 
 
 //********************** 第二部分 特定类型的帧定义 **************************
-// ****服务数据单元的定义和表示 APDU(Application Service Data Unit)*******
-// 7.3.1 ************* 在监视方向上的**过程信息**的应用服务数据单元 *************
+// ****服务数据单元的定义和表示 APDU(Application Service Data Unit)**********
+// 7.3.1 ************* 在监视方向上的**过程信息**的应用服务数据单元 **********
 /// 7.3.1.1 M_SP_TA_2 带时标的单点(Single-Point)信息体
 struct Obj_M_SP_TA_2 {
 	struct Spinfo sp;

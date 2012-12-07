@@ -4,6 +4,7 @@
  */
 #ifndef SD102_H
 #define SD102_H
+
 #include "CBASE102s.h"
 #include "sd102_stFrame.h"//结构定义
 //#include "sd102_ctDuid.h"//常量定义
@@ -20,16 +21,17 @@
 #ifndef PATCHLEVEL
 #define PATCHLEVEL 0
 #endif
+#define KIND_OF_102 SD102 ///<定义特殊类别的102规约,指示为山东102
 #define PREFIX "[sd102]" //打印用的前缀,方便区分
 #define PREERR "[sd102 ERR]"//
-//标准发布日期,山东电力集团公司 发布 2011年3月24日
+///标准发布日期,山东电力集团公司 发布 2011年3月24日
 #define  STANDARD_YEAR (11)
 #define  STANDARD_MONTH (3)
-//厂商编号,产品编号
+///厂商编号,产品编号
 #define FACT_ID (123)
 #define PRODUCT_ID (456)
 #define CLASS2MAX (256) //最大数据存储量:256帧单点数据
-//最大用户数据区长度,由len=1字节限制
+///最大用户数据区长度,由len=1字节限制
 #define MAX_UDAT_LEN (255)
 //最大帧长
 #define MAX_FRAME_LEN (4+MAX_UDAT_LEN+2) //sd102最大幀長,帧头+len+帧尾
@@ -38,7 +40,7 @@ struct Frame {
 	u8 dat[MAX_FRAME_LEN];
 	int len;
 };
-///tou 电量　文件头 //TODO　这是存储方面的头文件，以后应该修改定义到存储方面
+///tou 电量　文件头 @todo　这是存储方面的头文件，以后应该修改定义到存储方面
 struct touFilehead{
 	u8 year;
 	u8 month;
@@ -155,13 +157,13 @@ private:
 	int time_range(const struct Ta starttime, const struct Ta endtime) const;
 	int print_err_msg(int msg) const;
 	template<typename T> u8 check_sum(const T f) const;
-	template<typename T>int make_mirror_1( T &f,bool b_acd) const;
-	template<typename T>int make_mirror_2( T &f) const;
+	template<typename T>int make_mirror_start( T &f,bool b_acd) const;
+	template<typename T>int make_mirror_end( T &f) const;
 	int clear_fcb(struct Frame &fbak) const;
 	void print_array(const u8 *transbuf, const int len) const;
 	int copyframe(struct Frame &df, const struct Frame sf) const;
 	int protime_to_tm(const Ta ta,struct tm t)const;
-	//TODO　读写数据库（文件）相关的本应该有DB来完成
+	///@todo　读写数据库（文件）相关的本应该有DB来完成
 	void print_tou_head(const struct touFilehead  filehead)const;
 	void print_tou_dat(const struct Tou  tou) const;
 	u32 get_min(const Ta ta)const;

@@ -1,8 +1,0 @@
-include/sd102.h
-include/typedefine.h
-src/sd102.cpp
-include/sd102_struct.h
-include/sd102_funcode.h
-include/sd102_typ.h
-include/sd102_start_char.h
-include/sd102_cot.h
