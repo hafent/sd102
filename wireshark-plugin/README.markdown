@@ -22,6 +22,6 @@
 Windows 下可能需要修改 wireshark 的显示字体以显示中文,规约中汉字皆以UTF-8编码.
 
 ## 文件结构
-* hello.lua	: 规约解析插件.使用lua编写,调用wireshark的api解析报文.\n
-* sd102.pcap	: 保存的sd102协议数据包.用于测试插件效果,使用wireshark打开.
-* 1.png	: 效果图
+* hello.lua		: 规约解析插件.使用lua编写,调用wireshark的api解析报文.
+* example-dat.pcap	: 保存的sd102协议数据包.用于测试插件效果,使用wireshark打开.
+* screenshot*.png	: 效果图
