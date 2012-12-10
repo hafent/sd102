@@ -113,7 +113,16 @@ do
 	local f_ASDU_addr=ProtoField.uint16("sd102.ASDU_addr","应用服务单元公共地址(ASDU address)",base.DEC)
 	local f_ASDU_addr_lo=ProtoField.uint8("sd102.ASDU_addr_lo","低字节(lo)",base.HEX)
 	local f_ASDU_addr_hi=ProtoField.uint8("sd102.ASDU_addr_hi","高字节(hi_",base.HEX)
-	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","记录地址(RAD)",base.DEC,{[0]="默认"})
+	local f_recordAddr=ProtoField.uint8("sd102.recordAddr","记录地址(RAD)",base.DEC,{[0]="默认",[1]="从记账（计费）时段开始的电能累计量的记录地址",
+	[11]="电能累计量累计时段1的记录地址",
+	[12]="电能累计量累计时段2的记录地址",
+	[13]="电能累计量累计时段3的记录地址",
+	[50]="最早的单点信息",
+	[51]="单点信息的全部记录",
+	[52]="单点信息记录区段1",
+	[53]="单点信息记录区段2",
+	[54]="单点信息记录区段3",
+	[55]="单点信息记录区段4"})
 	--时间 ,其中有写位没解析 RSE
 	local f_Tb = ProtoField.bytes("sd102.Tb","时间(Tb)",base.HEX)
 	local f_Tb_ms=ProtoField.uint16("sd102.Tb_ms","毫秒(ms)",base.DEC,nil,0x03FF)
@@ -150,10 +159,10 @@ do
 	local f_Ta_year = ProtoField.uint8("sd102.Ta_year","年(year)",base.DEC,nil,0x7F)
 	--单点信息
 	local f_sp = ProtoField.bytes("sd102.Sp","单点信息(SP)",base.HEX)
-	local f_sp_spa = ProtoField.uint8("sd102.Sp_spa","单点信息地址(SP)",base.DEC)
+	local f_sp_spa = ProtoField.uint8("sd102.Sp_spa","单点信息地址(SPA)",base.DEC)
 	local f_sp_spi = ProtoField.uint8("sd102.Sp_spi","单点信息状态(SPI)",base.HEX,
 	{[0]="分开",[1]="闭合"},0x01)
-	local f_sp_spq = ProtoField.uint8("sd102.Sp_spq","单点信息质量(SPQ)",base.HEX)
+	local f_sp_spq = ProtoField.uint8("sd102.Sp_spq","单点信息质量(SPQ)",base.DEC,nil,0xFE)
 	--电量信息(共7字节)
 	local f_ti =ProtoField.bytes("sd102.TI","电量信息体(TI)",base.HEX)
 	--信息体地址 1字节
@@ -333,7 +342,7 @@ do
 				--设置终端时间
 			elseif buf(7,1):uint() == 128 then
 				addTb(t,13,buf)
-			--读一个选定的时间范围和一个选定的地址范围的记帐（计费）电能累计量
+				--读一个选定的时间范围和一个选定的地址范围的记帐（计费）电能累计量
 			elseif buf(7,1):uint() == 120 then 
 				t:add(f_msgaddr_start,buf(13,1))
 				t:add(f_msgaddr_end,buf(14,1))
@@ -343,7 +352,7 @@ do
 		else -----------上行 -------
 			--按TYP分类
 			if buf(7,1):uint() == 1 then --单点信息
-				t:add("sp")
+				--t:add("sp")
 				showsp(t,buf)
 			elseif buf(7,1):uint() == 2 then --读电量
 				--t:add("ti")
@@ -446,8 +455,22 @@ do
 	end
 	---------- 显示单点信息 信息体 函数
 	function showsp(t,buf)
-		--待完善
-		t:add("TODO: 显示单点信息返回信息体值")
+		local base=13 --基地址从13字节还是是obj
+		local sizeIT=7
+		local sizeObj=9
+		local n=buf(8,1):uint()
+		local tsp=t:add(f_bs,buf(base,n*sizeObj),"","单点信息集合,共 ")
+		tsp:append_text(n);
+		tsp:append_text(" 个.")
+		for i=0,(n-1) do
+			local sp=tsp:add(f_sp,buf(base,sizeObj))
+			sp:add(f_sp_spa,buf(base+0,1))
+			sp:add(f_sp_spi,buf(base+1,1))
+			sp:add(f_sp_spq,buf(base+1,1))
+			addTb(sp,base+2,buf)
+			base=base+sizeObj
+		end
+		--t:add("TODO: 显示单点信息返回信息体值")
 	end
 	---------- 添加显示 ti电量 n个信息体(TI_Obj)和 一个信息体单元(Ta)函数
 	function showti(t,buf)

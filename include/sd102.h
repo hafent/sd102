@@ -105,7 +105,7 @@ private:
 	int transfer(const struct Frame f);
 	int process_short_frame(const struct Frame fin,
 	        struct Frame* f_out) const;
-	int process_request(const struct Frame fin,
+	int trans_data(const struct Frame fin,
 	        std::queue<struct Frame> &q1,
 	        std::queue<struct Frame> &q2);
 	int getsystime(struct Tb &t,const struct m_tSystime systime) const;
@@ -160,6 +160,7 @@ private:
 	void print_array(const u8 *transbuf, const int len) const;
 	int copyframe(struct Frame &df, const struct Frame sf) const;
 	int protime_to_tm(const Ta ta,struct tm t)const;
+	void sp_translator(const u8 *source,u8  *result)const;
 	///@todo　读写数据库（文件）相关的本应该有DB来完成
 	void print_tou_head(const struct touFilehead  filehead)const;
 	void print_tou_dat(const struct Tou  tou) const;

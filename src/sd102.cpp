@@ -229,7 +229,7 @@ int Csd102::ReciProc(void)
 			return 2200;
 		}
 		ret =
-		                process_request(reci_frame, this->qclass1, this->qclass2);
+		                trans_data(reci_frame, this->qclass1, this->qclass2);
 		if (ret!=0) {
 			PRINT_HERE
 		}
@@ -329,7 +329,7 @@ int Csd102::copyframe(struct Frame &df, const struct Frame sf) const
 int Csd102::ack(struct Frame &f) const
         {
 	f.dat[0] = START_SC_FRAME;
-	f.len = sizeof(START_SC_FRAME);
+	f.len = sizeof(u8);
 	return 0;
 }
 /**
@@ -340,7 +340,7 @@ int Csd102::ack(struct Frame &f) const
 int Csd102::nack(struct Frame &f) const
         {
 	f.dat[0] = START_SC_FRAME;
-	f.len = sizeof(START_SC_FRAME);
+	f.len = sizeof(u8);
 	return 0;
 }
 /**将帧结构通过 m_transBuf 发送给主站
@@ -389,7 +389,7 @@ u8 Csd102::get_ctrl_field(const struct Frame f) const
 /**
  * 初步分离出正确的报文.帧前的数据清除,帧尾的数据保留在缓冲队列.
  *  高效的过滤大部分不合格的报文,
- *  经过处理之后准确无误的报文被保存在 readbuf[len] 数组中,传递出来
+ *  经过处理之后准确无误的报文被保存在 f 中,传递出来
  * @param[out] f 通用帧结构
  * @return  非0-失败
  */
@@ -653,7 +653,7 @@ int Csd102::process_short_frame(const struct Frame fin,
  * @param[out] q2 输出到2类数据
  * @return
  */
-int Csd102::process_request(const struct Frame fin,
+int Csd102::trans_data(const struct Frame fin,
         std::queue<struct Frame> &q1,
         std::queue<struct Frame> &q2)
 {
@@ -852,7 +852,7 @@ int Csd102::setsystime(TMStruct &systime, const struct Tb t) const
 #pragma  GCC diagnostic ignored  "-Wunused-parameter"
 // ************** 在监视方向的**过程信息** *************
 /**
- * 构造 M_SP_TA_2(上传单点信息)帧
+ * 构造 M_SP_TA_2(上传单点信息)帧 指定时间范围内单点信息
  * @param[in] fi 输入帧
  * @param[out] q 输出队列
  * @return
@@ -860,70 +860,137 @@ int Csd102::setsystime(TMStruct &systime, const struct Tb t) const
 int Csd102::make_M_SP_TA_2(const struct Frame fi,
         std::queue<struct Frame> &q1) const
         {
-	struct Frame frame_out;
+	struct Frame fout;
+	int maxvsq_per_frame;
+	u8 sp[sizeof(Obj_M_SP_TA_2)];
+	int ret = -1;
 	// 数据过多时分帧发送
 	//每帧最多可以包含的信息体个数,用户数据最多255,再根据单个信息体的大小确定
 	//不同类型的帧,因为包含的信息体大小不同,可能造成最多可包含数信息体数量不同
-	int maxperframe = 0;
-	struct m_tSystime systime;
 	//FIXME 区分出指令是  C_SP_NB_2 还是 C_SP_NA_2
 	struct stFrame_C_SP_NB_2 *fin = (stFrame_C_SP_NB_2 *) fi.dat;
 	//开始镜像帧 对/错误
-	bool iswrong=(this->format_ok(*fin)!=0);
+	bool iswrong = (this->format_ok(*fin)!=0);
 	make_mirror_start(*fin, iswrong);
 	q1.push(fi);
-	if(iswrong){
+	if (iswrong) {
 		printf(PREFIX"input instruction err 输入指令无效\n");
 		return 1;
 	}
-	u32 stime=Calc_Time_102(fin->obj.starttime.min, fin->obj.starttime.hour,
-		fin->obj.starttime.day, fin->obj.starttime.month,
-		fin->obj.starttime.year);
-	u32 etime=Calc_Time_102(fin->obj.endtime.min, fin->obj.endtime.hour,
-		fin->obj.endtime.day, fin->obj.endtime.month,
-		fin->obj.endtime.year);
+	u32 stime =
+	                Calc_Time_102(fin->obj.starttime.min, fin->obj.starttime.hour,
+	                                fin->obj.starttime.day, fin->obj.starttime.month,
+	                                fin->obj.starttime.year);
+	u32 etime = Calc_Time_102(fin->obj.endtime.min, fin->obj.endtime.hour,
+	                fin->obj.endtime.day, fin->obj.endtime.month,
+	                fin->obj.endtime.year);
 	unsigned char temp_buf[264];
-		Read_evt_kkk(temp_buf, stime, etime,EVENTFILE,SendT_RealTimes);
-	const int obj_num = 99;  ///@todo 信息体数量待计算
+	ret =
+	                Read_evt_kkk(temp_buf, stime, etime, "../"EVENTFILE, SendT_RealTimes);
+	if (ret<=0) {	//打开事件错误
+		PRINT_HERE
+	}
+	if (temp_buf[0]==0) {	//没有信息
+		PRINT_HERE
+	}
+	print_array(temp_buf, 264);
+
+	int totle_vsq = temp_buf[0];
+	///一帧最多可以包含的信息体个数(含)
+	maxvsq_per_frame = (MAX_UDAT_LEN-sizeof(Udat_head)-sizeof(Duid))
+	                /sizeof(Obj_M_SP_TA_2);
+	printf(PREFIX"vsq共%d个,每帧最多vsq=%d\n", totle_vsq, maxvsq_per_frame);
+	int framenu = totle_vsq/maxvsq_per_frame+1;
+	int io_ind=0;
+	for (int i = 0; i<framenu; i++) {
+		int n = (i==framenu-1) ?
+		                totle_vsq%maxvsq_per_frame : maxvsq_per_frame;
+		fout.len = sizeof(Frame_head)+sizeof(Udat_head)
+		                +sizeof(Duid)+sizeof(Obj_M_SP_TA_2)*n
+		                +sizeof(Frame_tail);
+		int offset = 0;//将各种指针与数据相互关联起来
+		Frame_head* f_head = (Frame_head*) (fout.dat+offset);
+		offset += sizeof(Frame_head);
+		Udat_head* udat_head = (Udat_head*) (fout.dat+offset);
+		offset += sizeof(Udat_head);
+		Duid* duid = (Duid*) (fout.dat+offset);
+		offset += sizeof(Duid);
+		Obj_M_SP_TA_2* obj = (Obj_M_SP_TA_2 *) (fout.dat+offset);
+		offset += sizeof(Obj_M_SP_TA_2)*n;
+		Frame_tail* f_tail = (Frame_tail*) (fout.dat+offset);
+		f_head->start_byte1 = START_LONG_FRAME;
+		f_head->len1 = fout.len-sizeof(Frame_head)-sizeof(Frame_tail);
+		f_head->len2 = f_head->len1;
+		f_head->start_byte2 = START_LONG_FRAME;
+		udat_head->cf_m.fcn = FCN_M_SEND_DAT;
+		udat_head->cf_m.prm = PRM_UP;
+		udat_head->cf_m.acd = ACD_ACCESS;  //有数据
+		udat_head->cf_m.dfc = DFC_NOT_FULL;
+		udat_head->cf_m.res = CF_RES;
+		udat_head->link_addr = this->link_addr;
+		duid->typm = M_SP_TA_2;
+		duid->vsq.n = n;
+		duid->vsq.sq = SQ_Similar;
+		duid->cot.cause = COT_REQUEST;
+		duid->cot.pn = COT_PN_ACK;
+		duid->cot.t = COT_T_NOT_TEST;
+		duid->rad = RAD_ALL_SP_INFO;
+		duid->rtu_addr = makeaddr(io_ind+1);  //根据信息体索引填写地址,
+		for (int j = 0; j<n; j++) {
+			sp_translator(temp_buf+12+j*sizeof(Obj_M_SP_TA_2),
+					(u8 * )(obj+j));
+			io_ind++;
+		}
+		f_tail->cs = this->check_sum(fout.dat+sizeof(Frame_head),
+				                f_head->len1);
+		f_tail->end_byte = END_BYTE;
+		//print_array(fout.dat, fout.len);
+		q1.push(fout);	//这一帧加入到队列
+	}
+
 	//完成后还有一帧镜像帧,激活结束
 	make_mirror_end(*fin);
 	q1.push(fi);
 	return 0;
 }
-/**
- * 打印电量文件的电量数据体
- * @param[in]	tou
- */
-void Csd102::print_tou_dat(const struct Tou tou) const
+void Csd102::sp_translator(const u8 *source, u8 *result) const
         {
-	printf("%d[%d] ", tou.FA.total.val, tou.FA.total.iv);
-	printf("%d[%d] ", tou.RA.total.val, tou.FA.total.iv);
-	printf("%d[%d] ", tou.FR.total.val, tou.FA.total.iv);
-	printf("%d[%d] ", tou.RR.total.val, tou.FA.total.iv);
-	printf("\n");
-	return;
+	if (source[0]==SPA_ERTU_CLOSE) {
+		result[0] = SPA_ERTU_CLOSE_GX;
+		result[1] = (SPQ_ERTU_CLOSE_GX<<1);
+	} else if (source[0]==SPA_ERTU_RST) {
+		result[0] = SPA_ERTU_RST_GX;
+		result[1] = (SPQ_ERTU_RST_GX<<1);
+	} else if (source[0]==SPA_CHECK_TIME) {
+		result[0] = SPA_SYN_TIME_GX;
+		if (source[1]&1)
+			result[1] = (SPQ_SYN_TIME_GX<<1);
+	} else if (source[0]==SPA_PARA_MOD) {
+		result[0] = SPA_PARA_MOD_GX;
+		result[1] = (SPQ_PARA_MOD_GX<<1);
+	} else if (source[0]==SPA_COMM_STATUS) {
+		result[0] = source[1]>>1;
+		if (source[1]&1) {
+			result[1] = (SPQ_COMM_ERR_GX<<1)+1;
+		} else {
+			result[1] = (SPQ_COMM_SUCCESS<<1)+0;
+		}
+	} else if (source[0]==SPA_LOW_VA) {
+		result[0] = source[1]>>1;
+		result[1] = (SPQ_LOW_VA_GX<<1)+(source[1]&1);
+	} else if (source[0]==SPA_LOW_VB) {
+		result[0] = source[1]>>1;
+		result[1] = (SPQ_LOW_VA_GX<<1)+(source[1]&1);
+	} else if (source[0]==SPA_LOW_VC) {
+		result[0] = source[1]>>1;
+		result[1] = (SPQ_LOW_VA_GX<<1)+(source[1]&1);
+	} else {
+		result[0] = source[0];
+		result[1] = source[1];
+	}
+	memcpy(result+2, source+2, sizeof(Tb));	//timeb
 }
-/**
- * 打印电量文件的文件头信息
- * @param[in]	filehead
- */
-void Csd102::print_tou_head(const struct touFilehead filehead) const
-        {
-	printf("tou file head:%d-%d-%d([%02X][%02X][%02X])\n"
-			"             sc= hi: %d[%02X] lo: %d[%02X]\n"
-			"             savenumber=%d[%02X]\n"
-			"             save flag="
-			"[%02X] [%02X] [%02X] [%02X]\n",
-	                filehead.year, filehead.month, filehead.day,
-	                filehead.year, filehead.month, filehead.day,
-	                filehead.save_cycle_hi, filehead.save_cycle_hi,
-	                filehead.save_cycle_lo, filehead.save_cycle_lo,
-	                filehead.save_number, filehead.save_number,
-	                filehead.save_flag1, filehead.save_flag2,
-	                filehead.save_flag3, filehead.save_flag4
-	                );
-	return;
-}
+
 /** 根据时间范围和信息体地址范围 从 历史数据 his 文件中读取
  * 指定的信息体 和时间信息 分别到信息体队列 和 Ta 时间队列.备用
  * @param[in] ts	输入时间范围 time start
@@ -939,7 +1006,7 @@ int Csd102::hisdat(const Ta ts, const Ta te,
         std::queue<struct Ta> &q_Ta,
         std::queue<struct Obj_M_IT_TX_2> &q_IT) const
         {
-	unsigned long min_start, min_end, min_now;		//三种时刻的分钟数
+	unsigned long min_start, min_end, min_now;	//三种时刻的分钟数
 	struct m_tSystime systime;
 	GetSystemTime_RTC(&systime);
 	struct Ta Tnow;
@@ -979,7 +1046,7 @@ int Csd102::hisdat(const Ta ts, const Ta te,
 		for (int i = saddr; i<=endaddr; i++) {		//信息体号
 			int mtrno = (i-1)/4;	//从信息体计算成表号
 			int datclass = (i-1)%4;  //信息体对应在每个表不同数据分类
-			///@note　重要改动:信息体数量＝采集时间／采集周期＊所采集的信息体范围
+			///@note　重要:信息体数量＝采集时间／采集周期＊所采集的信息体范围
 			std::string tou_file;
 			GetFileName_Day(&tou_file, month, day, mtrno, TASK_TOU);
 			std::cout<<"\t打开文件:"<<tou_file<<std::endl;
@@ -1131,10 +1198,10 @@ int Csd102::make_M_IT_TA_2(const struct Frame fi,
 	showtime(fin->obj.Tstart);
 	showtime(fin->obj.Tend);
 	//开始镜像帧 对/错误
-	bool iswrong=(this->format_ok(*fin)!=0);
+	bool iswrong = (this->format_ok(*fin)!=0);
 	make_mirror_start(*fin, iswrong);
 	q1.push(fi);
-	if(iswrong){
+	if (iswrong) {
 		printf(PREFIX"input instruction err 输入指令无效\n");
 		return 1;
 	}
@@ -1821,7 +1888,7 @@ int Csd102::make_mirror_end(T &f) const
 	return 0;
 }
 /**
- * 求各种已知长度的特定用途帧的校验值(固定长度的长帧).
+ * 求各种已知长度的特定用途帧的校验值(特定长度的长帧).
  * @param[in] f 例如 stFrame_C_SP_NB_2 ,stFrame_C_TI_NA_2,stFrame_M_EI_NA_2 等.
  * 		这样的[确定长度的],[特定用途]的帧结构体,参见 @file sd102_stFrame.h
  * 		必须要有帧头 Farme_head 成员结构
@@ -1858,6 +1925,40 @@ void Csd102::print_array(const u8 *a, const int len) const
 	for (i = 0; i<len; i++) {
 		printf("%02X ", a[i]);
 	}
+	printf("\n");
+	return;
+}
+/**
+ * 打印电量文件的文件头信息
+ * @param[in]	filehead
+ */
+void Csd102::print_tou_head(const struct touFilehead filehead) const
+        {
+	printf("tou file head:%d-%d-%d([%02X][%02X][%02X])\n"
+			"             sc= hi: %d[%02X] lo: %d[%02X]\n"
+			"             savenumber=%d[%02X]\n"
+			"             save flag="
+			"[%02X] [%02X] [%02X] [%02X]\n",
+	                filehead.year, filehead.month, filehead.day,
+	                filehead.year, filehead.month, filehead.day,
+	                filehead.save_cycle_hi, filehead.save_cycle_hi,
+	                filehead.save_cycle_lo, filehead.save_cycle_lo,
+	                filehead.save_number, filehead.save_number,
+	                filehead.save_flag1, filehead.save_flag2,
+	                filehead.save_flag3, filehead.save_flag4
+	                );
+	return;
+}
+/**
+ * 打印电量文件的电量数据体
+ * @param[in]	tou
+ */
+void Csd102::print_tou_dat(const struct Tou tou) const
+        {
+	printf("%d[%d] ", tou.FA.total.val, tou.FA.total.iv);
+	printf("%d[%d] ", tou.RA.total.val, tou.FA.total.iv);
+	printf("%d[%d] ", tou.FR.total.val, tou.FA.total.iv);
+	printf("%d[%d] ", tou.RR.total.val, tou.FA.total.iv);
 	printf("\n");
 	return;
 }
@@ -1997,7 +2098,7 @@ int Csd102::format_ok(struct stFrame_C_CI_NR_2 fin) const
  */
 int Csd102::format_ok(struct stFrame_C_SP_NB_2 fin) const
         {
-	if (this->time_range(fin.obj.starttime,fin.obj.endtime)!=0) {
+	if (this->time_range(fin.obj.starttime, fin.obj.endtime)!=0) {
 		printf("时间起止范围错误\n");
 		return 1;
 	}
@@ -2019,12 +2120,12 @@ int Csd102::print_err_msg(int msg) const
  * @param[in] obj_num
  * @return
  */
-inline rtu_addr_t Csd102::makeaddr(int obj_num) const
+inline rtu_addr_t Csd102::makeaddr(int obj_ind) const
         {
-	if (((obj_num/255)+1)!=1) {  //多于255个信息体
+	if (((obj_ind/255)+1)!=1) {  //多于255个信息体
 		//PRINT_HERE
 	}
-	return (obj_num/255)+1;
+	return (obj_ind/255)+1;
 }
 /**
  * 打印时间
