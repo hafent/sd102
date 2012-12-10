@@ -1,10 +1,11 @@
 /** @file sd102_ctDuid.h
  * 数据单元标识符Duid定义
- *  @page  数据单元标识符Duid定义
- * 数据单元标识符 duid的常量定义.
- * 仅定义常量,不定义结构,结构在element中定义
+ *  @page duid 数据单元标识符Duid定义
+ * 数据单元标识符 duid的常量定义.\n
+ * 仅定义常量,不定义结构,结构在element中定义.\n
  * Duid={标识类型(e_typc|e_typm),可变结构体(Vsq),传输原因(Cot),
- * 	终端地址(rtu_addr_t),记录地址(rad_t)}
+ * 	终端地址(rtu_addr_t),记录地址(rad_t)}.\n
+ * 在 @ref long-frame 中被引用.
  * @code
  +-----------+-------------+------+--------+
  |           |    typ_t    |1 byte|        |

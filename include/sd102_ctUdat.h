@@ -1,8 +1,9 @@
 /** @file sd102_ctUdat.h
  * 用户数据头Udat_head结构
- * @page 用户数据头Udat_head结构
+ * @page udat_head 用户数据头Udat_head结构
  * 用户数据头 结构 和一些数据类型的常量表达式.
- * 用户数据头={控制域(Ctrl_c|Ctrl_m),链路地址(link_addr_t)}
+ * 用户数据头={控制域(Ctrl_c|Ctrl_m),链路地址(link_addr_t)}.\n
+ * 在 @ref long-frame 中被引用.\n
  * @code
  +---------+------------------+---------------+------+--------+
  |         |                  | Ctrl_c|Ctrl_m |1 byte|        |
