@@ -143,6 +143,7 @@ private:
 	//
 	u8 check_sum(const u8 *a, const int len) const;
 	int format_ok(struct stFrame_C_CI_NR_2 fin) const;
+	int format_ok(struct stFrame_C_SP_NB_2 fin) const;
 	int time_range(const struct Obj_C_CI_XX_2 obj) const;
 	int ioa_range(const struct Obj_C_CI_XX_2 obj) const;
 	rtu_addr_t makeaddr(int obj_num) const;

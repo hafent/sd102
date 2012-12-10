@@ -1,9 +1,10 @@
-@page 规约解析插件
+规约解析插件使用说明
+==================
 
-本插件是基于 wireshark 网络抓包软件的.
+本插件是基于 wireshark 网络抓包软件的.  
 
-## 使用方法
-1. 安装 wireshark 网络抓包软件.支持M\$ Windows(TM)和Linux(R)操作系统
+## 使用方法  
+1. 安装 wireshark 网络抓包软件.支持 M\$ Windows 和 Linux 操作系统
 2. 将 `hello.lua` 文件复制到 wireshark 目录下.  
 	* Linux默认为 `/usr/share/wireshark` (需要权限)
 	* Window默认在... 自己找找 :P
@@ -25,3 +26,5 @@ Windows 下可能需要修改 wireshark 的显示字体以显示中文,规约中
 * hello.lua		: 规约解析插件.使用lua编写,调用wireshark的api解析报文.
 * example-dat.pcap	: 保存的sd102协议数据包.用于测试插件效果,使用wireshark打开.
 * screenshot1.png	: 效果图
+![Caption text](../wireshark-plugin/screenshot1.png "效果图1")
+![Caption text](../wireshark-plugin/screenshot2.png "效果图2")
