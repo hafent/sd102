@@ -5,11 +5,11 @@
  * 用户数据头={控制域(Ctrl_c|Ctrl_m),链路地址(link_addr_t)}.\n
  * 在 @ref long-frame 中被引用.\n
  * @code
- +---------+------------------+---------------+------+--------+
- |         |                  | Ctrl_c|Ctrl_m |1 byte|        |
- |Udat_head|                  | link_addr_t lo|1 byte|3 Bytes |
- |         |                  | link_addr_t hi|1 byte|        |
- +---------+------+-----------+---------------+------+--------+
+ +---------+---------------+------+--------+
+ |         | Ctrl_c/Ctrl_m |1 byte|        |
+ |Udat_head| link_addr_t lo|1 byte|3 Bytes |
+ |         | link_addr_t hi|1 byte|        |
+ +---------+---------------+------+--------+
  @endcode
  */
 #ifndef SD102_UDAT_H

@@ -38,7 +38,7 @@
 //********************** 第一部分 通用帧类型说明和定义 **************************
 #define VARIABLE_LENGTH_FRAME 1 //不固定长度的帧,通常时应为包含n个信息体,调试时置1,使用时置0
 #define INFO_OBJ_NUM 1 // 信息体数量,按照实际情况在定义帧时重新设置!
-#define __LINK_ADD_LEN 2 ///链路地址域长度
+#define __LINK_ADD_LEN 2 ///<链路地址域长度
 /**变长帧格式概括
  * @page  long-frame 可变长度帧帧格式
  * 帧结构中部分已知的结构, 帧头 帧尾 各种单元头等.
@@ -116,7 +116,7 @@ struct Duid { //ASDU头即 数据单元标识 Data Unit IDentifier
 	/** 7.2.4 电能累计量数据终端设备的地址从1开始，
 	对于信息体每超过一次255个信息点的情况，
 	将终端设备地址依次加1。
-	终端设备的地址可以和链路地址不一致。*/
+	终端设备的地址可以和链路地址不一致。链路地址才是对应LH3104终端地址*/
 	rtu_addr_t rtu_addr;
 	/** 7.2.5 记录地址(RAD) */
 	rad_t rad;
@@ -154,13 +154,12 @@ struct Short_frame {
 	struct Frame_tail farme_tail;
 };
 
-
 //********************** 第二部分 特定类型的帧定义 **************************
 // ****服务数据单元的定义和表示 APDU(Application Service Data Unit)**********
 // 7.3.1 ************* 在监视方向上的**过程信息**的应用服务数据单元 **********
 /// 7.3.1.1 M_SP_TA_2 带时标的单点(Single-Point)信息体
 struct Obj_M_SP_TA_2 {
-	struct Spinfo sp;
+	struct Sp sp;
 	struct Tb tb;
 };
 #if VARIABLE_LENGTH_FRAME
@@ -177,7 +176,7 @@ struct stFrame_M_SP_TA_2{
 struct Obj_M_IT_TX_2 {
 	ioa_t ioa;//
 	struct It it_power;
-	signature_t cs;//电能累计量数据保护的校核
+	signature_t cs;///<电能累计量数据保护的校核
 };
 #if VARIABLE_LENGTH_FRAME
 /// 7.3.1.2 M_IT_TA_2 ~ M_IT_TM_2 电能累计量帧

@@ -268,7 +268,7 @@ typedef u8 factcode_t; ///< 0..255
 ///7.2.7.6 产品编码 product code ;BS32 bit strings 32bits
 typedef u32 productcode_bs;
 ///7.2.7.7 带地址和限定词的单点信息 single-point information
-struct Spinfo {
+struct Sp {
 	u8 spa;//single-point address
 	u8 spi:1;//
 	u8 spq:7;//

@@ -74,7 +74,7 @@ CREATE_SUBDIRS = NO
 # Polish, Portuguese, Romanian, Russian, Serbian, Serbian-Cyrillic, Slovak,
 # Slovene, Spanish, Swedish, Ukrainian, and Vietnamese.
 
-OUTPUT_LANGUAGE = Chinese
+OUTPUT_LANGUAGE = English
 
 
 # If the BRIEF_MEMBER_DESC tag is set to YES (the default) Doxygen will
@@ -458,7 +458,7 @@ FORCE_LOCAL_INCLUDES = NO
 # If the INLINE_INFO tag is set to YES (the default) then a tag [inline]
 # is inserted in the documentation for inline members.
 
-INLINE_INFO = YES
+INLINE_INFO = NO
 
 # If the SORT_MEMBER_DOCS tag is set to YES (the default) then doxygen
 # will sort the (detailed) documentation of file and class members
@@ -472,7 +472,7 @@ SORT_MEMBER_DOCS = YES
 # by member name. If set to NO (the default) the members will appear in
 # declaration order.
 
-SORT_BRIEF_DOCS = NO
+SORT_BRIEF_DOCS = YES
 
 # If the SORT_MEMBERS_CTORS_1ST tag is set to YES then doxygen
 # will sort the (brief and detailed) documentation of class members so that
@@ -1243,7 +1243,7 @@ MAKEINDEX_CMD_NAME = makeindex
 # LaTeX documents. This may be useful for small projects and may help to
 # save some trees in general.
 
-COMPACT_LATEX = NO
+COMPACT_LATEX = YES
 
 # The PAPER_TYPE tag can be used to set the paper type that is used
 # by the printer. Possible values are: a4, letter, legal and
@@ -1275,7 +1275,7 @@ LATEX_FOOTER =
 # contain links (just like the HTML output) instead of page references
 # This makes the output suitable for online browsing using a pdf viewer.
 
-PDF_HYPERLINKS = NO
+PDF_HYPERLINKS = YES
 
 # If the USE_PDFLATEX tag is set to YES, pdflatex will be used instead of
 # plain latex in the generated Makefile. Set this option to YES to get a
@@ -1476,13 +1476,13 @@ ENABLE_PREPROCESSING = YES
 # compilation will be performed. Macro expansion can be done in a controlled
 # way by setting EXPAND_ONLY_PREDEF to YES.
 
-MACRO_EXPANSION = NO
+MACRO_EXPANSION = YES
 
 # If the EXPAND_ONLY_PREDEF and MACRO_EXPANSION tags are both set to YES
 # then the macro expansion is limited to the macros specified with the
 # PREDEFINED and EXPAND_AS_DEFINED tags.
 
-EXPAND_ONLY_PREDEF = NO
+EXPAND_ONLY_PREDEF = YES
 
 # If the SEARCH_INCLUDES tag is set to YES (the default) the includes files
 # pointed to by INCLUDE_PATH will be searched when a #include is found.

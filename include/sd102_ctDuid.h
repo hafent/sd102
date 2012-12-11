@@ -1,14 +1,15 @@
 /** @file sd102_ctDuid.h
  * 数据单元标识符Duid定义
  *  @page duid 数据单元标识符Duid定义
- * 数据单元标识符 duid的常量定义.\n
+ * 数据单元标识符 duid的常量定义.ct_ 前缀表示 const常量,包括枚举型和宏定义等逻辑上\n
+ * 不(应该)变化的量.\n
  * 仅定义常量,不定义结构,结构在element中定义.\n
- * Duid={标识类型(e_typc|e_typm),可变结构体(Vsq),传输原因(Cot),
+ * Duid={标识类型(e_typc\e_typm),可变结构体(Vsq),传输原因(Cot),
  * 	终端地址(rtu_addr_t),记录地址(rad_t)}.\n
  * 在 @ref long-frame 中被引用.
  * @code
  +-----------+-------------+------+--------+
- |           |    typ_t    |1 byte|        |
+ |           |e_typc\e_typm|1 byte|        |
  | ASDU head |    Vsq      |1 byte|        |
  |  (Duid)   |    Cot      |1 byte|6 Bytes |
  |           |rtu_addr_t lo|1 byte|        |
@@ -127,8 +128,11 @@ enum e_cot_t{
  <55>：＝单点信息记录区段4
  <56..127>：＝为将来兼容定义保留
  <128.. 255>：＝为特殊应用（专用范围） */
-const int RAD_DEFAULT = 0;
-const int RAD_ALL_SP_INFO = 51;
+enum e_rad{
+	RAD_DEFAULT = 0,
+	RAD_ALL_SP_INFO = 51
+};
+
 ///@todo 这些应该被移动到另外分类 ****  其他信息体元素的常量定义  ************ //
 /**电量Tb一些类型*/
 enum e_Tb {
@@ -174,6 +178,13 @@ const int SPA_EXT_INPUT=16;//外部状态量输入
 const int SPA_MANUAL_INPUT = 17;  // 人工输入
 const int SPA_WARN_MSG = 18;  //警告报文
 const int SPA_ERR_SINGAL = 19;  // 差错信号
+const int SPA_LOWV_A=129;
+const int SPA_LOWV_B=130;
+const int SPA_LOWV_C=131;
+const int SPA_BREAK_A = 132;
+const int SPA_BREAK_B = 133;
+const int SPA_BREAK_C = 134;
+const int SPA_LOSE_CONN =135;//与主站失去链接
 
 const  int SPI_ON =1;//事件发生
 const int SPI_OFF =0 ;//事件恢复

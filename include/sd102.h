@@ -8,25 +8,25 @@
 #include "CBASE102s.h"
 #include "sd102_stFrame.h"//结构定义
 #include <queue>
+#pragma pack(1)
 #define VER
 #ifndef MAJOR
-#define MAJOR 0 ///库版本号:主版本号
+#define MAJOR 0 ///<库版本号:主版本号
 #endif
 #ifndef MINOR
-#define MINOR 0 ///库版本号:次版本号
+#define MINOR 0 ///<库版本号:次版本号
 #endif
 #ifndef PATCHLEVEL
-#define PATCHLEVEL 0 ///库版本号:修订号
+#define PATCHLEVEL 0 ///<库版本号:修订号
 #endif
 #define KIND_OF_102 SD102 ///<定义特殊类别的102规约,指示为山东102
 #define PREFIX "[sd102]" ///<打印前缀:一般信息
 #define PREERR "[sd102 ERR]"///<打印前缀:错误信息
-///标准发布日期,山东电力集团公司 发布 2011年3月24日
-#define STANDARD_YEAR (11)
-#define STANDARD_MONTH (3)
+#define STANDARD_YEAR (11)///<标准发布日期,山东电力集团公司 发布 2011年3月24日
+#define STANDARD_MONTH (3)///<标准发布日期,3月
 #define FACT_ID (123)	///<厂商编号
 #define PRODUCT_ID (456)///<产品编号
-#define CLASS2MAX (256) //最大数据存储量:256帧单点数据
+#define CLASS2MAX (256) ///<最大数据存储量:256帧单点数据
 ///最大用户数据区长度,由len=1字节限制
 #define MAX_UDAT_LEN (255)
 ///最大帧长(字节)
@@ -161,11 +161,13 @@ private:
 	int copyframe(struct Frame &df, const struct Frame sf) const;
 	int protime_to_tm(const Ta ta,struct tm t)const;
 	void sp_translator(const u8 *source,u8  *result)const;
-	///@todo　读写数据库（文件）相关的本应该有DB来完成
+	int read_evt(const struct Ta starttime,
+		const struct Ta endtime,std::queue < Obj_M_SP_TA_2 > &q)const ;
 	void print_tou_head(const struct touFilehead  filehead)const;
 	void print_tou_dat(const struct Tou  tou) const;
 	u32 get_min(const Ta ta)const;
 	u32 get_min_2(Ta ta)const;
+	///@todo　读写数据库（文件）相关的操作本应该由DB来完成
 	int hisdat(const Ta ts,const Ta te,
 		ioa_t saddr,ioa_t endaddr,
 		std::queue<struct Ta> &q_Ta,

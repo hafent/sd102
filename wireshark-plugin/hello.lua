@@ -159,7 +159,20 @@ do
 	local f_Ta_year = ProtoField.uint8("sd102.Ta_year","年(year)",base.DEC,nil,0x7F)
 	--单点信息
 	local f_sp = ProtoField.bytes("sd102.Sp","单点信息(SP)",base.HEX)
-	local f_sp_spa = ProtoField.uint8("sd102.Sp_spa","单点信息地址(SPA)",base.DEC)
+	local f_sp_spa = ProtoField.uint8("sd102.Sp_spa","单点信息地址(SPA)",base.DEC,
+	{[1]="重新启动",
+	[15]="参数改变",
+	[3]="电源1故障",
+	[7]="主站对时",
+	[129]="A相PT失压",
+	[130]="B相PT失压",
+	[131]="C相PT失压",
+	[132]="A相CT断线",
+	[133]="B相CT断线",
+	[134]="C相CT断线",
+	[135]="终端与电表通信中断",
+	[136]="相序错误"})
+	
 	local f_sp_spi = ProtoField.uint8("sd102.Sp_spi","单点信息状态(SPI)",base.HEX,
 	{[0]="分开",[1]="闭合"},0x01)
 	local f_sp_spq = ProtoField.uint8("sd102.Sp_spq","单点信息质量(SPQ)",base.DEC,nil,0xFE)

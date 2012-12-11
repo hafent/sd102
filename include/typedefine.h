@@ -8,13 +8,17 @@
 #define SX102 1
 //#define SD102_Special_structure //标识山东102特定的结构
 //打印运行信息.最原始的调试方式
-#define PRINT_HERE {					\
-	printf("[File:%s Line:%d] Fun:%s\n",	\
-	__FILE__, __LINE__, __FUNCTION__);		\
+#define PRINT_HERE {						\
+	printf("[sd102][File:%s Line:%d] Fun:%s .\n",	\
+	__FILE__, __LINE__, __FUNCTION__);			\
+	}
+#define PRINT_RET(ret) {						\
+	printf("[sd102][File:%s Line:%d] Fun:%s ret %d .\n",	\
+	__FILE__, __LINE__, __FUNCTION__,(ret));		 	\
 	}
 //打印编译构建的日期和时间，类似：Dec  3 2012 09:59:57
 #define BUILD_INFO {					\
-	printf("Build:%s %s\n",	\
+	printf("[sd102]Build:%s %s\n",	\
 	__DATE__, __TIME__);		\
 	}
 typedef unsigned char u8;
