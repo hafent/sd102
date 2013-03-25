@@ -20,7 +20,7 @@
 #define KIND_OF_102 SD102 ///<定义特殊类别的102规约,指示为山东102
 #include "typedefine.h"
 #pragma pack(1)
-// 事件
+//事件
 #define SPQ_ERTU_RST_GX		1
 #define SPQ_ERTU_CLOSE_GX	1//系统掉电
 #define SPQ_SYN_TIME_GX 	2//对时
