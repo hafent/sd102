@@ -270,8 +270,8 @@ typedef u32 productcode_bs;
 ///7.2.7.7 带地址和限定词的单点信息 single-point information
 struct Sp {
 	u8 spa;//single-point address
-	u8 spi:1;//
-	u8 spq:7;//
+	u8 spi:1;//低1位
+	u8 spq:7;//高7位
 };
 ///7.2.7.8 电能累计量数据保护的校核 @todo 再详细查阅规约,查询对哪几部分CS
 typedef u8 signature_t;

@@ -1775,7 +1775,7 @@ int Csd102::make_P_MP_NA_2(std::queue<struct Frame> &q) const
 	return 0;
 
 }
-/* 电能累计量数据终端设备目前的系统时间 报文的制作.
+/** 电能累计量数据终端设备目前的系统时间 报文的制作.
  * */
 /**
  * 构造M_TI_TA_2 返回终端时间帧
