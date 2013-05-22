@@ -15,6 +15,7 @@
 #ifndef SD102_UDAT_H
 #define SD102_UDAT_H
 #include "typedefine.h"
+#include <stdint.h>
 #pragma pack(1)
 ///定义单个功能码及描述结构体
 struct stFcn_info {
@@ -61,7 +62,7 @@ enum e_prm {
 	PRM_UP = 0	///<上行 M
 };
 
-const u8 CF_RES = 0;	///<保留
+const uint8_t  CF_RES = 0;	///<保留
 ///控制域.数据流控制位(dfc,data flow control)
 enum e_dfc {
 	DFC_FULL = 1,	///<数据满
